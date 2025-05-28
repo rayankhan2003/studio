@@ -131,18 +131,25 @@ export default function CustomTestPage() {
 
 
     const testConfig = {
-      selectedChapters,
+      selectedChapters: Object.fromEntries(
+        Object.entries(selectedChapters).map(([subject, chaptersSet]) => [subject, Array.from(chaptersSet)])
+      ),
       questionCount: actualQuestionCount,
       timePerQuestion,
-      totalDuration: totalTestDuration,
+      totalDuration: totalTestDuration, // total duration in seconds
     };
+    
     console.log("Starting test with config:", testConfig);
-    // For now, we'll use a generic test ID. In a real app, this might be generated
-    // or the config passed to the test page.
-    // router.push(`/test/custom-${new Date().getTime()}`); 
-    // Mock test ID for now.
     toast({ title: "Test Starting!", description: "Redirecting to your custom test..." });
-    router.push(`/test/custom-test-session`); 
+    
+    // Pass configuration as query parameters
+    const queryParams = new URLSearchParams({
+      questionCount: String(actualQuestionCount),
+      totalDuration: String(totalTestDuration),
+      // chapters: JSON.stringify(testConfig.selectedChapters) // For more complex data, consider alternatives
+    });
+
+    router.push(`/test/custom-test-session?${queryParams.toString()}`); 
   };
   
   const getSelectedChaptersForPreview = () => {
@@ -184,20 +191,30 @@ export default function CustomTestPage() {
                     <AccordionTrigger className="py-3 hover:no-underline">
                       <div 
                         className="flex items-center space-x-3 flex-1"
-                        onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when clicking checkbox/label area
+                        onClick={(e) => { 
+                          // Allow click on checkbox/label to toggle selection without closing accordion
+                          // but still allow accordion trigger itself to work if area outside checkbox/label is clicked
+                          if ((e.target as HTMLElement).closest('input[type="checkbox"]') || (e.target as HTMLElement).closest('label')) {
+                            // If the click is on checkbox or label, let it propagate for checkbox functionality
+                          } else {
+                            // If click is on the trigger area but not checkbox/label, let accordion handle it
+                          }
+                        }}
                       >
                         <Checkbox
                           id={`select-all-${subject}`}
                           checked={getSubjectCheckboxState(subject)}
                           onCheckedChange={(checked) => {
-                            // Ensure onCheckedChange still works correctly after stopPropagation on parent
-                            // This might require a direct call if Radix relies on bubbling for its internal state update from Root
-                            // For ShadCN Checkbox, onCheckedChange is a direct prop.
                             handleSubjectSelectAll(subject, checked);
                           }}
+                          onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when clicking checkbox directly
                           aria-label={`Select all chapters in ${subject}`}
                         />
-                        <Label htmlFor={`select-all-${subject}`} className="text-lg font-semibold text-foreground cursor-pointer">
+                        <Label 
+                          htmlFor={`select-all-${subject}`} 
+                          className="text-lg font-semibold text-foreground cursor-pointer"
+                          onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when clicking label
+                        >
                           {subject}
                         </Label>
                       </div>

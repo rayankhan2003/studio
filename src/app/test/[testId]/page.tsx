@@ -1,83 +1,84 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Timer, ChevronLeft, ChevronRight, CheckSquare, Clock } from 'lucide-react'; // Added Clock
-import { useParams, useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, CheckSquare, Clock } from 'lucide-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Subjects, syllabus, type Subject as SubjectType } from '@/lib/syllabus'; // For mock question generation
 
-// Mock data - replace with actual data fetching
-const mockQuestions = [
-  { 
-    id: 'q1', 
-    subject: 'Biology',
-    chapter: 'Cell Structure & Function',
-    text: 'What is the powerhouse of the cell?', 
-    options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Endoplasmic Reticulum'], 
-    type: 'single-choice',
-    correctAnswer: 'Mitochondria'
-  },
-  { 
-    id: 'q2', 
-    subject: 'Physics',
-    chapter: 'Force & Motion',
-    text: 'Which of the following are vector quantities? (Select all that apply)', 
-    options: ['Speed', 'Velocity', 'Distance', 'Displacement', 'Mass'], 
-    type: 'multiple-choice',
-    correctAnswer: ['Velocity', 'Displacement']
-  },
-  { 
-    id: 'q3', 
-    subject: 'Chemistry',
-    chapter: 'Fundamental Concepts',
-    text: 'The chemical symbol for Gold is ___.', 
-    type: 'fill-in-the-blank',
-    correctAnswer: 'Au'
-  },
-  { 
-    id: 'q4', 
-    subject: 'English',
-    chapter: 'Grammar',
-    text: 'The statement "The sun rises in the west" is true.', 
-    type: 'true-false',
-    correctAnswer: 'False'
-  },
-  {
-    id: 'q5',
-    subject: 'Logical Reasoning',
-    chapter: 'Logical Deductions',
-    text: 'If all cats are mammals, and all mammals are animals, are all cats animals?',
-    options: ['Yes', 'No', 'Cannot be determined'],
-    type: 'single-choice',
-    correctAnswer: 'Yes'
-  },
-  // Add more questions to test scrolling and grid layout
-  ...Array.from({ length: 15 }, (_, i) => ({ // Total 20 questions
-    id: `q${i + 6}`,
-    subject: 'Biology',
-    chapter: 'Genetics',
-    text: `Sample question ${i + 6} about genetics?`,
-    options: [`Option A${i}`, `Option B${i}`, `Option C${i}`, `Option D${i}`],
-    type: 'single-choice',
-    correctAnswer: `Option A${i}`
-  }))
-];
+// Default values if query params are not present
+const DEFAULT_QUESTION_COUNT = 10;
+const DEFAULT_TOTAL_TEST_DURATION = 10 * 60; // 10 questions * 60 seconds
 
-const TOTAL_TEST_DURATION = 30 * 60; // 30 minutes in seconds (This would be dynamic in a real app)
+// Helper to generate mock questions
+const generateMockQuestions = (count: number) => {
+  const allSubjectKeys = Object.keys(Subjects) as (keyof typeof Subjects)[];
+  
+  return Array.from({ length: count }, (_, i) => {
+    const subjectKey = allSubjectKeys[i % allSubjectKeys.length];
+    const subjectName = Subjects[subjectKey];
+    const chaptersForSubject = syllabus[subjectName as SubjectType] || [{ name: 'General', topics: [] }];
+    const chapter = chaptersForSubject[i % chaptersForSubject.length] || { name: 'General', topics: [] };
+
+    const questionType = ['single-choice', 'multiple-choice', 'fill-in-the-blank', 'true-false'][i % 4];
+    let options: string[] | undefined = undefined;
+    let correctAnswer: string | string[];
+
+    switch (questionType) {
+      case 'single-choice':
+        options = [`Option A${i}`, `Option B${i}`, `Option C${i}`, `Option D${i}`];
+        correctAnswer = options[0];
+        break;
+      case 'multiple-choice':
+        options = [`Option W${i}`, `Option X${i}`, `Option Y${i}`, `Option Z${i}`, `Option V${i}`];
+        correctAnswer = [options[0], options[1]];
+        break;
+      case 'fill-in-the-blank':
+        correctAnswer = `Answer${i}`;
+        break;
+      case 'true-false':
+        options = ['True', 'False'] // Keep actual options for True/False
+        correctAnswer = 'True';
+        break;
+      default:
+        options = [`Opt A${i}`, `Opt B${i}`];
+        correctAnswer = `Opt A${i}`;
+    }
+
+    return { 
+      id: `q${i + 1}`, 
+      subject: subjectName,
+      chapter: chapter.name,
+      text: `This is mock question number ${i + 1} for ${subjectName} - ${chapter.name}. What is the answer?`, 
+      options: options, 
+      type: questionType as 'single-choice' | 'multiple-choice' | 'fill-in-the-blank' | 'true-false',
+      correctAnswer: correctAnswer
+    };
+  });
+};
+
 
 export default function TestPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const testId = params.testId as string;
 
+  const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || DEFAULT_QUESTION_COUNT;
+  const parsedTotalDuration = parseInt(searchParams.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
+
+  const questions = useMemo(() => generateMockQuestions(parsedQuestionCount), [parsedQuestionCount]);
+  const TOTAL_TEST_DURATION = useMemo(() => parsedTotalDuration, [parsedTotalDuration]);
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [timeLeft, setTimeLeft] = useState(TOTAL_TEST_DURATION);
@@ -85,8 +86,7 @@ export default function TestPage() {
   const [timerDisplayMode, setTimerDisplayMode] = useState<'remaining' | 'total'>('remaining');
 
   useEffect(() => {
-    const initialTime = TOTAL_TEST_DURATION;
-    setTimeLeft(initialTime);
+    setTimeLeft(TOTAL_TEST_DURATION); // Initialize or reset timeLeft when TOTAL_TEST_DURATION changes
 
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
@@ -101,14 +101,18 @@ export default function TestPage() {
     
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, [TOTAL_TEST_DURATION]); // Re-run effect if TOTAL_TEST_DURATION changes (e.g. new test loaded)
 
   useEffect(() => {
-    const attemptedQuestions = mockQuestions.filter(q => isQuestionAttempted(q.id)).length;
-    setProgress((attemptedQuestions / mockQuestions.length) * 100);
-  }, [answers]);
+    if (questions.length === 0) {
+        setProgress(0);
+        return;
+    }
+    const attemptedQuestions = questions.filter(q => isQuestionAttempted(q.id)).length;
+    setProgress((attemptedQuestions / questions.length) * 100);
+  }, [answers, questions]);
 
-  const currentQuestion = mockQuestions[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex];
 
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers((prevAnswers) => ({ ...prevAnswers, [questionId]: value }));
@@ -126,7 +130,7 @@ export default function TestPage() {
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < mockQuestions.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
@@ -139,6 +143,7 @@ export default function TestPage() {
 
   const handleSubmit = () => {
     console.log('Submitting answers for test:', testId, answers);
+    // Navigate to review page, potentially passing answers or submission ID
     router.push(`/test/${testId}/review`); 
   };
 
@@ -163,24 +168,39 @@ export default function TestPage() {
     setTimerDisplayMode(prev => prev === 'remaining' ? 'total' : 'remaining');
   };
 
+  if (questions.length === 0) {
+    return (
+        <div className="flex justify-center items-center h-screen">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Loading Test...</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>Please wait while the test is being prepared or check your configuration.</p>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-6xl mx-auto py-4 md:py-8">
       {/* Question Navigation Sidebar */}
       <ScrollArea className="w-full md:w-40 h-auto md:h-[calc(100vh-12rem)] py-3 rounded-lg bg-card border shadow-sm flex-shrink-0">
         <div className="px-2 grid grid-cols-3 gap-2">
-          {mockQuestions.map((question, index) => (
+          {questions.map((question, index) => (
             <Button
               key={question.id}
               onClick={() => setCurrentQuestionIndex(index)}
               variant="outline"
               className={cn(
-                "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-sm font-medium transition-all duration-200 ease-in-out", // Adjusted for grid
+                "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-sm font-medium transition-all duration-200 ease-in-out", 
                 isQuestionAttempted(question.id) ? 
                   'bg-green-500 border-green-600 hover:bg-green-600/90 text-white' : 
                   'bg-yellow-300 border-yellow-400 hover:bg-yellow-400/90 text-yellow-800',
                 currentQuestionIndex === index ? 'ring-2 ring-primary ring-offset-background ring-offset-2' : ''
               )}
-              title={`Question ${index + 1}`} // Added title for accessibility/hover
+              title={`Question ${index + 1}`}
             >
               {index + 1}
             </Button>
@@ -200,7 +220,7 @@ export default function TestPage() {
                 className="p-2 border rounded-md bg-muted hover:bg-muted/80"
                 aria-label="Toggle timer display mode"
               >
-                <Clock className="h-6 w-6 text-primary mr-2" /> {/* Changed Timer icon to Clock for consistency */}
+                <Clock className="h-6 w-6 text-primary mr-2" />
                 <span className="text-lg font-semibold tabular-nums">
                   {timerDisplayMode === 'remaining' ? formatTime(timeLeft) : formatTime(TOTAL_TEST_DURATION)}
                 </span>
@@ -208,7 +228,7 @@ export default function TestPage() {
             </div>
             <Progress value={progress} className="w-full h-2" />
             <CardDescription className="mt-2">
-              Question {currentQuestionIndex + 1} of {mockQuestions.length} ({isQuestionAttempted(currentQuestion.id) ? 'Attempted' : 'Unattempted'})
+              Question {currentQuestionIndex + 1} of {questions.length} ({isQuestionAttempted(currentQuestion.id) ? 'Attempted' : 'Unattempted'})
             </CardDescription>
           </CardHeader>
           <CardContent className="min-h-[250px] md:min-h-[300px] py-6">
@@ -264,7 +284,7 @@ export default function TestPage() {
                 onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
                 className="space-y-3"
               >
-                {['True', 'False'].map((option, index) => (
+                {(currentQuestion.options || ['True', 'False']).map((option, index) => ( // Ensure options for True/False
                   <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
                     <RadioGroupItem value={option} id={`${currentQuestion.id}-option-${index}`} />
                     <Label htmlFor={`${currentQuestion.id}-option-${index}`} className="text-base cursor-pointer flex-1">
@@ -279,7 +299,7 @@ export default function TestPage() {
             <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
               <ChevronLeft className="mr-2 h-4 w-4" /> Previous
             </Button>
-            {currentQuestionIndex === mockQuestions.length - 1 ? (
+            {currentQuestionIndex === questions.length - 1 ? (
               <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
                 <CheckSquare className="mr-2 h-4 w-4" /> Submit Test
               </Button>
@@ -294,4 +314,3 @@ export default function TestPage() {
     </div>
   );
 }
-
