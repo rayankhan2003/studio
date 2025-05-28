@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { User, CreditCard, History, ShieldX, CalendarOff, Edit3, AlertCircle } from "lucide-react";
+import { User, CreditCard, History, ShieldX, CalendarOff, Edit3, AlertCircle, Smartphone, Landmark } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Mock data - replace with actual data fetching in a real application
 const mockUser = {
@@ -24,6 +25,8 @@ const mockSubscription = {
   price: "1000 PKR/month",
   nextBillingDate: "2024-08-30",
   startDate: "2024-03-30",
+  paymentMethodType: "Card", // 'Card', 'Easypaisa', 'JazzCash'
+  paymentMethodDetail: "Visa **** 1234"
 };
 
 const mockPaymentHistory = [
@@ -33,14 +36,17 @@ const mockPaymentHistory = [
   { id: "pay_4", date: "2024-04-30", amount: "1000 PKR", status: "Paid", method: "Visa **** 1234" },
 ];
 
+type PaymentMethodType = 'card' | 'easypaisa' | 'jazzcash';
+
 export default function AccountPage() {
   const { toast } = useToast();
   const [subscription, setSubscription] = useState(mockSubscription);
   const [isUpdatePaymentOpen, setIsUpdatePaymentOpen] = useState(false);
+  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentMethodType>('card');
+  const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvc: '', name: '' });
+  const [mobileWalletNumber, setMobileWalletNumber] = useState('');
 
   const handleCancelSubscription = () => {
-    // In a real app, this would make an API call to cancel the subscription.
-    // For this prototype, we'll just update the local state.
     setSubscription(prev => ({ ...prev, status: "Cancelled", nextBillingDate: "N/A" }));
     toast({
       title: "Subscription Cancelled",
@@ -49,13 +55,36 @@ export default function AccountPage() {
   };
   
   const handleUpdatePayment = () => {
-     // Simulate payment update
+    let newPaymentMethodDisplay = "";
+    if (selectedPaymentType === 'card') {
+      newPaymentMethodDisplay = `Card ${cardDetails.name ? `(${cardDetails.name})` : ''}`;
+    } else if (selectedPaymentType === 'easypaisa') {
+      newPaymentMethodDisplay = `Easypaisa (${mobileWalletNumber})`;
+    } else if (selectedPaymentType === 'jazzcash') {
+      newPaymentMethodDisplay = `JazzCash (${mobileWalletNumber})`;
+    }
+
+    setSubscription(prev => ({
+      ...prev,
+      paymentMethodType: selectedPaymentType.charAt(0).toUpperCase() + selectedPaymentType.slice(1),
+      paymentMethodDetail: newPaymentMethodDisplay || "Updated (Details Mocked)"
+    }));
+
     toast({
-      title: "Payment Method Updated",
-      description: "Your payment method has been successfully updated. (Mock action)",
+      title: "Payment Method Update Attempted",
+      description: `Your payment method has been mocked as updated to ${newPaymentMethodDisplay}. (This is a mock action)`,
     });
     setIsUpdatePaymentOpen(false);
+    // Reset form fields
+    setCardDetails({ number: '', expiry: '', cvc: '', name: '' });
+    setMobileWalletNumber('');
   }
+
+  const resetDialogFields = () => {
+    setSelectedPaymentType('card');
+    setCardDetails({ number: '', expiry: '', cvc: '', name: '' });
+    setMobileWalletNumber('');
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-8">
@@ -86,6 +115,14 @@ export default function AccountPage() {
                   </Badge>
                 </h3>
               </div>
+               <div>
+                <h3 className="font-semibold">Current Payment Method:</h3>
+                <p className="text-muted-foreground flex items-center gap-2">
+                  {subscription.paymentMethodType === 'Card' && <CreditCard className="h-5 w-5 text-muted-foreground" />}
+                  {(subscription.paymentMethodType === 'Easypaisa' || subscription.paymentMethodType === 'JazzCash') && <Smartphone className="h-5 w-5 text-muted-foreground" />}
+                  {subscription.paymentMethodDetail}
+                </p>
+              </div>
               {subscription.status === "Active" && (
                 <div>
                   <h3 className="font-semibold">Next Billing Date:</h3>
@@ -99,7 +136,7 @@ export default function AccountPage() {
             </CardContent>
             {subscription.status === "Active" && (
               <CardFooter className="border-t pt-4 flex flex-col sm:flex-row gap-2 justify-end">
-                 <Button variant="outline" onClick={() => setIsUpdatePaymentOpen(true)}>
+                 <Button variant="outline" onClick={() => { resetDialogFields(); setIsUpdatePaymentOpen(true); }}>
                   <CreditCard className="mr-2 h-4 w-4" /> Update Payment Method
                 </Button>
                 <AlertDialog>
@@ -191,7 +228,7 @@ export default function AccountPage() {
                 <Label className="text-xs text-muted-foreground">Email Address</Label>
                 <p className="font-semibold">{mockUser.email}</p>
               </div>
-              <Button variant="outline" size="sm" className="mt-2 w-full">
+              <Button variant="outline" size="sm" className="mt-2 w-full" disabled>
                 <Edit3 className="mr-2 h-4 w-4" /> Edit Profile (Not Implemented)
               </Button>
             </CardContent>
@@ -200,36 +237,75 @@ export default function AccountPage() {
       </div>
 
       {/* Update Payment Method Dialog */}
-      <AlertDialog open={isUpdatePaymentOpen} onOpenChange={setIsUpdatePaymentOpen}>
+      <AlertDialog open={isUpdatePaymentOpen} onOpenChange={(open) => {
+          setIsUpdatePaymentOpen(open);
+          if (!open) resetDialogFields();
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Update Payment Method</AlertDialogTitle>
             <AlertDialogDescription>
-              Enter your new payment details. This is a mock form.
+              Select your payment type and enter the new details. This is a mock form.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="cardNumber">Card Number</Label>
-              <Input id="cardNumber" placeholder="•••• •••• •••• ••••" />
+              <Label htmlFor="paymentType">Payment Type</Label>
+              <Select value={selectedPaymentType} onValueChange={(value) => setSelectedPaymentType(value as PaymentMethodType)}>
+                <SelectTrigger id="paymentType">
+                  <SelectValue placeholder="Select payment type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="card">
+                    <span className="flex items-center gap-2"><CreditCard /> Card (Visa, Mastercard, Debit)</span>
+                  </SelectItem>
+                  <SelectItem value="easypaisa">
+                     <span className="flex items-center gap-2"><Smartphone /> Easypaisa</span>
+                  </SelectItem>
+                  <SelectItem value="jazzcash">
+                     <span className="flex items-center gap-2"><Smartphone /> JazzCash</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            {selectedPaymentType === 'card' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="cardNumber">Card Number</Label>
+                  <Input id="cardNumber" placeholder="•••• •••• •••• ••••" value={cardDetails.number} onChange={(e) => setCardDetails(prev => ({...prev, number: e.target.value}))} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expiryDate">Expiry Date</Label>
+                    <Input id="expiryDate" placeholder="MM/YY" value={cardDetails.expiry} onChange={(e) => setCardDetails(prev => ({...prev, expiry: e.target.value}))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cvc">CVC</Label>
+                    <Input id="cvc" placeholder="•••" value={cardDetails.cvc} onChange={(e) => setCardDetails(prev => ({...prev, cvc: e.target.value}))} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cardName">Name on Card</Label>
+                  <Input id="cardName" placeholder="Aisha Khan" value={cardDetails.name} onChange={(e) => setCardDetails(prev => ({...prev, name: e.target.value}))} />
+                </div>
+              </>
+            )}
+
+            {(selectedPaymentType === 'easypaisa' || selectedPaymentType === 'jazzcash') && (
               <div className="space-y-2">
-                <Label htmlFor="expiryDate">Expiry Date</Label>
-                <Input id="expiryDate" placeholder="MM/YY" />
+                <Label htmlFor="mobileWalletNumber">Account/Mobile Number</Label>
+                <Input 
+                  id="mobileWalletNumber" 
+                  placeholder="e.g., 03xxxxxxxxx" 
+                  value={mobileWalletNumber}
+                  onChange={(e) => setMobileWalletNumber(e.target.value)}
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="cvc">CVC</Label>
-                <Input id="cvc" placeholder="•••" />
-              </div>
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="cardName">Name on Card</Label>
-              <Input id="cardName" placeholder="Aisha Khan" />
-            </div>
+            )}
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => {setIsUpdatePaymentOpen(false); resetDialogFields();}}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleUpdatePayment}>Save Changes</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -238,3 +314,5 @@ export default function AccountPage() {
     </div>
   );
 }
+
+    
