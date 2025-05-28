@@ -1,12 +1,11 @@
 
 'use client';
 
-import React from 'react'; // Added missing React import
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
+import { BarChart as RechartsBarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
 import { BarChart3, TrendingUp, BookOpen, Clock, Percent, Target, Goal } from 'lucide-react';
-import { useState, useMemo, useEffect } from 'react';
 import { Subjects, syllabus, type Subject, allSubjects, type Chapter } from '@/lib/syllabus';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -15,49 +14,41 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 
-// Enhanced Mock Data
-const overallPerformance = {
-  averageScore: 78, // Percentage
-  testsTaken: 15,
-  overallProgress: 65, // Percentage towards a goal or completion
+// Types for localStorage data
+interface StoredTestReport {
+  id: string;
+  name: string;
+  date: string;
+  overallScorePercentage: number;
+  subjectScores: Partial<Record<Subject, number>>;
+  chapterScores: Partial<Record<Subject, Record<string, number>>>;
+  // rawQuestions can be omitted here if not directly used by analytics page
+}
+
+// Initial Mock Data (will be supplemented by localStorage)
+const initialOverallPerformance = {
+  averageScore: 0, // Will be calculated
+  testsTaken: 0,   // Will be calculated
+  overallProgress: 65, // Placeholder, could be goal-oriented
 };
 
-// Combined subject score progression (used for overall subject trends)
-const subjectScoreProgressionData = [
-  { name: 'Test 1', [Subjects.BIOLOGY]: 75, [Subjects.CHEMISTRY]: 60, [Subjects.PHYSICS]: 80, [Subjects.ENGLISH]: 70, [Subjects.LOGICAL_REASONING]: 65, date: '2024-06-01' },
-  { name: 'Test 2', [Subjects.BIOLOGY]: 80, [Subjects.CHEMISTRY]: 65, [Subjects.PHYSICS]: 78, [Subjects.ENGLISH]: 75, [Subjects.LOGICAL_REASONING]: 70, date: '2024-06-15' },
-  { name: 'Test 3', [Subjects.BIOLOGY]: 70, [Subjects.CHEMISTRY]: 72, [Subjects.PHYSICS]: 85, [Subjects.ENGLISH]: 68, [Subjects.LOGICAL_REASONING]: 72, date: '2024-07-01' },
-  { name: 'Test 4', [Subjects.BIOLOGY]: 85, [Subjects.CHEMISTRY]: 78, [Subjects.PHYSICS]: 82, [Subjects.ENGLISH]: 80, [Subjects.LOGICAL_REASONING]: 75, date: '2024-07-15' },
-  { name: 'Test 5', [Subjects.BIOLOGY]: 82, [Subjects.CHEMISTRY]: 80, [Subjects.PHYSICS]: 79, [Subjects.ENGLISH]: 77, [Subjects.LOGICAL_REASONING]: 78, date: '2024-07-30' },
+const initialSubjectScoreProgressionData: Array<Record<string, any>> = [
+  // Example structure, will be populated
+  // { name: 'Test 1', [Subjects.BIOLOGY]: 75, [Subjects.CHEMISTRY]: 60, date: '2024-06-01' },
 ];
 
-// New: Historical data for chapter proficiency over multiple tests
-// Structure: { [subject]: { [chapterName]: [{ testName: string, score: number }] } }
-const chapterPerformanceHistoryData: Record<Subject, Record<string, { testName: string; score: number }[]>> = {
-  [Subjects.BIOLOGY]: {
-    [syllabus[Subjects.BIOLOGY][0].name]: [{ testName: 'Test 1', score: 70 }, { testName: 'Test 2', score: 75 }, { testName: 'Test 3', score: 72 }, { testName: 'Test 4', score: 80 }, { testName: 'Test 5', score: 82 }],
-    [syllabus[Subjects.BIOLOGY][1].name]: [{ testName: 'Test 1', score: 60 }, { testName: 'Test 2', score: 65 }, { testName: 'Test 3', score: 68 }, { testName: 'Test 4', score: 70 }, { testName: 'Test 5', score: 75 }],
-    [syllabus[Subjects.BIOLOGY][2].name]: [{ testName: 'Test 1', score: 55 }, { testName: 'Test 2', score: 60 }, { testName: 'Test 3', score: 58 }, { testName: 'Test 4', score: 65 }, { testName: 'Test 5', score: 70 }],
-    [syllabus[Subjects.BIOLOGY][3].name]: [{ testName: 'Test 1', score: 80 }, { testName: 'Test 2', score: 82 }, { testName: 'Test 3', score: 85 }, { testName: 'Test 4', score: 88 }, { testName: 'Test 5', score: 90 }],
-  },
-  [Subjects.CHEMISTRY]: {
-    [syllabus[Subjects.CHEMISTRY][0].name]: [{ testName: 'Test 1', score: 65 }, { testName: 'Test 2', score: 70 }, { testName: 'Test 3', score: 68 }, { testName: 'Test 4', score: 72 }, { testName: 'Test 5', score: 78 }],
-    [syllabus[Subjects.CHEMISTRY][1].name]: [{ testName: 'Test 1', score: 50 }, { testName: 'Test 2', score: 55 }, { testName: 'Test 3', score: 60 }, { testName: 'Test 4', score: 62 }, { testName: 'Test 5', score: 68 }],
-  },
-  [Subjects.PHYSICS]: {
-    [syllabus[Subjects.PHYSICS][0].name]: [{ testName: 'Test 1', score: 70 }, { testName: 'Test 2', score: 68 }, { testName: 'Test 3', score: 75 }, { testName: 'Test 4', score: 72 }, { testName: 'Test 5', score: 78 }],
-  },
-  [Subjects.ENGLISH]: {
-    [syllabus[Subjects.ENGLISH][0].name]: [{ testName: 'Test 1', score: 80 }, { testName: 'Test 2', score: 85 }, { testName: 'Test 3', score: 82 }, { testName: 'Test 4', score: 88 }, { testName: 'Test 5', score: 90 }],
-  },
-  [Subjects.LOGICAL_REASONING]: {
-    [syllabus[Subjects.LOGICAL_REASONING][0].name]: [{ testName: 'Test 1', score: 60 }, { testName: 'Test 2', score: 65 }, { testName: 'Test 3', score: 70 }, { testName: 'Test 4', score: 72 }, { testName: 'Test 5', score: 75 }],
-  },
-};
+const initialChapterPerformanceHistoryData: Record<Subject, Record<string, { testName: string; score: number }[]>> = 
+  allSubjects.reduce((acc, subj) => {
+    acc[subj] = {};
+    syllabus[subj].forEach(chap => {
+      acc[subj][chap.name] = [];
+    });
+    return acc;
+  }, {} as Record<Subject, Record<string, { testName: string; score: number }[]>>);
 
 
-const timeSpentData = [
-  { name: Subjects.BIOLOGY, avgTimePerQuestion: 1.5 }, // minutes
+const initialTimeSpentData = [ // This can remain static or be updated if time tracking is implemented
+  { name: Subjects.BIOLOGY, avgTimePerQuestion: 1.5 },
   { name: Subjects.CHEMISTRY, avgTimePerQuestion: 2.0 },
   { name: Subjects.PHYSICS, avgTimePerQuestion: 2.2 },
   { name: Subjects.ENGLISH, avgTimePerQuestion: 1.2 },
@@ -72,13 +63,8 @@ const subjectColors: Record<Subject, string> = {
   [Subjects.LOGICAL_REASONING]: "hsl(var(--chart-5))",
 };
 const chapterLineColors = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--primary))", 
-  "hsl(var(--accent))",
+  "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))", "hsl(var(--chart-5))", "hsl(var(--primary))", "hsl(var(--accent))",
 ];
 
 
@@ -86,17 +72,86 @@ export default function AnalyticsPage() {
   const [selectedSubject, setSelectedSubject] = useState<Subject>(Subjects.BIOLOGY);
   const [filterPeriod, setFilterPeriod] = useState('all-time');
 
+  // State for data loaded from localStorage and processed
+  const [overallPerformance, setOverallPerformance] = useState(initialOverallPerformance);
+  const [subjectScoreProgressionData, setSubjectScoreProgressionData] = useState(initialSubjectScoreProgressionData);
+  const [chapterPerformanceHistoryData, setChapterPerformanceHistoryData] = useState(initialChapterPerformanceHistoryData);
+  const [timeSpentData, setTimeSpentData] = useState(initialTimeSpentData); // If this becomes dynamic
+
   // State for goal setting
   const [isSetGoalDialogOpen, setIsSetGoalDialogOpen] = useState(false);
   const [goalDialogSubject, setGoalDialogSubject] = useState<Subject>(Subjects.BIOLOGY);
   const [goalDialogChapter, setGoalDialogChapter] = useState<string>('');
   const [goalDialogTargetScore, setGoalDialogTargetScore] = useState<string>('');
-  const [chapterGoals, setChapterGoals] = useState<Record<Subject, Record<string, number>>>({
-    // Example: [Subjects.BIOLOGY]: { "Cell Structure & Function": 90 }
-  });
+  const [chapterGoals, setChapterGoals] = useState<Record<Subject, Record<string, number>>>({});
 
   useEffect(() => {
-    // Reset chapter selection when subject changes in dialog
+    // Load and process test history from localStorage
+    const storedHistoryString = localStorage.getItem('prepwiseTestHistory');
+    const storedHistory: StoredTestReport[] = storedHistoryString ? JSON.parse(storedHistoryString) : [];
+
+    if (storedHistory.length > 0) {
+      let newTotalScoreSum = 0;
+      let newTestsTaken = storedHistory.length;
+      
+      const newSubjectProgression: typeof initialSubjectScoreProgressionData = [];
+      const newChapterHistory: typeof initialChapterPerformanceHistoryData = 
+        allSubjects.reduce((acc, subj) => {
+          acc[subj] = {};
+          syllabus[subj].forEach(chap => {
+            acc[subj][chap.name] = [];
+          });
+          return acc;
+        }, {} as typeof initialChapterPerformanceHistoryData);
+
+      storedHistory.forEach(report => {
+        // Update subject score progression
+        const progressionEntry: Record<string, any> = { name: report.name, date: report.date };
+        let currentTestSubjectScoreSum = 0;
+        let currentTestSubjectCount = 0;
+
+        allSubjects.forEach(subj => {
+          if (report.subjectScores[subj] !== undefined) {
+            progressionEntry[subj] = report.subjectScores[subj];
+            currentTestSubjectScoreSum += report.subjectScores[subj]!;
+            currentTestSubjectCount++;
+          }
+        });
+        newSubjectProgression.push(progressionEntry);
+        if (currentTestSubjectCount > 0) {
+            newTotalScoreSum += (currentTestSubjectScoreSum / currentTestSubjectCount); // Average score for this test
+        }
+
+
+        // Update chapter performance history
+        allSubjects.forEach(subj => {
+          if (report.chapterScores[subj]) {
+            for (const chapterName in report.chapterScores[subj]) {
+              if (!newChapterHistory[subj][chapterName]) {
+                newChapterHistory[subj][chapterName] = [];
+              }
+              newChapterHistory[subj][chapterName].push({
+                testName: report.name,
+                score: report.chapterScores[subj]![chapterName],
+              });
+            }
+          }
+        });
+      });
+      
+      setSubjectScoreProgressionData(newSubjectProgression);
+      setChapterPerformanceHistoryData(newChapterHistory);
+      setOverallPerformance(prev => ({
+        ...prev,
+        testsTaken: newTestsTaken,
+        averageScore: newTestsTaken > 0 ? parseFloat((newTotalScoreSum / newTestsTaken).toFixed(1)) : 0,
+      }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
+
+
+  useEffect(() => {
     if (syllabus[goalDialogSubject]?.length > 0) {
       setGoalDialogChapter(syllabus[goalDialogSubject][0].name);
     } else {
@@ -106,32 +161,64 @@ export default function AnalyticsPage() {
 
 
   const overallSubjectPerformance = useMemo(() => {
-    return allSubjects.map(subject => {
-      const scores = subjectScoreProgressionData.map(test => test[subject] || 0);
-      const average = scores.reduce((acc, score) => acc + score, 0) / (scores.length || 1);
-      return { name: subject, averageScore: parseFloat(average.toFixed(1)) };
+    if (subjectScoreProgressionData.length === 0) {
+      return allSubjects.map(subject => ({ name: subject, averageScore: 0 }));
+    }
+  
+    const subjectTotals: Record<Subject, { sum: number, count: number }> = 
+      allSubjects.reduce((acc, s) => { acc[s] = { sum: 0, count: 0 }; return acc; }, {} as any);
+  
+    subjectScoreProgressionData.forEach(test => {
+      allSubjects.forEach(subject => {
+        if (test[subject] !== undefined && typeof test[subject] === 'number') {
+          subjectTotals[subject].sum += test[subject];
+          subjectTotals[subject].count++;
+        }
+      });
     });
-  }, []);
+  
+    return allSubjects.map(subject => {
+      const avg = subjectTotals[subject].count > 0 ? subjectTotals[subject].sum / subjectTotals[subject].count : 0;
+      return { name: subject, averageScore: parseFloat(avg.toFixed(1)) };
+    });
+  }, [subjectScoreProgressionData]);
+  
 
-  // Prepare data for the chapter proficiency line chart
   const chapterProficiencyChartData = useMemo(() => {
     const subjectChapters = syllabus[selectedSubject];
-    if (!subjectChapters || !chapterPerformanceHistoryData[selectedSubject]) return [];
+    const historyForSelectedSubject = chapterPerformanceHistoryData[selectedSubject];
+    if (!subjectChapters || !historyForSelectedSubject) return [];
 
-    // Assuming all chapters in history data have entries for all tests (Test 1 to Test 5)
-    // This needs to be robust if test sets are inconsistent.
-    const testNames = ['Test 1', 'Test 2', 'Test 3', 'Test 4', 'Test 5']; 
+    // Get all unique test names from the history for this subject to form the X-axis
+    const testNamesSet = new Set<string>();
+    subjectChapters.forEach(chapter => {
+      (historyForSelectedSubject[chapter.name] || []).forEach(entry => {
+        testNamesSet.add(entry.testName);
+      });
+    });
+    // Sort test names, assuming format "Test #N" or by date if available
+    const sortedTestNames = Array.from(testNamesSet).sort((a, b) => {
+        const numA = parseInt(a.match(/Test #?(\d+)/)?.[1] || '0');
+        const numB = parseInt(b.match(/Test #?(\d+)/)?.[1] || '0');
+        if (numA !== numB) return numA - numB;
+        // Fallback to string sort if not in "Test #N" format or numbers are equal
+        const dateA = subjectScoreProgressionData.find(d => d.name === a)?.date;
+        const dateB = subjectScoreProgressionData.find(d => d.name === b)?.date;
+        if (dateA && dateB) return new Date(dateA).getTime() - new Date(dateB).getTime();
+        return a.localeCompare(b);
+    });
 
-    return testNames.map(testName => {
+
+    return sortedTestNames.map(testName => {
       const dataPoint: { name: string; [chapterName: string]: number | string } = { name: testName };
       subjectChapters.forEach(chapter => {
-        const history = chapterPerformanceHistoryData[selectedSubject]?.[chapter.name];
+        const history = historyForSelectedSubject[chapter.name];
         const testEntry = history?.find(entry => entry.testName === testName);
-        dataPoint[chapter.name] = testEntry ? testEntry.score : 0; // Default to 0 if no score
+        dataPoint[chapter.name] = testEntry ? testEntry.score : 0; 
       });
       return dataPoint;
     });
-  }, [selectedSubject]);
+  }, [selectedSubject, chapterPerformanceHistoryData, subjectScoreProgressionData]);
   
   const handleSetGoal = () => {
     if (!goalDialogChapter || !goalDialogTargetScore) {
@@ -153,14 +240,16 @@ export default function AnalyticsPage() {
     }));
     toast({ title: "Goal Set!", description: `Target for ${goalDialogChapter} (${goalDialogSubject}) set to ${target}%.` });
     setIsSetGoalDialogOpen(false);
-    setGoalDialogTargetScore(''); // Reset for next time
+    setGoalDialogTargetScore(''); 
   };
   
   const openGoalDialog = (subject?: Subject, chapter?: string) => {
-    setGoalDialogSubject(subject || selectedSubject || allSubjects[0]);
-    const chaptersForSubject = syllabus[subject || selectedSubject || allSubjects[0]];
-    setGoalDialogChapter(chapter || (chaptersForSubject.length > 0 ? chaptersForSubject[0].name : ''));
-    setGoalDialogTargetScore(chapterGoals[subject || selectedSubject]?.[chapter || '']?.toString() || '');
+    const currentSubject = subject || selectedSubject || allSubjects[0];
+    setGoalDialogSubject(currentSubject);
+    const chaptersForSubject = syllabus[currentSubject];
+    const currentChapter = chapter || (chaptersForSubject.length > 0 ? chaptersForSubject[0].name : '');
+    setGoalDialogChapter(currentChapter);
+    setGoalDialogTargetScore(chapterGoals[currentSubject]?.[currentChapter]?.toString() || '');
     setIsSetGoalDialogOpen(true);
   };
 
@@ -194,7 +283,7 @@ export default function AnalyticsPage() {
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-6">
           <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-            <h3 className="text-4xl font-bold text-primary">{overallPerformance.averageScore}%</h3>
+            <h3 className="text-4xl font-bold text-primary">{overallPerformance.averageScore.toFixed(1)}%</h3>
             <p className="text-sm text-muted-foreground">Average Score</p>
           </div>
           <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
@@ -226,7 +315,7 @@ export default function AnalyticsPage() {
                 <Tooltip />
                 <Legend />
                 {allSubjects.map(subject => (
-                  <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject]} strokeWidth={2} activeDot={{ r: 6 }} />
+                  <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject]} strokeWidth={2} activeDot={{ r: 6 }} connectNulls />
                 ))}
               </LineChart>
             </ResponsiveContainer>
@@ -242,32 +331,35 @@ export default function AnalyticsPage() {
             <CardDescription>Your average performance in each subject.</CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={overallSubjectPerformance}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={120}
-                  fill="#8884d8"
-                  dataKey="averageScore"
-                  nameKey="name"
-                >
-                  {overallSubjectPerformance.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={subjectColors[entry.name as Subject]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value, name) => [`${value}%`, name]} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+             {overallSubjectPerformance.some(s => s.averageScore > 0) ? (
+                <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie
+                    data={overallSubjectPerformance.filter(s => s.averageScore > 0)} // Filter out subjects with no score for pie chart
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="averageScore"
+                    nameKey="name"
+                    >
+                    {overallSubjectPerformance.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={subjectColors[entry.name as Subject]} />
+                    ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name]} />
+                    <Legend />
+                </PieChart>
+                </ResponsiveContainer>
+             ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">No subject scores available yet.</div>
+             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Chapter Proficiency - Now a Line Chart */}
       <Card className="shadow-lg">
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
@@ -296,42 +388,47 @@ export default function AnalyticsPage() {
           </div>
         </CardHeader>
         <CardContent className="h-[450px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chapterProficiencyChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip 
-                formatter={(value: number, name: string) => [`${value}%`, name]}
-                labelFormatter={(label: string) => `Test: ${label}`}
-              />
-              <Legend />
-              {syllabus[selectedSubject]?.map((chapter, index) => {
-                const goal = chapterGoals[selectedSubject]?.[chapter.name];
-                return (
-                  <React.Fragment key={chapter.name}>
-                    <Line
-                      type="monotone"
-                      dataKey={chapter.name}
-                      stroke={chapterLineColors[index % chapterLineColors.length]}
-                      strokeWidth={2}
-                      activeDot={{ r: 6 }}
-                      dot={{r:3}}
-                    />
-                    {goal !== undefined && (
-                      <ReferenceLine
-                        y={goal}
-                        label={{ value: `${chapter.name} Goal: ${goal}%`, position: 'insideTopRight', fill: chapterLineColors[index % chapterLineColors.length], dy: -5, dx:5, fontSize: '0.75rem' }}
+          {chapterProficiencyChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chapterProficiencyChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip 
+                  formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
+                  labelFormatter={(label: string) => `Attempt: ${label}`}
+                />
+                <Legend />
+                {syllabus[selectedSubject]?.map((chapter, index) => {
+                  const goal = chapterGoals[selectedSubject]?.[chapter.name];
+                  return (
+                    <React.Fragment key={chapter.name}>
+                      <Line
+                        type="monotone"
+                        dataKey={chapter.name}
                         stroke={chapterLineColors[index % chapterLineColors.length]}
-                        strokeDasharray="3 3"
-                        strokeWidth={1.5}
+                        strokeWidth={2}
+                        activeDot={{ r: 6 }}
+                        dot={{r:3}}
+                        connectNulls // Important for sparse data
                       />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </LineChart>
-          </ResponsiveContainer>
+                      {goal !== undefined && (
+                        <ReferenceLine
+                          y={goal}
+                          label={{ value: `${chapter.name} Goal: ${goal}%`, position: 'insideTopRight', fill: chapterLineColors[index % chapterLineColors.length], dy: -5, dx:5, fontSize: '0.75rem' }}
+                          stroke={chapterLineColors[index % chapterLineColors.length]}
+                          strokeDasharray="3 3"
+                          strokeWidth={1.5}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">No chapter performance data available for {selectedSubject} yet.</div>
+          )}
         </CardContent>
       </Card>
       
@@ -341,23 +438,22 @@ export default function AnalyticsPage() {
             <Clock className="h-6 w-6 text-orange-500" />
             Average Time per Question
           </CardTitle>
-          <CardDescription>Analyze your speed and time management across subjects.</CardDescription>
+          <CardDescription>Analyze your speed and time management across subjects (mock data).</CardDescription>
         </CardHeader>
         <CardContent className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={timeSpentData} layout="vertical">
+            <RechartsBarChart data={timeSpentData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
               <YAxis dataKey="name" type="category" width={120} />
               <Tooltip formatter={(value: number) => [`${value.toFixed(1)} mins`, "Avg. Time"]} />
               <Legend />
               <Bar dataKey="avgTimePerQuestion" name="Avg. Time (mins)" fill="hsl(var(--chart-5))" radius={[0, 4, 4, 0]} />
-            </BarChart>
+            </RechartsBarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* Goal Setting Dialog */}
       <Dialog open={isSetGoalDialogOpen} onOpenChange={setIsSetGoalDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -423,7 +519,6 @@ export default function AnalyticsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
