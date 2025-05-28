@@ -1,10 +1,11 @@
+
 'use client';
 
 import Link from 'next/link';
 import { PrepWiseLogo } from '@/components/icons/logo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, UserCircle, Home, LayoutDashboard, BarChart3, Lightbulb, History as HistoryIcon } from 'lucide-react';
+import { Menu, UserCircle, Home, LayoutDashboard, BarChart3, Lightbulb, History as HistoryIcon, Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -14,8 +15,7 @@ const navItems = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/insights', label: 'AI Insights', icon: Lightbulb },
   { href: '/history', label: 'History', icon: HistoryIcon },
-  // Example Test link, can be dynamic later
-  { href: '/test/sample-test', label: 'Start Test', icon: LayoutDashboard }, 
+  { href: '/test/custom', label: 'Create Test', icon: Settings }, 
 ];
 
 export function Header() {

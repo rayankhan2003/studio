@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, BookText, CalendarDays, CheckCircle2, LineChart } from "lucide-react";
+import { Activity, BookText, CalendarDays, CheckCircle2, LineChart, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -19,9 +20,9 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Welcome to your Dashboard</h1>
-        <Link href="/test/new">
+        <Link href="/test/custom">
           <Button>
-            <BookText className="mr-2 h-4 w-4" /> Start New Test
+            <Settings className="mr-2 h-4 w-4" /> Create Custom Test
           </Button>
         </Link>
       </div>
@@ -118,7 +119,8 @@ export default function DashboardPage() {
           <Link href="/insights">
             <Button variant="secondary" className="w-full h-16 text-base">AI Study Insights</Button>
           </Link>
-          <Link href="/test/new-subject-test">
+          <Link href="/test/new-subject-test"> 
+            {/* This link could also point to /test/custom with pre-filters if desired, or be a separate simplified interface */}
             <Button variant="secondary" className="w-full h-16 text-base">Practice a Subject</Button>
           </Link>
           <Link href="/faq">
