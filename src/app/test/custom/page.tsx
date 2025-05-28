@@ -182,11 +182,19 @@ export default function CustomTestPage() {
                 {allSubjects.map((subject) => (
                   <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md px-3">
                     <AccordionTrigger className="py-3 hover:no-underline">
-                      <div className="flex items-center space-x-3 flex-1">
+                      <div 
+                        className="flex items-center space-x-3 flex-1"
+                        onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when clicking checkbox/label area
+                      >
                         <Checkbox
                           id={`select-all-${subject}`}
                           checked={getSubjectCheckboxState(subject)}
-                          onCheckedChange={(checked) => handleSubjectSelectAll(subject, checked)}
+                          onCheckedChange={(checked) => {
+                            // Ensure onCheckedChange still works correctly after stopPropagation on parent
+                            // This might require a direct call if Radix relies on bubbling for its internal state update from Root
+                            // For ShadCN Checkbox, onCheckedChange is a direct prop.
+                            handleSubjectSelectAll(subject, checked);
+                          }}
                           aria-label={`Select all chapters in ${subject}`}
                         />
                         <Label htmlFor={`select-all-${subject}`} className="text-lg font-semibold text-foreground cursor-pointer">
@@ -339,4 +347,3 @@ export default function CustomTestPage() {
     </div>
   );
 }
-
