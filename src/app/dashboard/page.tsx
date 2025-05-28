@@ -21,8 +21,10 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Welcome to your Dashboard</h1>
         <Button asChild>
-          <Link href="/test/custom">
-            <Settings className="mr-2 h-4 w-4" /> Create Custom Test
+          <Link href="/test/custom" legacyBehavior passHref>
+            <a>
+              <Settings className="mr-2 h-4 w-4" /> Create Custom Test
+            </a>
           </Link>
         </Button>
       </div>
@@ -79,7 +81,9 @@ export default function DashboardPage() {
               <p className="text-muted-foreground">No recent tests found.</p>
             )}
             <Button asChild variant="outline" className="w-full mt-4">
-              <Link href="/history">View All History</Link>
+              <Link href="/history" legacyBehavior passHref>
+                <a>View All History</a>
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -102,7 +106,9 @@ export default function DashboardPage() {
               className="rounded-md"
             />
             <Button asChild className="w-full">
-              <Link href="/analytics">View Detailed Analytics</Link>
+              <Link href="/analytics" legacyBehavior passHref>
+                <a>View Detailed Analytics</a>
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -117,14 +123,19 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <Button asChild variant="secondary" className="w-full h-16 text-base">
-            <Link href="/insights">AI Study Insights</Link>
+            <Link href="/insights" legacyBehavior passHref>
+              <a>AI Study Insights</a>
+            </Link>
           </Button>
           <Button asChild variant="secondary" className="w-full h-16 text-base">
-            {/* This link could also point to /test/custom with pre-filters if desired, or be a separate simplified interface */}
-            <Link href="/test/new-subject-test">Practice a Subject</Link>
+            <Link href="/test/new-subject-test" legacyBehavior passHref>
+              <a>Practice a Subject</a>
+            </Link>
           </Button>
           <Button asChild variant="secondary" className="w-full h-16 text-base">
-            <Link href="/faq">View FAQs</Link>
+            <Link href="/faq" legacyBehavior passHref>
+              <a>View FAQs</a>
+            </Link>
           </Button>
         </CardContent>
       </Card>
