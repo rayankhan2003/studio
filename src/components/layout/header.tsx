@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { PrepWiseLogo } from '@/components/icons/logo';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'; // Added SheetHeader and SheetTitle
 import { Menu, UserCircle, Home, LayoutDashboard, BarChart3, Lightbulb, History as HistoryIcon, Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -70,6 +70,9 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Main Menu</SheetTitle>
+                </SheetHeader>
                 <div className="p-4">
                   <Link href="/" className="mb-6 flex items-center gap-2" aria-label="PrepWise Home">
                     <PrepWiseLogo />
