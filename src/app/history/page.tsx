@@ -1,15 +1,19 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileText, Eye, Download, History as HistoryIcon } from 'lucide-react';
 import Link from 'next/link';
+import { Subjects } from '@/lib/syllabus';
 
 // Mock data - replace with actual data
 const mockHistory = [
-  { id: 'test001', name: 'Mathematics - Algebra Basics', date: '2024-07-15', score: '85%', subject: 'Mathematics' },
-  { id: 'test002', name: 'Physics - Kinematics Quiz', date: '2024-07-18', score: '72%', subject: 'Physics' },
-  { id: 'test003', name: 'Chemistry - Atomic Structure', date: '2024-07-22', score: '90%', subject: 'Chemistry' },
-  { id: 'test004', name: 'Mathematics - Geometry Midterm', date: '2024-07-25', score: '65%', subject: 'Mathematics' },
+  { id: 'test001', name: 'Biology - Acellular Life Quiz', date: '2024-07-15', score: '85%', subject: Subjects.BIOLOGY },
+  { id: 'test002', name: 'Physics - Kinematics Practice', date: '2024-07-18', score: '72%', subject: Subjects.PHYSICS },
+  { id: 'test003', name: 'Chemistry - Stoichiometry Test', date: '2024-07-22', score: '90%', subject: Subjects.CHEMISTRY },
+  { id: 'test004', name: 'English - Vocabulary Builder I', date: '2024-07-25', score: '65%', subject: Subjects.ENGLISH },
+  { id: 'test005', name: 'Logical Reasoning - Critical Thinking Set A', date: '2024-07-28', score: '78%', subject: Subjects.LOGICAL_REASONING },
+  { id: 'test006', name: 'Biology - Bioenergetics Review', date: '2024-07-30', score: '88%', subject: Subjects.BIOLOGY },
 ];
 
 export default function TestHistoryPage() {
