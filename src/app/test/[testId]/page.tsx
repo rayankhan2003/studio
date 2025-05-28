@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Timer, ChevronLeft, ChevronRight, CheckSquare } from 'lucide-react';
+import { Timer, ChevronLeft, ChevronRight, CheckSquare, Clock } from 'lucide-react'; // Added Clock
 import { useParams, useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -59,8 +59,8 @@ const mockQuestions = [
     type: 'single-choice',
     correctAnswer: 'Yes'
   },
-  // Add more questions to test scrolling
-  ...Array.from({ length: 15 }, (_, i) => ({
+  // Add more questions to test scrolling and grid layout
+  ...Array.from({ length: 15 }, (_, i) => ({ // Total 20 questions
     id: `q${i + 6}`,
     subject: 'Biology',
     chapter: 'Genetics',
@@ -71,7 +71,7 @@ const mockQuestions = [
   }))
 ];
 
-const TOTAL_TEST_DURATION = 30 * 60; // 30 minutes in seconds
+const TOTAL_TEST_DURATION = 30 * 60; // 30 minutes in seconds (This would be dynamic in a real app)
 
 export default function TestPage() {
   const params = useParams();
@@ -82,6 +82,7 @@ export default function TestPage() {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [timeLeft, setTimeLeft] = useState(TOTAL_TEST_DURATION);
   const [progress, setProgress] = useState(0);
+  const [timerDisplayMode, setTimerDisplayMode] = useState<'remaining' | 'total'>('remaining');
 
   useEffect(() => {
     const initialTime = TOTAL_TEST_DURATION;
@@ -103,7 +104,8 @@ export default function TestPage() {
   }, []); 
 
   useEffect(() => {
-    setProgress(((Object.keys(answers).length) / mockQuestions.length) * 100);
+    const attemptedQuestions = mockQuestions.filter(q => isQuestionAttempted(q.id)).length;
+    setProgress((attemptedQuestions / mockQuestions.length) * 100);
   }, [answers]);
 
   const currentQuestion = mockQuestions[currentQuestionIndex];
@@ -151,29 +153,34 @@ export default function TestPage() {
     if (!answerExists) return false;
     
     const answerValue = answers[questionId];
-    if (Array.isArray(answerValue)) return answerValue.length > 0; // For multiple choice
-    if (typeof answerValue === 'string') return answerValue.trim() !== ''; // For single-choice, fill-in-the-blank, true-false
+    if (Array.isArray(answerValue)) return answerValue.length > 0;
+    if (typeof answerValue === 'string') return answerValue.trim() !== ''; 
     
     return false; 
+  };
+
+  const toggleTimerDisplay = () => {
+    setTimerDisplayMode(prev => prev === 'remaining' ? 'total' : 'remaining');
   };
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-6xl mx-auto py-4 md:py-8">
       {/* Question Navigation Sidebar */}
-      <ScrollArea className="w-full md:w-24 h-28 md:h-[calc(100vh-12rem)] py-3 md:py-4 rounded-lg bg-card border shadow-sm flex-shrink-0">
-        <div className="px-2 md:px-3 space-y-2 md:space-y-2 flex md:flex-col flex-row overflow-x-auto md:overflow-x-hidden pb-2 md:pb-0">
+      <ScrollArea className="w-full md:w-40 h-auto md:h-[calc(100vh-12rem)] py-3 rounded-lg bg-card border shadow-sm flex-shrink-0">
+        <div className="px-2 grid grid-cols-3 gap-2">
           {mockQuestions.map((question, index) => (
             <Button
               key={question.id}
               onClick={() => setCurrentQuestionIndex(index)}
               variant="outline"
               className={cn(
-                "w-10 h-10 md:w-full md:h-10 flex items-center justify-center rounded-md border text-sm font-medium transition-all duration-200 ease-in-out flex-shrink-0 mx-1 md:mx-0",
+                "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-sm font-medium transition-all duration-200 ease-in-out", // Adjusted for grid
                 isQuestionAttempted(question.id) ? 
                   'bg-green-500 border-green-600 hover:bg-green-600/90 text-white' : 
                   'bg-yellow-300 border-yellow-400 hover:bg-yellow-400/90 text-yellow-800',
                 currentQuestionIndex === index ? 'ring-2 ring-primary ring-offset-background ring-offset-2' : ''
               )}
+              title={`Question ${index + 1}`} // Added title for accessibility/hover
             >
               {index + 1}
             </Button>
@@ -182,15 +189,22 @@ export default function TestPage() {
       </ScrollArea>
 
       {/* Main Test Content Card */}
-      <div className="flex-1 min-w-0"> {/* Added min-w-0 for flex child proper sizing */}
+      <div className="flex-1 min-w-0">
         <Card className="shadow-xl">
           <CardHeader>
             <div className="flex justify-between items-center mb-4">
               <CardTitle className="text-2xl">Test: {currentQuestion.subject} - {currentQuestion.chapter}</CardTitle>
-              <div className="flex items-center gap-2 p-2 border rounded-md bg-muted">
-                <Timer className="h-6 w-6 text-primary" />
-                <span className="text-lg font-semibold tabular-nums">{formatTime(timeLeft)}</span>
-              </div>
+              <Button 
+                variant="ghost" 
+                onClick={toggleTimerDisplay} 
+                className="p-2 border rounded-md bg-muted hover:bg-muted/80"
+                aria-label="Toggle timer display mode"
+              >
+                <Clock className="h-6 w-6 text-primary mr-2" /> {/* Changed Timer icon to Clock for consistency */}
+                <span className="text-lg font-semibold tabular-nums">
+                  {timerDisplayMode === 'remaining' ? formatTime(timeLeft) : formatTime(TOTAL_TEST_DURATION)}
+                </span>
+              </Button>
             </div>
             <Progress value={progress} className="w-full h-2" />
             <CardDescription className="mt-2">
@@ -280,3 +294,4 @@ export default function TestPage() {
     </div>
   );
 }
+
