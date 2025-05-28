@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Timer, ChevronLeft, ChevronRight, CheckSquare } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { Checkbox } from '@/components/ui/checkbox'; // Added for multiple-choice
-import { Input } from '@/components/ui/input'; // Added for fill-in-the-blank
-
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 // Mock data - replace with actual data fetching
 const mockQuestions = [
@@ -57,7 +58,17 @@ const mockQuestions = [
     options: ['Yes', 'No', 'Cannot be determined'],
     type: 'single-choice',
     correctAnswer: 'Yes'
-  }
+  },
+  // Add more questions to test scrolling
+  ...Array.from({ length: 15 }, (_, i) => ({
+    id: `q${i + 6}`,
+    subject: 'Biology',
+    chapter: 'Genetics',
+    text: `Sample question ${i + 6} about genetics?`,
+    options: [`Option A${i}`, `Option B${i}`, `Option C${i}`, `Option D${i}`],
+    type: 'single-choice',
+    correctAnswer: `Option A${i}`
+  }))
 ];
 
 const TOTAL_TEST_DURATION = 30 * 60; // 30 minutes in seconds
@@ -73,8 +84,6 @@ export default function TestPage() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Temporary fix for hydration mismatch with Math.random or new Date.
-    // This ensures timer starts client-side.
     const initialTime = TOTAL_TEST_DURATION;
     setTimeLeft(initialTime);
 
@@ -91,11 +100,11 @@ export default function TestPage() {
     
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array to run once on mount
+  }, []); 
 
   useEffect(() => {
-    setProgress(((currentQuestionIndex + 1) / mockQuestions.length) * 100);
-  }, [currentQuestionIndex]);
+    setProgress(((Object.keys(answers).length) / mockQuestions.length) * 100);
+  }, [answers]);
 
   const currentQuestion = mockQuestions[currentQuestionIndex];
 
@@ -127,10 +136,7 @@ export default function TestPage() {
   };
 
   const handleSubmit = () => {
-    // Logic to submit answers
     console.log('Submitting answers for test:', testId, answers);
-    // Store answers or pass to review page via state/query params if small, or context/store for larger data
-    // For now, just navigate. The review page will use its own mock data.
     router.push(`/test/${testId}/review`); 
   };
 
@@ -140,102 +146,137 @@ export default function TestPage() {
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const isQuestionAttempted = (questionId: string): boolean => {
+    const answerExists = Object.prototype.hasOwnProperty.call(answers, questionId);
+    if (!answerExists) return false;
+    
+    const answerValue = answers[questionId];
+    if (Array.isArray(answerValue)) return answerValue.length > 0; // For multiple choice
+    if (typeof answerValue === 'string') return answerValue.trim() !== ''; // For single-choice, fill-in-the-blank, true-false
+    
+    return false; 
+  };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Card className="shadow-xl">
-        <CardHeader>
-          <div className="flex justify-between items-center mb-4">
-            <CardTitle className="text-2xl">Test: {currentQuestion.subject} - {currentQuestion.chapter}</CardTitle>
-            <div className="flex items-center gap-2 p-2 border rounded-md bg-muted">
-              <Timer className="h-6 w-6 text-primary" />
-              <span className="text-lg font-semibold tabular-nums">{formatTime(timeLeft)}</span>
-            </div>
-          </div>
-          <Progress value={progress} className="w-full h-2" />
-          <CardDescription className="mt-2">
-            Question {currentQuestionIndex + 1} of {mockQuestions.length}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="min-h-[300px] py-6">
-          <h2 className="text-xl font-semibold mb-6">{currentQuestion.text}</h2>
-          
-          {currentQuestion.type === 'single-choice' && (
-            <RadioGroup
-              value={answers[currentQuestion.id] as string || ''}
-              onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-              className="space-y-3"
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-6xl mx-auto py-4 md:py-8">
+      {/* Question Navigation Sidebar */}
+      <ScrollArea className="w-full md:w-24 h-28 md:h-[calc(100vh-12rem)] py-3 md:py-4 rounded-lg bg-card border shadow-sm flex-shrink-0">
+        <div className="px-2 md:px-3 space-y-2 md:space-y-2 flex md:flex-col flex-row overflow-x-auto md:overflow-x-hidden pb-2 md:pb-0">
+          {mockQuestions.map((question, index) => (
+            <Button
+              key={question.id}
+              onClick={() => setCurrentQuestionIndex(index)}
+              variant="outline"
+              className={cn(
+                "w-10 h-10 md:w-full md:h-10 flex items-center justify-center rounded-md border text-sm font-medium transition-all duration-200 ease-in-out flex-shrink-0 mx-1 md:mx-0",
+                isQuestionAttempted(question.id) ? 
+                  'bg-green-500 border-green-600 hover:bg-green-600/90 text-white' : 
+                  'bg-yellow-300 border-yellow-400 hover:bg-yellow-400/90 text-yellow-800',
+                currentQuestionIndex === index ? 'ring-2 ring-primary ring-offset-background ring-offset-2' : ''
+              )}
             >
-              {currentQuestion.options?.map((option, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
-                  <RadioGroupItem value={option} id={`${currentQuestion.id}-option-${index}`} />
-                  <Label htmlFor={`${currentQuestion.id}-option-${index}`} className="text-base cursor-pointer flex-1">
-                    {option}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          )}
+              {index + 1}
+            </Button>
+          ))}
+        </div>
+      </ScrollArea>
 
-          {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
-            <div className="space-y-3">
-              {currentQuestion.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
-                  <Checkbox
-                    id={`${currentQuestion.id}-option-${index}`}
-                    checked={(answers[currentQuestion.id] as string[] || []).includes(option)}
-                    onCheckedChange={(checked) => handleMultipleChoiceChange(currentQuestion.id, option, !!checked)}
-                  />
-                  <Label htmlFor={`${currentQuestion.id}-option-${index}`} className="text-base cursor-pointer flex-1">
-                    {option}
-                  </Label>
-                </div>
-              ))}
+      {/* Main Test Content Card */}
+      <div className="flex-1 min-w-0"> {/* Added min-w-0 for flex child proper sizing */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <div className="flex justify-between items-center mb-4">
+              <CardTitle className="text-2xl">Test: {currentQuestion.subject} - {currentQuestion.chapter}</CardTitle>
+              <div className="flex items-center gap-2 p-2 border rounded-md bg-muted">
+                <Timer className="h-6 w-6 text-primary" />
+                <span className="text-lg font-semibold tabular-nums">{formatTime(timeLeft)}</span>
+              </div>
             </div>
-          )}
-          
-          {currentQuestion.type === 'fill-in-the-blank' && (
-             <Input 
-                type="text" 
-                value={(answers[currentQuestion.id] as string) || ''}
-                onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                className="w-full p-2 border rounded-md focus:ring-primary focus:border-primary text-base"
-                placeholder="Type your answer here"
-             />
-          )}
+            <Progress value={progress} className="w-full h-2" />
+            <CardDescription className="mt-2">
+              Question {currentQuestionIndex + 1} of {mockQuestions.length} ({isQuestionAttempted(currentQuestion.id) ? 'Attempted' : 'Unattempted'})
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="min-h-[250px] md:min-h-[300px] py-6">
+            <h2 className="text-xl font-semibold mb-6">{currentQuestion.text}</h2>
+            
+            {currentQuestion.type === 'single-choice' && (
+              <RadioGroup
+                value={answers[currentQuestion.id] as string || ''}
+                onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                className="space-y-3"
+              >
+                {currentQuestion.options?.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
+                    <RadioGroupItem value={option} id={`${currentQuestion.id}-option-${index}`} />
+                    <Label htmlFor={`${currentQuestion.id}-option-${index}`} className="text-base cursor-pointer flex-1">
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            )}
 
-          {currentQuestion.type === 'true-false' && (
-            <RadioGroup
-              value={answers[currentQuestion.id] as string || ''}
-              onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-              className="space-y-3"
-            >
-              {['True', 'False'].map((option, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
-                  <RadioGroupItem value={option} id={`${currentQuestion.id}-option-${index}`} />
-                  <Label htmlFor={`${currentQuestion.id}-option-${index}`} className="text-base cursor-pointer flex-1">
-                    {option}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between items-center">
-          <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
-            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-          </Button>
-          {currentQuestionIndex === mockQuestions.length - 1 ? (
-            <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-              <CheckSquare className="mr-2 h-4 w-4" /> Submit Test
+            {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
+              <div className="space-y-3">
+                {currentQuestion.options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
+                    <Checkbox
+                      id={`${currentQuestion.id}-option-${index}`}
+                      checked={(answers[currentQuestion.id] as string[] || []).includes(option)}
+                      onCheckedChange={(checked) => handleMultipleChoiceChange(currentQuestion.id, option, !!checked)}
+                    />
+                    <Label htmlFor={`${currentQuestion.id}-option-${index}`} className="text-base cursor-pointer flex-1">
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {currentQuestion.type === 'fill-in-the-blank' && (
+               <Input 
+                  type="text" 
+                  value={(answers[currentQuestion.id] as string) || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                  className="w-full p-2 border rounded-md focus:ring-primary focus:border-primary text-base"
+                  placeholder="Type your answer here"
+               />
+            )}
+
+            {currentQuestion.type === 'true-false' && (
+              <RadioGroup
+                value={answers[currentQuestion.id] as string || ''}
+                onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
+                className="space-y-3"
+              >
+                {['True', 'False'].map((option, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
+                    <RadioGroupItem value={option} id={`${currentQuestion.id}-option-${index}`} />
+                    <Label htmlFor={`${currentQuestion.id}-option-${index}`} className="text-base cursor-pointer flex-1">
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-between items-center">
+            <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
+              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
             </Button>
-          ) : (
-            <Button onClick={handleNext}>
-              Next <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+            {currentQuestionIndex === mockQuestions.length - 1 ? (
+              <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+                <CheckSquare className="mr-2 h-4 w-4" /> Submit Test
+              </Button>
+            ) : (
+              <Button onClick={handleNext}>
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
