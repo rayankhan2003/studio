@@ -20,11 +20,11 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Welcome to your Dashboard</h1>
-        <Link href="/test/custom">
-          <Button>
+        <Button asChild>
+          <Link href="/test/custom">
             <Settings className="mr-2 h-4 w-4" /> Create Custom Test
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -78,9 +78,9 @@ export default function DashboardPage() {
             ) : (
               <p className="text-muted-foreground">No recent tests found.</p>
             )}
-            <Link href="/history" className="mt-4 block">
-              <Button variant="outline" className="w-full">View All History</Button>
-            </Link>
+            <Button asChild variant="outline" className="w-full mt-4">
+              <Link href="/history">View All History</Link>
+            </Button>
           </CardContent>
         </Card>
         
@@ -101,9 +101,9 @@ export default function DashboardPage() {
               height={200} 
               className="rounded-md"
             />
-            <Link href="/analytics">
-              <Button className="w-full">View Detailed Analytics</Button>
-            </Link>
+            <Button asChild className="w-full">
+              <Link href="/analytics">View Detailed Analytics</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -116,16 +116,16 @@ export default function DashboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <Link href="/insights">
-            <Button variant="secondary" className="w-full h-16 text-base">AI Study Insights</Button>
-          </Link>
-          <Link href="/test/new-subject-test"> 
+          <Button asChild variant="secondary" className="w-full h-16 text-base">
+            <Link href="/insights">AI Study Insights</Link>
+          </Button>
+          <Button asChild variant="secondary" className="w-full h-16 text-base">
             {/* This link could also point to /test/custom with pre-filters if desired, or be a separate simplified interface */}
-            <Button variant="secondary" className="w-full h-16 text-base">Practice a Subject</Button>
-          </Link>
-          <Link href="/faq">
-            <Button variant="secondary" className="w-full h-16 text-base">View FAQs</Button>
-          </Link>
+            <Link href="/test/new-subject-test">Practice a Subject</Link>
+          </Button>
+          <Button asChild variant="secondary" className="w-full h-16 text-base">
+            <Link href="/faq">View FAQs</Link>
+          </Button>
         </CardContent>
       </Card>
 
