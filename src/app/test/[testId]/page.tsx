@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -15,7 +15,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Subjects, syllabus, type Subject as SubjectType, type Chapter as ChapterType } from '@/lib/syllabus';
 
-// Default values if query params are not present
 const DEFAULT_QUESTION_COUNT = 10;
 const DEFAULT_TOTAL_TEST_DURATION = 10 * 60; // 10 questions * 60 seconds
 
@@ -33,9 +32,11 @@ interface StoredTestReport {
   id: string;
   name: string;
   date: string;
+  testType: 'custom' | 'mdcat';
+  mdcatYear?: number; // Only if testType is 'mdcat'
   overallScorePercentage: number;
-  subjectScores: Partial<Record<SubjectType, number>>; // Subject average percentages for THIS test
-  chapterScores: Partial<Record<SubjectType, Record<string, number>>>; // Chapter percentages for THIS test
+  subjectScores: Partial<Record<SubjectType, number>>; 
+  chapterScores: Partial<Record<SubjectType, Record<string, number>>>; 
   rawQuestions: Array<{
     id: string;
     subject: SubjectType;
@@ -49,9 +50,7 @@ interface StoredTestReport {
   }>;
 }
 
-
-// Helper to generate mock questions
-const generateMockQuestions = (count: number): MockQuestion[] => {
+const generateMockQuestions = (count: number, testName: string = "Question"): MockQuestion[] => {
   const allSubjectKeys = Object.keys(Subjects) as (keyof typeof Subjects)[];
   
   return Array.from({ length: count }, (_, i) => {
@@ -66,21 +65,21 @@ const generateMockQuestions = (count: number): MockQuestion[] => {
 
     switch (questionType) {
       case 'single-choice':
-        options = [`Option A for Q${i+1}`, `Correct Answer for Q${i+1}`, `Option C for Q${i+1}`, `Option D for Q${i+1}`];
-        correctAnswer = options[1]; // Make the second option correct for variety
+        options = [`Option A for ${testName} Q${i+1}`, `Correct Answer for ${testName} Q${i+1}`, `Option C for ${testName} Q${i+1}`, `Option D for ${testName} Q${i+1}`];
+        correctAnswer = options[1]; 
         break;
       case 'multiple-choice':
-        options = [`Correct Opt W for Q${i+1}`, `Correct Opt X for Q${i+1}`, `Option Y for Q${i+1}`, `Option Z for Q${i+1}`, `Option V for Q${i+1}`];
+        options = [`Correct Opt W for ${testName} Q${i+1}`, `Correct Opt X for ${testName} Q${i+1}`, `Option Y for ${testName} Q${i+1}`, `Option Z for ${testName} Q${i+1}`, `Option V for ${testName} Q${i+1}`];
         correctAnswer = [options[0], options[1]];
         break;
       case 'fill-in-the-blank':
-        correctAnswer = `AnswerForQ${i+1}`;
+        correctAnswer = `AnswerFor${testName}Q${i+1}`;
         break;
       case 'true-false':
         options = ['True', 'False'] 
-        correctAnswer = (i % 2 === 0) ? 'True' : 'False'; // Alternate correct answer
+        correctAnswer = (i % 2 === 0) ? 'True' : 'False'; 
         break;
-      default: // Should not happen with current types
+      default: 
         options = [`Opt A${i}`, `Opt B${i}`];
         correctAnswer = `Opt A${i}`;
     }
@@ -89,7 +88,7 @@ const generateMockQuestions = (count: number): MockQuestion[] => {
       id: `q${i + 1}`, 
       subject: subjectName,
       chapter: chapter.name,
-      text: `This is mock question number ${i + 1} for ${subjectName} - ${chapter.name}. What is the answer?`, 
+      text: `This is mock question number ${i + 1} for ${subjectName} - ${chapter.name} (Test: ${testName}). What is the answer?`, 
       options: options, 
       type: questionType as MockQuestion['type'],
       correctAnswer: correctAnswer
@@ -102,12 +101,13 @@ export default function TestPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const testId = params.testId as string; // e.g., "custom-test-session"
+  const testId = params.testId as string; 
 
   const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || DEFAULT_QUESTION_COUNT;
   const parsedTotalDuration = parseInt(searchParams.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
+  const testNameFromParams = searchParams.get('testName') || `Test (${testId})`;
 
-  const questions = useMemo(() => generateMockQuestions(parsedQuestionCount), [parsedQuestionCount]);
+  const questions = useMemo(() => generateMockQuestions(parsedQuestionCount, testNameFromParams), [parsedQuestionCount, testNameFromParams]);
   const TOTAL_TEST_DURATION = useMemo(() => parsedTotalDuration, [parsedTotalDuration]);
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -202,11 +202,9 @@ export default function TestPage() {
       const userAnswer = answers[q.id];
       const correct = isAnswerCorrect(q, userAnswer);
 
-      // Initialize subject if not present
       if (!chapterResults[q.subject]) chapterResults[q.subject] = {};
       if (!subjectResults[q.subject]) subjectResults[q.subject] = { correct: 0, total: 0 };
       
-      // Initialize chapter if not present
       if (!chapterResults[q.subject][q.chapter]) chapterResults[q.subject][q.chapter] = { correct: 0, total: 0 };
 
       chapterResults[q.subject][q.chapter].total++;
@@ -237,7 +235,7 @@ export default function TestPage() {
       finalChapterScores[subject] = {};
       for (const chapterName in chapterResults[subject]) {
         const res = chapterResults[subject][chapterName];
-        finalChapterScores[subject]![chapterName] = res.total > 0 ? (res.correct / res.total) * 100 : 0;
+        finalChapterScores[subject]![chapterName] = res.total > 0 ? parseFloat(((res.correct / res.total) * 100).toFixed(1)) : 0;
       }
     }
 
@@ -245,18 +243,29 @@ export default function TestPage() {
     for (const subjectKey in subjectResults) {
       const subject = subjectKey as SubjectType;
       const res = subjectResults[subject];
-      finalSubjectScores[subject] = res.total > 0 ? (res.correct / res.total) * 100 : 0;
+      finalSubjectScores[subject] = res.total > 0 ? parseFloat(((res.correct / res.total) * 100).toFixed(1)) : 0;
     }
     
-    const overallScorePercentage = overallTotal > 0 ? (overallCorrect / overallTotal) * 100 : 0;
+    const overallScorePercentage = overallTotal > 0 ? parseFloat(((overallCorrect / overallTotal) * 100).toFixed(1)) : 0;
 
     const existingHistoryString = localStorage.getItem('prepwiseTestHistory');
     const existingHistory: StoredTestReport[] = existingHistoryString ? JSON.parse(existingHistoryString) : [];
     
+    const reportId = `${testId}-${Date.now()}`;
+    let testType: 'custom' | 'mdcat' = 'custom';
+    let mdcatYear: number | undefined = undefined;
+
+    if (testId.startsWith('mdcat-')) {
+      testType = 'mdcat';
+      mdcatYear = parseInt(testId.split('-')[1]);
+    }
+    
     const newTestReport: StoredTestReport = {
-      id: `${testId}-${Date.now()}`,
-      name: `Test #${existingHistory.length + 1}`,
+      id: reportId,
+      name: testNameFromParams || (testType === 'mdcat' ? `MDCAT ${mdcatYear}` : `Test #${existingHistory.length + 1}`),
       date: new Date().toISOString().split('T')[0],
+      testType: testType,
+      mdcatYear: mdcatYear,
       overallScorePercentage: overallScorePercentage,
       subjectScores: finalSubjectScores,
       chapterScores: finalChapterScores,
@@ -266,9 +275,7 @@ export default function TestPage() {
     existingHistory.push(newTestReport);
     localStorage.setItem('prepwiseTestHistory', JSON.stringify(existingHistory));
     
-    // For review page, pass the ID of the just-submitted test.
-    // The review page can then fetch this specific report from localStorage.
-    router.push(`/test/${newTestReport.id}/review`); 
+    router.push(`/test/${reportId}/review`); 
   };
 
 
@@ -302,6 +309,7 @@ export default function TestPage() {
                 </CardHeader>
                 <CardContent>
                     <p>Please wait while the test is being prepared or check your configuration.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Ensure questionCount and totalDuration are provided in URL parameters if this is a custom test.</p>
                 </CardContent>
             </Card>
         </div>
@@ -336,7 +344,7 @@ export default function TestPage() {
         <Card className="shadow-xl">
           <CardHeader>
             <div className="flex justify-between items-center mb-4">
-              <CardTitle className="text-2xl">Test: {currentQuestion.subject} - {currentQuestion.chapter}</CardTitle>
+              <CardTitle className="text-2xl">{testNameFromParams}: {currentQuestion.subject} - {currentQuestion.chapter}</CardTitle>
               <Button 
                 variant="ghost" 
                 onClick={toggleTimerDisplay} 

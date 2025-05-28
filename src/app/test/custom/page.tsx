@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { toast } from '@/hooks/use-toast';
 import { allSubjects, syllabus, type Subject, type Chapter } from '@/lib/syllabus';
-import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info } from 'lucide-react';
+import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive } from 'lucide-react';
 
 const questionCountPresets = [5, 10, 15, 20, 30, 50, 100];
 const timePerQuestionOptions = [
@@ -23,6 +23,8 @@ const timePerQuestionOptions = [
   { label: '90 seconds', value: 90 },
   { label: '120 seconds', value: 120 },
 ];
+
+const pastMDCATYears = Array.from({ length: 2024 - 2015 + 1 }, (_, i) => 2015 + i).reverse(); // 2024, 2023, ..., 2015
 
 type SelectedChapters = Record<Subject, Set<string>>;
 
@@ -46,7 +48,6 @@ export default function CustomTestPage() {
 
 
   useEffect(() => {
-    // Pre-open the first subject in the accordion if available
     if (allSubjects.length > 0) {
       setActiveAccordionItems([allSubjects[0]]);
     }
@@ -61,7 +62,6 @@ export default function CustomTestPage() {
   }, [selectedChapters]);
   
   const totalAvailableQuestionsEstimate = useMemo(() => {
-    // This is a rough estimate, assuming ~10-20 questions per chapter for mock purposes
     return totalSelectedChaptersCount * 15; 
   }, [totalSelectedChaptersCount]);
 
@@ -72,7 +72,7 @@ export default function CustomTestPage() {
       const allChaptersInSubject = syllabus[subject].map(ch => ch.name);
       if (checked === true) {
         allChaptersInSubject.forEach(ch => newSubjectChapters.add(ch));
-      } else { // false or indeterminate, treat as uncheck all for simplicity of "select all" click
+      } else { 
         allChaptersInSubject.forEach(ch => newSubjectChapters.delete(ch));
       }
       return { ...prev, [subject]: newSubjectChapters };
@@ -111,7 +111,7 @@ export default function CustomTestPage() {
     return actualQuestionCount * timePerQuestion;
   }, [actualQuestionCount, timePerQuestion]);
 
-  const handleStartTest = () => {
+  const handleStartCustomTest = () => {
     if (totalSelectedChaptersCount === 0) {
       toast({ title: "Error", description: "Please select at least one chapter.", variant: "destructive" });
       return;
@@ -128,28 +128,32 @@ export default function CustomTestPage() {
         duration: 7000,
       });
     }
-
-
-    const testConfig = {
-      selectedChapters: Object.fromEntries(
-        Object.entries(selectedChapters).map(([subject, chaptersSet]) => [subject, Array.from(chaptersSet)])
-      ),
-      questionCount: actualQuestionCount,
-      timePerQuestion,
-      totalDuration: totalTestDuration, // total duration in seconds
-    };
     
-    console.log("Starting test with config:", testConfig);
-    toast({ title: "Test Starting!", description: "Redirecting to your custom test..." });
+    toast({ title: "Custom Test Starting!", description: "Redirecting to your custom test..." });
     
-    // Pass configuration as query parameters
     const queryParams = new URLSearchParams({
       questionCount: String(actualQuestionCount),
       totalDuration: String(totalTestDuration),
-      // chapters: JSON.stringify(testConfig.selectedChapters) // For more complex data, consider alternatives
+      // selectedChapters: JSON.stringify(Object.fromEntries(Object.entries(selectedChapters).map(([sub, chapSet]) => [sub, Array.from(chapSet)]))), // Could be too long for URL
+      testName: "Custom Test"
     });
 
     router.push(`/test/custom-test-session?${queryParams.toString()}`); 
+  };
+
+  const handleStartMdcatTest = (year: number) => {
+    const mdcatQuestionCount = 50; // Example: Past papers have 50 questions
+    const mdcatTimePerQuestion = 60; // Example: 60 seconds per question
+    const mdcatTotalDuration = mdcatQuestionCount * mdcatTimePerQuestion;
+
+    toast({ title: `MDCAT ${year} Test Starting!`, description: "Redirecting to the test..." });
+    
+    const queryParams = new URLSearchParams({
+      questionCount: String(mdcatQuestionCount),
+      totalDuration: String(mdcatTotalDuration),
+      testName: `MDCAT ${year}`
+    });
+    router.push(`/test/mdcat-${year}?${queryParams.toString()}`);
   };
   
   const getSelectedChaptersForPreview = () => {
@@ -165,19 +169,20 @@ export default function CustomTestPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 mb-8">
         <Settings className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold tracking-tight">Create Custom Test</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Configure Your Test</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
+          {/* Custom Test Configuration Card */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ListChecks className="h-6 w-6 text-primary" /> Select Subjects & Chapters
+                <ListChecks className="h-6 w-6 text-primary" /> Create a Custom Test
               </CardTitle>
-              <CardDescription>Choose the content you want to be tested on.</CardDescription>
+              <CardDescription>Choose subjects, chapters, question count, and time limits.</CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion 
@@ -192,12 +197,8 @@ export default function CustomTestPage() {
                       <div 
                         className="flex items-center space-x-3 flex-1"
                         onClick={(e) => { 
-                          // Allow click on checkbox/label to toggle selection without closing accordion
-                          // but still allow accordion trigger itself to work if area outside checkbox/label is clicked
                           if ((e.target as HTMLElement).closest('input[type="checkbox"]') || (e.target as HTMLElement).closest('label')) {
-                            // If the click is on checkbox or label, let it propagate for checkbox functionality
                           } else {
-                            // If click is on the trigger area but not checkbox/label, let accordion handle it
                           }
                         }}
                       >
@@ -207,13 +208,13 @@ export default function CustomTestPage() {
                           onCheckedChange={(checked) => {
                             handleSubjectSelectAll(subject, checked);
                           }}
-                          onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when clicking checkbox directly
+                          onClick={(e) => e.stopPropagation()} 
                           aria-label={`Select all chapters in ${subject}`}
                         />
                         <Label 
                           htmlFor={`select-all-${subject}`} 
                           className="text-lg font-semibold text-foreground cursor-pointer"
-                          onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when clicking label
+                          onClick={(e) => e.stopPropagation()} 
                         >
                           {subject}
                         </Label>
@@ -239,13 +240,23 @@ export default function CustomTestPage() {
                 ))}
               </Accordion>
             </CardContent>
+             <CardFooter className="border-t pt-6">
+                <Button 
+                    size="lg" 
+                    className="w-full" 
+                    onClick={handleStartCustomTest}
+                    disabled={totalSelectedChaptersCount === 0 || actualQuestionCount <= 0}
+                  >
+                    <PlayCircle className="mr-2 h-5 w-5" /> Start Custom Test
+                </Button>
+            </CardFooter>
           </Card>
 
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Hash className="h-6 w-6 text-primary" /> Question Count
+                  <Hash className="h-6 w-6 text-primary" /> Question Count (Custom Test)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -300,7 +311,7 @@ export default function CustomTestPage() {
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-6 w-6 text-primary" /> Time per Question
+                  <Clock className="h-6 w-6 text-primary" /> Time per Question (Custom Test)
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -326,7 +337,7 @@ export default function CustomTestPage() {
           <Card className="shadow-lg sticky top-20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Info className="h-6 w-6 text-accent" /> Test Preview
+                <Info className="h-6 w-6 text-accent" /> Custom Test Preview
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
@@ -348,15 +359,29 @@ export default function CustomTestPage() {
               <p><strong>Time per Question:</strong> <span className="text-primary font-semibold">{timePerQuestionOptions.find(opt => opt.value === timePerQuestion)?.label || 'N/A'}</span></p>
               <p><strong>Total Test Duration:</strong> <span className="text-primary font-semibold">{formatDuration(totalTestDuration)}</span></p>
             </CardContent>
-            <CardFooter>
-              <Button 
-                size="lg" 
-                className="w-full" 
-                onClick={handleStartTest}
-                disabled={totalSelectedChaptersCount === 0 || actualQuestionCount <= 0}
-              >
-                <PlayCircle className="mr-2 h-5 w-5" /> Start Test
-              </Button>
+            {/* Footer for custom test button is now part of the main custom test card */}
+          </Card>
+
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-6 w-6 text-primary" /> Practice Past MDCAT Papers
+              </CardTitle>
+              <CardDescription>Attempt full past papers to simulate exam conditions.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3">
+              {pastMDCATYears.map(year => (
+                <Button
+                  key={year}
+                  variant="outline"
+                  onClick={() => handleStartMdcatTest(year)}
+                >
+                  MDCAT {year}
+                </Button>
+              ))}
+            </CardContent>
+             <CardFooter>
+                <p className="text-xs text-muted-foreground">Each past paper is set to 50 questions and 50 minutes (mock settings).</p>
             </CardFooter>
           </Card>
         </div>

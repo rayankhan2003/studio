@@ -4,8 +4,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart as RechartsBarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
-import { BarChart3, TrendingUp, BookOpen, Clock, Percent, Target, Goal } from 'lucide-react';
+import { BarChart3, TrendingUp, BookOpen, Clock, Percent, Target, Goal, Archive } from 'lucide-react';
 import { Subjects, syllabus, type Subject, allSubjects, type Chapter } from '@/lib/syllabus';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -14,28 +15,24 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 
-// Types for localStorage data
 interface StoredTestReport {
   id: string;
   name: string;
   date: string;
+  testType: 'custom' | 'mdcat';
+  mdcatYear?: number;
   overallScorePercentage: number;
   subjectScores: Partial<Record<Subject, number>>;
   chapterScores: Partial<Record<Subject, Record<string, number>>>;
-  // rawQuestions can be omitted here if not directly used by analytics page
 }
 
-// Initial Mock Data (will be supplemented by localStorage)
 const initialOverallPerformance = {
-  averageScore: 0, // Will be calculated
-  testsTaken: 0,   // Will be calculated
-  overallProgress: 65, // Placeholder, could be goal-oriented
+  averageScore: 0,
+  testsTaken: 0,
+  overallProgress: 65, 
 };
 
-const initialSubjectScoreProgressionData: Array<Record<string, any>> = [
-  // Example structure, will be populated
-  // { name: 'Test 1', [Subjects.BIOLOGY]: 75, [Subjects.CHEMISTRY]: 60, date: '2024-06-01' },
-];
+const initialSubjectScoreProgressionData: Array<Record<string, any>> = [];
 
 const initialChapterPerformanceHistoryData: Record<Subject, Record<string, { testName: string; score: number }[]>> = 
   allSubjects.reduce((acc, subj) => {
@@ -46,8 +43,7 @@ const initialChapterPerformanceHistoryData: Record<Subject, Record<string, { tes
     return acc;
   }, {} as Record<Subject, Record<string, { testName: string; score: number }[]>>);
 
-
-const initialTimeSpentData = [ // This can remain static or be updated if time tracking is implemented
+const initialTimeSpentData = [ 
   { name: Subjects.BIOLOGY, avgTimePerQuestion: 1.5 },
   { name: Subjects.CHEMISTRY, avgTimePerQuestion: 2.0 },
   { name: Subjects.PHYSICS, avgTimePerQuestion: 2.2 },
@@ -69,16 +65,15 @@ const chapterLineColors = [
 
 
 export default function AnalyticsPage() {
-  const [selectedSubject, setSelectedSubject] = useState<Subject>(Subjects.BIOLOGY);
-  const [filterPeriod, setFilterPeriod] = useState('all-time');
+  const [selectedSubjectForChapterChart, setSelectedSubjectForChapterChart] = useState<Subject>(Subjects.BIOLOGY);
+  const [filterPeriod, setFilterPeriod] = useState('all-time'); // Placeholder for future filtering
+  const [analyticsView, setAnalyticsView] = useState<'custom' | 'mdcat'>('custom');
 
-  // State for data loaded from localStorage and processed
   const [overallPerformance, setOverallPerformance] = useState(initialOverallPerformance);
-  const [subjectScoreProgressionData, setSubjectScoreProgressionData] = useState(initialSubjectScoreProgressionData);
+  const [subjectScoreProgressionData, setSubjectScoreProgressionData] = useState<Array<Record<string, any>>>([]);
   const [chapterPerformanceHistoryData, setChapterPerformanceHistoryData] = useState(initialChapterPerformanceHistoryData);
-  const [timeSpentData, setTimeSpentData] = useState(initialTimeSpentData); // If this becomes dynamic
+  const [timeSpentData, setTimeSpentData] = useState(initialTimeSpentData);
 
-  // State for goal setting
   const [isSetGoalDialogOpen, setIsSetGoalDialogOpen] = useState(false);
   const [goalDialogSubject, setGoalDialogSubject] = useState<Subject>(Subjects.BIOLOGY);
   const [goalDialogChapter, setGoalDialogChapter] = useState<string>('');
@@ -86,27 +81,34 @@ export default function AnalyticsPage() {
   const [chapterGoals, setChapterGoals] = useState<Record<Subject, Record<string, number>>>({});
 
   useEffect(() => {
-    // Load and process test history from localStorage
     const storedHistoryString = localStorage.getItem('prepwiseTestHistory');
-    const storedHistory: StoredTestReport[] = storedHistoryString ? JSON.parse(storedHistoryString) : [];
+    let storedHistory: StoredTestReport[] = storedHistoryString ? JSON.parse(storedHistoryString) : [];
+
+    // Filter history based on analyticsView
+    storedHistory = storedHistory.filter(report => 
+      analyticsView === 'custom' ? report.testType === 'custom' : report.testType === 'mdcat'
+    );
+    
+    // Reset data before processing filtered history
+    let newTotalScoreSum = 0;
+    let newTestsTaken = 0;
+    const newSubjectProgression: typeof initialSubjectScoreProgressionData = [];
+    const newChapterHistory: typeof initialChapterPerformanceHistoryData = 
+      allSubjects.reduce((acc, subj) => {
+        acc[subj] = {};
+        syllabus[subj].forEach(chap => {
+          acc[subj][chap.name] = [];
+        });
+        return acc;
+      }, {} as typeof initialChapterPerformanceHistoryData);
 
     if (storedHistory.length > 0) {
-      let newTotalScoreSum = 0;
-      let newTestsTaken = storedHistory.length;
-      
-      const newSubjectProgression: typeof initialSubjectScoreProgressionData = [];
-      const newChapterHistory: typeof initialChapterPerformanceHistoryData = 
-        allSubjects.reduce((acc, subj) => {
-          acc[subj] = {};
-          syllabus[subj].forEach(chap => {
-            acc[subj][chap.name] = [];
-          });
-          return acc;
-        }, {} as typeof initialChapterPerformanceHistoryData);
-
+      newTestsTaken = storedHistory.length;
       storedHistory.forEach(report => {
-        // Update subject score progression
-        const progressionEntry: Record<string, any> = { name: report.name, date: report.date };
+        const progressionEntry: Record<string, any> = { 
+          name: report.testType === 'mdcat' ? `MDCAT ${report.mdcatYear}` : report.name, 
+          date: report.date 
+        };
         let currentTestSubjectScoreSum = 0;
         let currentTestSubjectCount = 0;
 
@@ -119,11 +121,9 @@ export default function AnalyticsPage() {
         });
         newSubjectProgression.push(progressionEntry);
         if (currentTestSubjectCount > 0) {
-            newTotalScoreSum += (currentTestSubjectScoreSum / currentTestSubjectCount); // Average score for this test
+            newTotalScoreSum += (currentTestSubjectScoreSum / currentTestSubjectCount);
         }
 
-
-        // Update chapter performance history
         allSubjects.forEach(subj => {
           if (report.chapterScores[subj]) {
             for (const chapterName in report.chapterScores[subj]) {
@@ -131,24 +131,24 @@ export default function AnalyticsPage() {
                 newChapterHistory[subj][chapterName] = [];
               }
               newChapterHistory[subj][chapterName].push({
-                testName: report.name,
+                testName: report.testType === 'mdcat' ? `MDCAT ${report.mdcatYear}` : report.name,
                 score: report.chapterScores[subj]![chapterName],
               });
             }
           }
         });
       });
-      
-      setSubjectScoreProgressionData(newSubjectProgression);
-      setChapterPerformanceHistoryData(newChapterHistory);
-      setOverallPerformance(prev => ({
-        ...prev,
-        testsTaken: newTestsTaken,
-        averageScore: newTestsTaken > 0 ? parseFloat((newTotalScoreSum / newTestsTaken).toFixed(1)) : 0,
-      }));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+    
+    setSubjectScoreProgressionData(newSubjectProgression);
+    setChapterPerformanceHistoryData(newChapterHistory);
+    setOverallPerformance(prev => ({
+      ...prev,
+      testsTaken: newTestsTaken,
+      averageScore: newTestsTaken > 0 ? parseFloat((newTotalScoreSum / newTestsTaken).toFixed(1)) : 0,
+    }));
+
+  }, [analyticsView]); // Re-run when analyticsView changes
 
 
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
   }, [goalDialogSubject]);
 
 
-  const overallSubjectPerformance = useMemo(() => {
+  const overallSubjectAverageScores = useMemo(() => {
     if (subjectScoreProgressionData.length === 0) {
       return allSubjects.map(subject => ({ name: subject, averageScore: 0 }));
     }
@@ -185,29 +185,26 @@ export default function AnalyticsPage() {
   
 
   const chapterProficiencyChartData = useMemo(() => {
-    const subjectChapters = syllabus[selectedSubject];
-    const historyForSelectedSubject = chapterPerformanceHistoryData[selectedSubject];
+    const subjectChapters = syllabus[selectedSubjectForChapterChart];
+    const historyForSelectedSubject = chapterPerformanceHistoryData[selectedSubjectForChapterChart];
     if (!subjectChapters || !historyForSelectedSubject) return [];
 
-    // Get all unique test names from the history for this subject to form the X-axis
     const testNamesSet = new Set<string>();
     subjectChapters.forEach(chapter => {
       (historyForSelectedSubject[chapter.name] || []).forEach(entry => {
         testNamesSet.add(entry.testName);
       });
     });
-    // Sort test names, assuming format "Test #N" or by date if available
     const sortedTestNames = Array.from(testNamesSet).sort((a, b) => {
-        const numA = parseInt(a.match(/Test #?(\d+)/)?.[1] || '0');
-        const numB = parseInt(b.match(/Test #?(\d+)/)?.[1] || '0');
+        const numA = parseInt(a.match(/Test #?(\d+)/)?.[1] || a.match(/MDCAT (\d+)/)?.[1] || '0');
+        const numB = parseInt(b.match(/Test #?(\d+)/)?.[1] || b.match(/MDCAT (\d+)/)?.[1] || '0');
         if (numA !== numB) return numA - numB;
-        // Fallback to string sort if not in "Test #N" format or numbers are equal
+        
         const dateA = subjectScoreProgressionData.find(d => d.name === a)?.date;
         const dateB = subjectScoreProgressionData.find(d => d.name === b)?.date;
         if (dateA && dateB) return new Date(dateA).getTime() - new Date(dateB).getTime();
         return a.localeCompare(b);
     });
-
 
     return sortedTestNames.map(testName => {
       const dataPoint: { name: string; [chapterName: string]: number | string } = { name: testName };
@@ -218,7 +215,7 @@ export default function AnalyticsPage() {
       });
       return dataPoint;
     });
-  }, [selectedSubject, chapterPerformanceHistoryData, subjectScoreProgressionData]);
+  }, [selectedSubjectForChapterChart, chapterPerformanceHistoryData, subjectScoreProgressionData]);
   
   const handleSetGoal = () => {
     if (!goalDialogChapter || !goalDialogTargetScore) {
@@ -244,7 +241,7 @@ export default function AnalyticsPage() {
   };
   
   const openGoalDialog = (subject?: Subject, chapter?: string) => {
-    const currentSubject = subject || selectedSubject || allSubjects[0];
+    const currentSubject = subject || selectedSubjectForChapterChart || allSubjects[0];
     setGoalDialogSubject(currentSubject);
     const chaptersForSubject = syllabus[currentSubject];
     const currentChapter = chapter || (chaptersForSubject.length > 0 ? chaptersForSubject[0].name : '');
@@ -261,198 +258,216 @@ export default function AnalyticsPage() {
           <BarChart3 className="mr-3 h-8 w-8 text-primary" />
           Performance Analytics
         </h1>
-        <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter period" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="last-7-days">Last 7 Days</SelectItem>
-            <SelectItem value="last-30-days">Last 30 Days</SelectItem>
-            <SelectItem value="all-time">All Time</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-4 items-center">
+            <Tabs value={analyticsView} onValueChange={(value) => setAnalyticsView(value as 'custom' | 'mdcat')}>
+              <TabsList>
+                <TabsTrigger value="custom">Custom Tests</TabsTrigger>
+                <TabsTrigger value="mdcat" className="flex items-center gap-1">
+                  <Archive className="h-4 w-4" /> Past MDCAT
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Select value={filterPeriod} onValueChange={setFilterPeriod} disabled>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-time">All Time</SelectItem>
+                {/* <SelectItem value="last-7-days">Last 7 Days</SelectItem>
+                <SelectItem value="last-30-days">Last 30 Days</SelectItem> */}
+              </SelectContent>
+            </Select>
+        </div>
       </div>
-
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Percent className="h-6 w-6 text-primary" />
-            Overall Performance Summary
-          </CardTitle>
-          <CardDescription>Your cumulative performance across all tests.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-6">
-          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-            <h3 className="text-4xl font-bold text-primary">{overallPerformance.averageScore.toFixed(1)}%</h3>
-            <p className="text-sm text-muted-foreground">Average Score</p>
-          </div>
-          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-            <h3 className="text-4xl font-bold text-primary">{overallPerformance.testsTaken}</h3>
-            <p className="text-sm text-muted-foreground">Tests Taken</p>
-          </div>
-          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg space-y-2">
-             <Progress value={overallPerformance.overallProgress} className="w-full h-3" />
-             <p className="text-sm text-muted-foreground">Overall Progress: {overallPerformance.overallProgress}%</p>
-          </div>
-        </CardContent>
-      </Card>
       
-      <div className="grid lg:grid-cols-2 gap-8">
+      <TabsContent value={analyticsView} className="mt-0 space-y-8"> {/* Added space-y-8 here */}
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              Subject-wise Score Progression
+              <Percent className="h-6 w-6 text-primary" />
+              Overall Performance Summary ({analyticsView === 'custom' ? 'Custom Tests' : 'Past MDCAT Tests'})
             </CardTitle>
-            <CardDescription>Track your scores across different subjects over time.</CardDescription>
+            <CardDescription>Your cumulative performance for the selected test type.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={subjectScoreProgressionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 100]}/>
-                <Tooltip />
-                <Legend />
-                {allSubjects.map(subject => (
-                  <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject]} strokeWidth={2} activeDot={{ r: 6 }} connectNulls />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
+          <CardContent className="grid md:grid-cols-3 gap-6">
+            <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+              <h3 className="text-4xl font-bold text-primary">{overallPerformance.averageScore.toFixed(1)}%</h3>
+              <p className="text-sm text-muted-foreground">Average Score</p>
+            </div>
+            <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+              <h3 className="text-4xl font-bold text-primary">{overallPerformance.testsTaken}</h3>
+              <p className="text-sm text-muted-foreground">Tests Taken</p>
+            </div>
+            <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg space-y-2">
+              <Progress value={overallPerformance.averageScore} className="w-full h-3" /> {/* Using average score for overall progress visual */}
+              <p className="text-sm text-muted-foreground">Overall Average: {overallPerformance.averageScore.toFixed(1)}%</p>
+            </div>
           </CardContent>
         </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Target className="h-6 w-6 text-green-500" />
-              Average Score by Subject
-            </CardTitle>
-            <CardDescription>Your average performance in each subject.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[400px]">
-             {overallSubjectPerformance.some(s => s.averageScore > 0) ? (
-                <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                    <Pie
-                    data={overallSubjectPerformance.filter(s => s.averageScore > 0)} // Filter out subjects with no score for pie chart
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={120}
-                    fill="#8884d8"
-                    dataKey="averageScore"
-                    nameKey="name"
-                    >
-                    {overallSubjectPerformance.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={subjectColors[entry.name as Subject]} />
-                    ))}
-                    </Pie>
-                    <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name]} />
-                    <Legend />
-                </PieChart>
-                </ResponsiveContainer>
-             ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">No subject scores available yet.</div>
-             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="shadow-lg">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-            <div className="flex-1">
+        
+        <div className="grid lg:grid-cols-2 gap-8">
+          <Card className="shadow-lg">
+            <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2">
-                <BookOpen className="h-6 w-6 text-accent" />
-                Chapter Proficiency Trend ({selectedSubject})
+                <TrendingUp className="h-6 w-6 text-primary" />
+                Subject-wise Score Progression
               </CardTitle>
-              <CardDescription>Track your performance in each chapter over time for the selected subject.</CardDescription>
+              <CardDescription>Track your scores across different subjects over time for {analyticsView === 'custom' ? 'custom tests' : 'past MDCAT tests'}.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+             {subjectScoreProgressionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={subjectScoreProgressionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis domain={[0, 100]}/>
+                  <Tooltip />
+                  <Legend />
+                  {allSubjects.map(subject => (
+                    <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject]} strokeWidth={2} activeDot={{ r: 6 }} connectNulls />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+               ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">No subject progression data available for this view.</div>
+             )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Target className="h-6 w-6 text-green-500" />
+                Average Score by Subject
+              </CardTitle>
+              <CardDescription>Your average performance in each subject for {analyticsView === 'custom' ? 'custom tests' : 'past MDCAT tests'}.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {overallSubjectAverageScores.some(s => s.averageScore > 0) ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                      <Pie
+                      data={overallSubjectAverageScores.filter(s => s.averageScore > 0)} 
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="averageScore"
+                      nameKey="name"
+                      >
+                      {overallSubjectAverageScores.filter(s => s.averageScore > 0).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={subjectColors[entry.name as Subject]} />
+                      ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name]} />
+                      <Legend />
+                  </PieChart>
+                  </ResponsiveContainer>
+              ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">No subject scores available for this view.</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="shadow-lg">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+              <div className="flex-1">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <BookOpen className="h-6 w-6 text-accent" />
+                  Chapter Proficiency Trend ({selectedSubjectForChapterChart})
+                </CardTitle>
+                <CardDescription>Track your performance in each chapter over time for {analyticsView === 'custom' ? 'custom tests' : 'past MDCAT tests'}.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openGoalDialog()}>
+                    <Goal className="mr-2 h-4 w-4" /> Set/Edit Chapter Goal
+                  </Button>
+                  <Select value={selectedSubjectForChapterChart} onValueChange={(value) => setSelectedSubjectForChapterChart(value as Subject)}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allSubjects.map(subject => (
+                        <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => openGoalDialog()}>
-                  <Goal className="mr-2 h-4 w-4" /> Set/Edit Chapter Goal
-                </Button>
-                <Select value={selectedSubject} onValueChange={(value) => setSelectedSubject(value as Subject)}>
-                  <SelectTrigger className="w-full md:w-[200px]">
-                    <SelectValue placeholder="Select Subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allSubjects.map(subject => (
-                      <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="h-[450px]">
-          {chapterProficiencyChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chapterProficiencyChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip 
-                  formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
-                  labelFormatter={(label: string) => `Attempt: ${label}`}
-                />
-                <Legend />
-                {syllabus[selectedSubject]?.map((chapter, index) => {
-                  const goal = chapterGoals[selectedSubject]?.[chapter.name];
-                  return (
-                    <React.Fragment key={chapter.name}>
-                      <Line
-                        type="monotone"
-                        dataKey={chapter.name}
-                        stroke={chapterLineColors[index % chapterLineColors.length]}
-                        strokeWidth={2}
-                        activeDot={{ r: 6 }}
-                        dot={{r:3}}
-                        connectNulls // Important for sparse data
-                      />
-                      {goal !== undefined && (
-                        <ReferenceLine
-                          y={goal}
-                          label={{ value: `${chapter.name} Goal: ${goal}%`, position: 'insideTopRight', fill: chapterLineColors[index % chapterLineColors.length], dy: -5, dx:5, fontSize: '0.75rem' }}
+          </CardHeader>
+          <CardContent className="h-[450px]">
+            {chapterProficiencyChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chapterProficiencyChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
+                    labelFormatter={(label: string) => `Attempt: ${label}`}
+                  />
+                  <Legend />
+                  {syllabus[selectedSubjectForChapterChart]?.map((chapter, index) => {
+                    const goal = chapterGoals[selectedSubjectForChapterChart]?.[chapter.name];
+                    return (
+                      <React.Fragment key={chapter.name}>
+                        <Line
+                          type="monotone"
+                          dataKey={chapter.name}
                           stroke={chapterLineColors[index % chapterLineColors.length]}
-                          strokeDasharray="3 3"
-                          strokeWidth={1.5}
+                          strokeWidth={2}
+                          activeDot={{ r: 6 }}
+                          dot={{r:3}}
+                          connectNulls 
                         />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </LineChart>
+                        {goal !== undefined && (
+                          <ReferenceLine
+                            y={goal}
+                            label={{ value: `${chapter.name} Goal: ${goal}%`, position: 'insideTopRight', fill: chapterLineColors[index % chapterLineColors.length], dy: -5, dx:5, fontSize: '0.75rem' }}
+                            stroke={chapterLineColors[index % chapterLineColors.length]}
+                            strokeDasharray="3 3"
+                            strokeWidth={1.5}
+                            isFront={true}
+                          />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">No chapter performance data available for {selectedSubjectForChapterChart} in this view.</div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Clock className="h-6 w-6 text-orange-500" />
+              Average Time per Question (Mock Data)
+            </CardTitle>
+            <CardDescription>Analyze your speed and time management across subjects (currently static mock data).</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart data={timeSpentData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={120} />
+                <Tooltip formatter={(value: number) => [`${value.toFixed(1)} mins`, "Avg. Time"]} />
+                <Legend />
+                <Bar dataKey="avgTimePerQuestion" name="Avg. Time (mins)" fill="hsl(var(--chart-5))" radius={[0, 4, 4, 0]} />
+              </RechartsBarChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">No chapter performance data available for {selectedSubject} yet.</div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Clock className="h-6 w-6 text-orange-500" />
-            Average Time per Question
-          </CardTitle>
-          <CardDescription>Analyze your speed and time management across subjects (mock data).</CardDescription>
-        </CardHeader>
-        <CardContent className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsBarChart data={timeSpentData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={120} />
-              <Tooltip formatter={(value: number) => [`${value.toFixed(1)} mins`, "Avg. Time"]} />
-              <Legend />
-              <Bar dataKey="avgTimePerQuestion" name="Avg. Time (mins)" fill="hsl(var(--chart-5))" radius={[0, 4, 4, 0]} />
-            </RechartsBarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
 
       <Dialog open={isSetGoalDialogOpen} onOpenChange={setIsSetGoalDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
