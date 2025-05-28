@@ -15,7 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { allSubjects, syllabus, type Subject, type Chapter } from '@/lib/syllabus';
 import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive } from 'lucide-react';
 
-const questionCountPresets = [5, 10, 15, 20, 30, 50, 100];
+const questionCountPresets = [5, 10, 15, 20, 30, 50, 100, 200]; // Added 200
 const timePerQuestionOptions = [
   { label: '30 seconds', value: 30 },
   { label: '45 seconds', value: 45 },
@@ -24,7 +24,13 @@ const timePerQuestionOptions = [
   { label: '120 seconds', value: 120 },
 ];
 
-const pastMDCATYears = Array.from({ length: 2024 - 2015 + 1 }, (_, i) => 2015 + i).reverse(); // 2024, 2023, ..., 2015
+const pastMDCATYears = Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).reverse();
+
+// Standard mock configuration for past MDCAT papers
+const MOCK_MDCAT_QUESTION_COUNT = 200;
+const MOCK_MDCAT_TOTAL_MINUTES = 210; // 3.5 hours
+const MOCK_MDCAT_TOTAL_DURATION_SECONDS = MOCK_MDCAT_TOTAL_MINUTES * 60;
+
 
 type SelectedChapters = Record<Subject, Set<string>>;
 
@@ -62,6 +68,7 @@ export default function CustomTestPage() {
   }, [selectedChapters]);
   
   const totalAvailableQuestionsEstimate = useMemo(() => {
+    // This is a rough estimate, assuming each chapter has ~15 mock questions for custom tests
     return totalSelectedChaptersCount * 15; 
   }, [totalSelectedChaptersCount]);
 
@@ -113,7 +120,7 @@ export default function CustomTestPage() {
 
   const handleStartCustomTest = () => {
     if (totalSelectedChaptersCount === 0) {
-      toast({ title: "Error", description: "Please select at least one chapter.", variant: "destructive" });
+      toast({ title: "Error", description: "Please select at least one chapter for a custom test.", variant: "destructive" });
       return;
     }
     if (actualQuestionCount <= 0) {
@@ -123,7 +130,7 @@ export default function CustomTestPage() {
      if (actualQuestionCount > totalAvailableQuestionsEstimate && totalAvailableQuestionsEstimate > 0) {
       toast({ 
         title: "Warning", 
-        description: `You requested ${actualQuestionCount} questions, but selected chapters might only have around ${totalAvailableQuestionsEstimate} questions available. The test will proceed with the maximum available if less.`, 
+        description: `You requested ${actualQuestionCount} questions, but selected chapters might only have around ${totalAvailableQuestionsEstimate} mock questions available. The test will proceed with the maximum available if less.`, 
         variant: "default",
         duration: 7000,
       });
@@ -134,7 +141,6 @@ export default function CustomTestPage() {
     const queryParams = new URLSearchParams({
       questionCount: String(actualQuestionCount),
       totalDuration: String(totalTestDuration),
-      // selectedChapters: JSON.stringify(Object.fromEntries(Object.entries(selectedChapters).map(([sub, chapSet]) => [sub, Array.from(chapSet)]))), // Could be too long for URL
       testName: "Custom Test"
     });
 
@@ -142,15 +148,11 @@ export default function CustomTestPage() {
   };
 
   const handleStartMdcatTest = (year: number) => {
-    const mdcatQuestionCount = 50; // Example: Past papers have 50 questions
-    const mdcatTimePerQuestion = 60; // Example: 60 seconds per question
-    const mdcatTotalDuration = mdcatQuestionCount * mdcatTimePerQuestion;
-
-    toast({ title: `MDCAT ${year} Test Starting!`, description: "Redirecting to the test..." });
+    toast({ title: `MDCAT ${year} Test Starting!`, description: `Simulating MDCAT ${year} with ${MOCK_MDCAT_QUESTION_COUNT} questions and ${MOCK_MDCAT_TOTAL_MINUTES} minutes.` });
     
     const queryParams = new URLSearchParams({
-      questionCount: String(mdcatQuestionCount),
-      totalDuration: String(mdcatTotalDuration),
+      questionCount: String(MOCK_MDCAT_QUESTION_COUNT),
+      totalDuration: String(MOCK_MDCAT_TOTAL_DURATION_SECONDS),
       testName: `MDCAT ${year}`
     });
     router.push(`/test/mdcat-${year}?${queryParams.toString()}`);
@@ -182,7 +184,7 @@ export default function CustomTestPage() {
               <CardTitle className="flex items-center gap-2">
                 <ListChecks className="h-6 w-6 text-primary" /> Create a Custom Test
               </CardTitle>
-              <CardDescription>Choose subjects, chapters, question count, and time limits.</CardDescription>
+              <CardDescription>Choose subjects, chapters, question count, and time limits for a personalized practice session.</CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion 
@@ -192,14 +194,16 @@ export default function CustomTestPage() {
                 onValueChange={setActiveAccordionItems}
               >
                 {allSubjects.map((subject) => (
-                  <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md px-3">
-                    <AccordionTrigger className="py-3 hover:no-underline">
+                  <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md">
+                    <AccordionTrigger className="py-3 hover:no-underline px-3">
                       <div 
                         className="flex items-center space-x-3 flex-1"
-                        onClick={(e) => { 
-                          if ((e.target as HTMLElement).closest('input[type="checkbox"]') || (e.target as HTMLElement).closest('label')) {
-                          } else {
-                          }
+                         onClick={(e) => { 
+                            // Allow click only on checkbox/label for selection, not to toggle accordion
+                            if (!((e.target as HTMLElement).closest('input[type="checkbox"]') || (e.target as HTMLElement).closest('label'))) {
+                               // e.preventDefault(); // This would prevent accordion toggle; might be too restrictive.
+                               // Better to let trigger handle accordion, and ensure checkbox clicks are specific.
+                            }
                         }}
                       >
                         <Checkbox
@@ -302,7 +306,7 @@ export default function CustomTestPage() {
                  {actualQuestionCount > totalAvailableQuestionsEstimate && totalSelectedChaptersCount > 0 && (
                     <p className="text-xs text-orange-600 flex items-start gap-1">
                       <AlertCircle size={14} className="flex-shrink-0 mt-0.5"/>
-                      <span>Selected chapters might have fewer than {actualQuestionCount} questions. Test will use available questions.</span>
+                      <span>Selected chapters have an estimated {totalAvailableQuestionsEstimate} mock questions. Test will use available count if less.</span>
                     </p>
                 )}
               </CardContent>
@@ -358,8 +362,13 @@ export default function CustomTestPage() {
               <p><strong>Total Questions:</strong> <span className="text-primary font-semibold">{actualQuestionCount > 0 ? actualQuestionCount : 'N/A'}</span></p>
               <p><strong>Time per Question:</strong> <span className="text-primary font-semibold">{timePerQuestionOptions.find(opt => opt.value === timePerQuestion)?.label || 'N/A'}</span></p>
               <p><strong>Total Test Duration:</strong> <span className="text-primary font-semibold">{formatDuration(totalTestDuration)}</span></p>
+               {totalSelectedChaptersCount === 0 && actualQuestionCount > 0 && (
+                 <p className="text-xs text-orange-500">Please select chapters to start a custom test.</p>
+               )}
+               {actualQuestionCount <=0 && totalSelectedChaptersCount > 0 && (
+                 <p className="text-xs text-orange-500">Please set a valid number of questions.</p>
+               )}
             </CardContent>
-            {/* Footer for custom test button is now part of the main custom test card */}
           </Card>
 
           <Card className="shadow-lg">
@@ -381,7 +390,7 @@ export default function CustomTestPage() {
               ))}
             </CardContent>
              <CardFooter>
-                <p className="text-xs text-muted-foreground">Each past paper is set to 50 questions and 50 minutes (mock settings).</p>
+                <p className="text-xs text-muted-foreground">Each past paper is simulated with {MOCK_MDCAT_QUESTION_COUNT} questions and a {MOCK_MDCAT_TOTAL_MINUTES}-minute duration for practice.</p>
             </CardFooter>
           </Card>
         </div>
@@ -389,3 +398,5 @@ export default function CustomTestPage() {
     </div>
   );
 }
+
+    
