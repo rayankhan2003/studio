@@ -1,12 +1,13 @@
 
 'use client';
 
+import React from 'react'; // Added missing React import
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
-import { BarChart3, TrendingUp, BookOpen, Clock, Percent, Users, Target, Edit3, Goal } from 'lucide-react';
+import { BarChart3, TrendingUp, BookOpen, Clock, Percent, Target, Goal } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { Subjects, syllabus, type Subject, allSubjects, getChaptersForSubject, type Chapter } from '@/lib/syllabus';
+import { Subjects, syllabus, type Subject, allSubjects, type Chapter } from '@/lib/syllabus';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
