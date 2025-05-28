@@ -3,8 +3,8 @@ import { HelpCircle } from "lucide-react";
 
 const faqs = [
   {
-    question: "What is PrepWise?",
-    answer: "PrepWise is an AI-powered online platform designed to help students prepare for academic and competitive exams. We offer personalized test preparation, real-time performance analytics, and an intuitive dashboard.",
+    question: "What is SmarterCat?",
+    answer: "SmarterCat is an AI-powered online platform designed to help students prepare for academic and competitive exams. We offer personalized test preparation, real-time performance analytics, and an intuitive dashboard.",
   },
   {
     question: "How does the AI recommendation work?",
@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     question: "What types of questions are available?",
-    answer: "PrepWise supports various question formats including single-choice, multiple-choice, fill-in-the-blanks, and true/false questions to provide a comprehensive testing experience.",
+    answer: "SmarterCat supports various question formats including single-choice, multiple-choice, fill-in-the-blanks, and true/false questions to provide a comprehensive testing experience.",
   },
   {
     question: "Can I track my progress over time?",
@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     question: "Is there a free trial or plan?",
-    answer: "Currently, PrepWise offers specific packages. Please check our (upcoming) pricing page for more details on subscription models and payment options. We may introduce trial periods in the future.",
+    answer: "Currently, SmarterCat offers specific packages. Please check our (upcoming) pricing page for more details on subscription models and payment options. We may introduce trial periods in the future.",
   },
   {
     question: "How is my data protected?",
@@ -37,7 +37,7 @@ export default function FaqPage() {
          </div>
         <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">Frequently Asked Questions</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Find answers to common questions about PrepWise.
+          Find answers to common questions about SmarterCat.
         </p>
       </div>
 

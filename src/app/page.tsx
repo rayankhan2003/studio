@@ -36,10 +36,10 @@ export default function HomePage() {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                  Unlock Your Exam Potential with PrepWise
+                  Unlock Your Exam Potential with SmarterCat
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl mx-auto">
-                  Your personalized AI-powered partner for acing competitive exams. Experience adaptive learning, detailed analytics, and focused preparation.
+                  Your personalized AI-powered partner for acing competitive exams. Experience adaptive learning, detailed analytics, and focused preparation with SmarterCat.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
@@ -73,7 +73,7 @@ export default function HomePage() {
             <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Key Features</div>
             <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need to Succeed</h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              PrepWise offers a comprehensive suite of tools designed to elevate your exam preparation.
+              SmarterCat offers a comprehensive suite of tools designed to elevate your exam preparation.
             </p>
           </div>
           <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-2 xl:grid-cols-4">
@@ -98,10 +98,10 @@ export default function HomePage() {
         <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">
-              About PrepWise
+              About SmarterCat
             </h2>
             <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              PrepWise was founded with a simple mission: to make exam preparation more effective, personalized, and accessible. We leverage cutting-edge AI and pedagogical insights to help students achieve their academic goals.
+              SmarterCat was founded with a simple mission: to make exam preparation more effective, personalized, and accessible. We leverage cutting-edge AI and pedagogical insights to help students achieve their academic goals.
             </p>
             <Link href="/about">
               <Button variant="link" className="p-0 h-auto text-primary">

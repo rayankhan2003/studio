@@ -45,8 +45,8 @@ export default function ContactPage() {
               <div>
                 <h3 className="font-semibold text-lg">Email Us</h3>
                 <p className="text-muted-foreground">Our support team will get back to you within 24 hours.</p>
-                <a href="mailto:support@prepwise.com" className="text-primary hover:underline">
-                  support@prepwise.com
+                <a href="mailto:support@smartercat.com" className="text-primary hover:underline">
+                  support@smartercat.com
                 </a>
               </div>
             </div>

@@ -21,7 +21,7 @@ const mockUser = {
 
 const mockSubscription = {
   status: "Active", // Could be "Active", "Cancelled", "Past Due", "Inactive"
-  planName: "PrepWise Premium",
+  planName: "SmarterCat Premium",
   price: "1000 PKR/month",
   nextBillingDate: "2024-08-30",
   startDate: "2024-03-30",
@@ -50,7 +50,7 @@ export default function AccountPage() {
     setSubscription(prev => ({ ...prev, status: "Cancelled", nextBillingDate: "N/A" }));
     toast({
       title: "Subscription Cancelled",
-      description: "Your PrepWise Premium subscription has been cancelled. You will retain access until the end of your current billing period.",
+      description: "Your SmarterCat Premium subscription has been cancelled. You will retain access until the end of your current billing period.",
     });
   };
   
@@ -98,7 +98,7 @@ export default function AccountPage() {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-xl">Subscription Details</CardTitle>
-              <CardDescription>Manage your PrepWise Premium subscription.</CardDescription>
+              <CardDescription>Manage your SmarterCat Premium subscription.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -149,7 +149,7 @@ export default function AccountPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        If you cancel, you'll lose access to PrepWise Premium features at the end of your current billing period ({subscription.nextBillingDate}). Are you sure you want to proceed?
+                        If you cancel, you'll lose access to SmarterCat Premium features at the end of your current billing period ({subscription.nextBillingDate}). Are you sure you want to proceed?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -314,5 +314,3 @@ export default function AccountPage() {
     </div>
   );
 }
-
-    

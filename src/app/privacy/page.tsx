@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
 
       <div className="prose prose-lg max-w-none text-foreground bg-card p-6 sm:p-8 rounded-lg shadow-md">
         <p>
-          Welcome to PrepWise! This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
+          Welcome to SmarterCat! This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
         </p>
 
         <h2>1. Information We Collect</h2>
@@ -83,8 +83,8 @@ export default function PrivacyPolicyPage() {
           If you have questions or comments about this Privacy Policy, please contact us at:
         </p>
         <p>
-          PrepWise Support<br />
-          Email: <a href="mailto:privacy@prepwise.com" className="text-primary hover:underline">privacy@prepwise.com</a><br />
+          SmarterCat Support<br />
+          Email: <a href="mailto:privacy@smartercat.com" className="text-primary hover:underline">privacy@smartercat.com</a><br />
           Address: 123 Learning Lane, Knowledge City, ED 54321
         </p>
       </div>

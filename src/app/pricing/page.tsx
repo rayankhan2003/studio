@@ -36,7 +36,7 @@ export default function PricingPage() {
           Unlock Premium Access
         </h1>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Get full access to all PrepWise features, personalized insights, and unlimited practice tests with our simple monthly subscription.
+          Get full access to all SmarterCat features, personalized insights, and unlimited practice tests with our simple monthly subscription.
         </p>
       </section>
 
@@ -46,7 +46,7 @@ export default function PricingPage() {
             POPULAR
           </div>
           <CardHeader className="text-center pt-10">
-            <CardTitle className="text-3xl mb-2">PrepWise Premium</CardTitle>
+            <CardTitle className="text-3xl mb-2">SmarterCat Premium</CardTitle>
             <CardDescription className="text-xl font-semibold text-primary">
               1000 PKR / month
             </CardDescription>

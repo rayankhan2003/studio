@@ -15,7 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { allSubjects, syllabus, type Subject, type Chapter } from '@/lib/syllabus';
 import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive } from 'lucide-react';
 
-const questionCountPresets = [5, 10, 15, 20, 30, 50, 100, 200]; // Added 200
+const questionCountPresets = [5, 10, 15, 20, 30, 50, 100, 200]; 
 const timePerQuestionOptions = [
   { label: '30 seconds', value: 30 },
   { label: '45 seconds', value: 45 },
@@ -141,7 +141,7 @@ export default function CustomTestPage() {
     const queryParams = new URLSearchParams({
       questionCount: String(actualQuestionCount),
       totalDuration: String(totalTestDuration),
-      testName: "Custom Test"
+      testName: "Custom SmarterCat Test"
     });
 
     router.push(`/test/custom-test-session?${queryParams.toString()}`); 
@@ -398,5 +398,3 @@ export default function CustomTestPage() {
     </div>
   );
 }
-
-    
