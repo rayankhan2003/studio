@@ -3,11 +3,14 @@
 'use server';
 
 /**
- * @fileOverview Provides an AI-powered study plan generator.
+ * @fileOverview Provides AI-powered study plan generation and reset functionalities.
  *
  * - generateStudyPlan - A function that returns a personalized study schedule.
  * - StudyPlanInput - The input type for the generateStudyPlan function.
  * - StudyPlanOutput - The return type for the generateStudyPlan function.
+ * - resetStudyPlan - A function to reset or clear a study plan (placeholder).
+ * - ResetStudyPlanInput - The input type for the resetStudyPlan function.
+ * - ResetStudyPlanOutput - The return type for the resetStudyPlan function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -137,6 +140,33 @@ const studyPlannerFlow = ai.defineFlow(
     };
   }
 );
+
+// Placeholder Schema and Types for Reset Functionality
+export const ResetStudyPlanInputSchema = z.object({
+  planId: z.string().optional().describe('Optional ID of the plan to reset.'),
+  reason: z.string().optional().describe('Optional reason for resetting the plan.'),
+});
+export type ResetStudyPlanInput = z.infer<typeof ResetStudyPlanInputSchema>;
+
+export const ResetStudyPlanOutputSchema = z.object({
+  status: z.string().describe('Status message indicating the result of the reset operation.'),
+  details: z.string().optional().describe('Optional details about the reset operation.'),
+});
+export type ResetStudyPlanOutput = z.infer<typeof ResetStudyPlanOutputSchema>;
+
+/**
+ * Placeholder function to reset a study plan.
+ * In a real application, this would interact with data storage or AI to clear/reset a plan.
+ */
+export async function resetStudyPlan(input: ResetStudyPlanInput): Promise<ResetStudyPlanOutput> {
+  console.log('Attempting to reset study plan with input:', input);
+  // Mock implementation
+  return {
+    status: 'Study plan reset successfully (mock response).',
+    details: input.planId ? `Plan ID ${input.planId} was targeted for reset.` : 'No specific plan ID provided for reset.',
+  };
+}
+
 
 // Helper to ensure allSubjects is correctly typed for use in Zod enum if needed elsewhere,
 // but for the template, passing it directly is fine.
