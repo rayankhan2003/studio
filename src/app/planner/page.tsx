@@ -2,7 +2,7 @@
 // src/app/planner/page.tsx
 'use client';
 
-import React, 'use client';
+import React from 'react';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
