@@ -8,7 +8,7 @@
  * - generateStudyPlan - A function that returns a personalized study schedule.
  * - StudyPlanInput - The input type for the generateStudyPlan function.
  * - StudyPlanOutput - The return type for the generateStudyPlan function.
- * - resetStudyPlan - A function to reset or clear a study plan (placeholder).
+ * - resetStudyPlan - A function to reset or clear a study plan.
  * - ResetStudyPlanInput - The input type for the resetStudyPlan function.
  * - ResetStudyPlanOutput - The return type for the resetStudyPlan function.
  */
@@ -166,9 +166,3 @@ export async function resetStudyPlan(input: ResetStudyPlanInput): Promise<ResetS
     details: input.planId ? `Plan ID ${input.planId} was targeted for reset.` : 'No specific plan ID provided for reset.',
   };
 }
-
-
-// Helper to ensure allSubjects is correctly typed for use in Zod enum if needed elsewhere,
-// but for the template, passing it directly is fine.
-const allSubjectsTuple = allSubjects as [string, ...string[]];
-export const ZodSubjectEnum = z.enum(allSubjectsTuple);
