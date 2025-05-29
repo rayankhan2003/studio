@@ -1,92 +1,112 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, BarChart3, Lightbulb, BookOpen } from "lucide-react";
+import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, CalendarClock, Send } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-const features = [
-  {
-    icon: BookOpen,
-    title: "Personalized Tests",
-    description: "Tailor tests to your needs with subject and chapter-wise selections.",
-  },
-  {
-    icon: BarChart3,
-    title: "Visual Analytics",
-    description: "Track your progress with insightful charts and graphs on your performance.",
-  },
-  {
-    icon: Lightbulb,
-    title: "AI-Powered Insights",
-    description: "Get smart recommendations on what to study next based on your results.",
-  },
-  {
-    icon: CheckCircle,
-    title: "Comprehensive Review",
-    description: "Review your answers, understand mistakes, and learn effectively.",
-  },
-];
-
 export default function HomePage() {
+  const features = [
+    {
+      icon: Brain,
+      title: "AI Study Planner With Goal Setting",
+      description: [
+        "Start with your target MDCAT exam date and define goals for each subject — like “90% in Biology” or “Master Physics in 30 days.”",
+        "Let our AI create a personalized day-by-day timetable.",
+        "Track your chapter-wise progress.",
+        "Re-adjust the plan dynamically if you're falling behind or ahead.",
+        "Receive smart reminders, motivation tips, and updated plans via email (mock feature)."
+      ],
+    },
+    {
+      icon: Settings2,
+      title: "Custom Test Creator: You Choose, You Control",
+      description: [
+        "Select any combination of subjects and chapters.",
+        "Set your own question count (e.g., 5, 10, 25… even 100).",
+        "Choose time per question (30s to 2 mins).",
+        "Build practice tests that match your level and goals."
+      ],
+    },
+    {
+      icon: TrendingUp,
+      title: "Goal-Oriented Analytics: Know Your Progress",
+      description: [
+        "Track your chapter-wise scores over time (shown in line graphs).",
+        "Monitor subject-level performance vs. your set goals.",
+        "See completion status of your study plan.",
+        "Visual indicators and progress meters show exactly how close you are to your dream score."
+      ],
+    },
+    {
+      icon: BookCopy,
+      title: "Full MDCAT Syllabus Coverage + Past Papers",
+      description: [
+        "Smartly categorized MCQs for Biology, Chemistry, Physics, English, and Logical Reasoning.",
+        "Old MDCAT papers to simulate real exam pressure.",
+        "Regular updates based on MDCAT 2025 curriculum (mock data used)."
+      ],
+    },
+     {
+      icon: Rocket,
+      title: "Stay Motivated and On Track",
+      description: [
+        "Personalized insights from AI.",
+        "Reminders to follow your planner.",
+        "Progress alerts via email (mock feature).",
+        "Adjustments when your actual performance needs an extra push."
+      ],
+    },
+  ];
+
   return (
-    <div className="flex flex-col items-center space-y-12">
-      <section className="w-full py-12 md:py-24 lg:py-32 text-center">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
-            <div className="flex flex-col justify-center space-y-4">
-              <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                  Unlock Your Exam Potential with SmarterCat
-                </h1>
-                <p className="max-w-[600px] text-muted-foreground md:text-xl mx-auto">
-                  Your personalized AI-powered partner for acing competitive exams. Experience adaptive learning, detailed analytics, and focused preparation with SmarterCat.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
-                <Link href="/dashboard">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Get Started
-                  </Button>
-                </Link>
-                <Link href="/about">
-                  <Button size="lg" variant="outline">
-                    Learn More
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <Image
-              src="https://placehold.co/600x400.png"
-              width="600"
-              height="400"
-              alt="Student studying"
-              data-ai-hint="student studying"
-              className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
-            />
-          </div>
+    <div className="flex flex-col items-center space-y-16 py-8">
+      <section className="w-full text-center container px-4 md:px-6">
+        <div className="max-w-3xl mx-auto">
+           <Image
+            src="https://placehold.co/150x150.png"
+            width="120"
+            height="120"
+            alt="SmarterCat Logo Large"
+            data-ai-hint="cat studying"
+            className="mx-auto mb-6 rounded-full shadow-lg"
+          />
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary/80">
+            🩺 Crack MDCAT 2025 with Confidence
+          </h1>
+          <p className="mt-6 text-xl text-muted-foreground">
+            Your Personalized Study Companion
+          </p>
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+            Welcome to the most powerful MDCAT preparation platform built for <strong>ambitious students</strong> like you. Whether you're aiming for <strong>top government medical colleges</strong> or just starting your journey, we give you <strong>all the tools you need to succeed</strong> — from smart tests to intelligent planning and goal setting.
+          </p>
         </div>
       </section>
 
-      <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-muted/50 rounded-lg">
+      <section id="why-smartercat" className="w-full py-12 bg-muted/50 rounded-lg">
         <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-            <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Key Features</div>
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need to Succeed</h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              SmarterCat offers a comprehensive suite of tools designed to elevate your exam preparation.
-            </p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              🚀 Why Thousands of MDCAT Students Will Trust SmarterCat
+            </h2>
           </div>
-          <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-2 xl:grid-cols-4">
-            {features.map((feature) => (
-              <Card key={feature.title} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                  <div className="p-2 bg-primary/10 rounded-md">
-                     <feature.icon className="w-8 h-8 text-primary" />
+          <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8">
+            {features.map((feature, index) => (
+              <Card key={feature.title} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
+                <CardHeader className="flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-md w-fit">
+                      <feature.icon className="w-8 h-8 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl">{feature.title}</CardTitle>
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                <CardContent className="flex-grow">
+                  <ul className="space-y-2 text-muted-foreground list-disc list-inside pl-2">
+                    {feature.description.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             ))}
@@ -94,31 +114,61 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="about-preview" className="w-full py-12 md:py-24 lg:py-32">
-        <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">
-              About SmarterCat
-            </h2>
-            <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              SmarterCat was founded with a simple mission: to make exam preparation more effective, personalized, and accessible. We leverage cutting-edge AI and pedagogical insights to help students achieve their academic goals.
-            </p>
-            <Link href="/about">
-              <Button variant="link" className="p-0 h-auto text-primary">
-                Discover Our Story <span aria-hidden="true">&rarr;</span>
-              </Button>
-            </Link>
+      <section className="w-full py-12 text-center container px-4 md:px-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
+             <Target className="w-10 h-10 text-primary" />
           </div>
-          <div className="flex justify-center">
-            <Image
-              src="https://placehold.co/550x310.png"
-              width="550"
-              height="310"
-              alt="Team working"
-              data-ai-hint="team collaboration"
-              className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full"
-            />
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            🧠 Study Smarter, Score Higher
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            The key to cracking MDCAT isn't just hard work — it's <strong>smart strategy</strong>. With our platform, you’ll:
+          </p>
+          <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left text-muted-foreground">
+            {["Set clear goals", "Follow a dynamic AI plan", "Adapt as you learn", "Track real progress", "Stay motivated with purpose"].map(item => (
+              <li key={item} className="flex items-center p-3 bg-card border rounded-md shadow-sm">
+                <CheckCircle2 className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="w-full py-12 bg-accent/10 rounded-lg">
+        <div className="container px-4 md:px-6 text-center">
+           <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
+             <CalendarClock className="w-10 h-10 text-primary" />
           </div>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-primary">
+            📅 Make Your MDCAT Prep a Journey — Not a Struggle
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+            With SmarterCat, your preparation is <strong>calculated</strong>, <strong>goal-driven</strong>, and <strong>data-backed</strong>. Whether it's your daily schedule, chapter mastery, or your final MDCAT strategy, you’ll always know <strong>where you stand</strong> — and what to do next.
+          </p>
+        </div>
+      </section>
+
+      <section className="w-full py-16 text-center container px-4 md:px-6">
+        <div className="max-w-2xl mx-auto">
+           <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
+             <Send className="w-10 h-10 text-primary" />
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-3">
+            Join Now — Demo Access Available!
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            Thousands of students will trust SmarterCat to generate their personal study plans, track their progress with real data, create smart tests, simulate the real exam, and reach their MBBS/BDS dreams.
+          </p>
+          <Link href="/account">
+            <Button size="lg" className="text-lg py-7 px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/50 transition-shadow">
+              Register Now & Start Your Journey
+            </Button>
+          </Link>
+           <p className="mt-4 text-sm text-muted-foreground">
+            Check our <Link href="/pricing" className="underline hover:text-primary">Pricing Page</Link> for Demo and Premium plan details.
+          </p>
         </div>
       </section>
     </div>
