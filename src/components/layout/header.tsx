@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { SmarterCatLogo } from '@/components/icons/logo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, Lightbulb, History as HistoryIcon, Settings, ShoppingCart, User, Brain } from 'lucide-react';
+import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,6 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/test/custom', label: 'Create Test', icon: Settings }, 
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/insights', label: 'AI Insights', icon: Lightbulb },
   { href: '/planner', label: 'AI Planner', icon: Brain },
   { href: '/history', label: 'History', icon: HistoryIcon },
   { href: '/pricing', label: 'Pricing', icon: ShoppingCart },

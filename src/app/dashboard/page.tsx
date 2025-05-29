@@ -121,15 +121,10 @@ export default function DashboardPage() {
             Quick Actions
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
           <Button asChild variant="secondary" className="w-full h-16 text-base">
-            <Link href="/insights" legacyBehavior passHref>
-              <a>AI Study Insights</a>
-            </Link>
-          </Button>
-          <Button asChild variant="secondary" className="w-full h-16 text-base">
-            <Link href="/test/new-subject-test" legacyBehavior passHref>
-              <a>Practice a Subject</a>
+            <Link href="/planner" legacyBehavior passHref>
+              <a>AI Study Planner</a>
             </Link>
           </Button>
           <Button asChild variant="secondary" className="w-full h-16 text-base">
