@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SmarterCat - Your Personal Exam Preparation Partner',
-  description: 'Personalized test preparation, real-time performance analytics, and an intuitive dashboard for SmarterCat.',
+  title: 'SmarterCat - AI Study Planner & Test Prep',
+  description: 'AI-powered study planner, personalized test preparation, real-time performance analytics, and an intuitive dashboard for SmarterCat.',
 };
 
 export default function RootLayout({
