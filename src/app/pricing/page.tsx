@@ -3,11 +3,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, CreditCard, Smartphone, Banknote, ShieldCheck, UserPlus, Calendar, School, X } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, Banknote, ShieldCheck, UserPlus, Calendar, School, Phone, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import React, { useState } from 'react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 import { Input } from "@/components/ui/input";
@@ -21,52 +20,85 @@ const paymentMethods = [
   { name: "JazzCash", icon: Smartphone },
 ];
 
-interface SubscriptionFormData {
+interface PremiumFormData {
   fullName: string;
   dob: string;
   educationBoard: string;
+  mobileNumber: string;
+  email: string;
   cardNumber: string;
   cardExpiry: string;
   cardCvc: string;
 }
 
-const initialFormData: SubscriptionFormData = {
+const initialPremiumFormData: PremiumFormData = {
   fullName: '',
   dob: '',
   educationBoard: '',
+  mobileNumber: '',
+  email: '',
   cardNumber: '',
   cardExpiry: '',
   cardCvc: '',
 };
 
+interface DemoInfoData {
+  fullName: string;
+  dob: string;
+  educationBoard: string;
+  mobileNumber: string;
+  email: string;
+}
+
+const initialDemoInfoData: DemoInfoData = {
+  fullName: '',
+  dob: '',
+  educationBoard: '',
+  mobileNumber: '',
+  email: '',
+};
+
+
 export default function PricingPage() {
   const { toast } = useToast();
   const [isPremiumDialogOpen, setIsPremiumDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<SubscriptionFormData>(initialFormData);
+  const [premiumFormData, setPremiumFormData] = useState<PremiumFormData>(initialPremiumFormData);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isDemoInfoDialogOpen, setIsDemoInfoDialogOpen] = useState(false);
+  const [demoInfoData, setDemoInfoData] = useState<DemoInfoData>(initialDemoInfoData);
+
+
+  const handlePremiumInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setPremiumFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleStartDemo = () => {
+  const handleDemoInfoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setDemoInfoData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleActivateDemoSubmit = () => {
+    console.log("Mock Demo Activation Data:", demoInfoData);
     toast({
-      title: "Demo Plan Activated!",
+      title: "Demo Information Captured!",
       description: "You can now access up to 25 sample questions. (This is a mock feature)",
     });
-    // Potentially redirect to /test/custom or a specific demo test
+    setIsDemoInfoDialogOpen(false);
+    setDemoInfoData(initialDemoInfoData);
+     // Potentially redirect to /test/custom or a specific demo test
   };
   
   const handlePremiumSubscribeSubmit = () => {
     // In a real app, this would validate data and then initiate payment.
-    console.log("Mock Premium Subscription Data:", formData);
+    console.log("Mock Premium Subscription Data:", premiumFormData);
     toast({
       title: "Information Captured (Mock)",
       description: "Redirecting to payment gateway... You may receive an SMS from your bank for confirmation. (This is a mock action)",
       duration: 7000,
     });
     setIsPremiumDialogOpen(false);
-    setFormData(initialFormData); // Reset form
+    setPremiumFormData(initialPremiumFormData); // Reset form
   };
 
   return (
@@ -89,7 +121,7 @@ export default function PricingPage() {
               Free
             </CardDescription>
             <p className="text-sm text-muted-foreground mt-1">
-              Get a taste of SmarterCat.
+              Get a taste of SmarterCat. Provide some basic info to start.
             </p>
           </CardHeader>
           <CardContent className="space-y-6 flex-grow">
@@ -108,7 +140,7 @@ export default function PricingPage() {
             </ul>
           </CardContent>
           <CardFooter className="mt-auto">
-            <Button onClick={handleStartDemo} className="w-full text-lg py-6" variant="outline">
+            <Button onClick={() => setIsDemoInfoDialogOpen(true)} className="w-full text-lg py-6" variant="outline">
               Start Demo
             </Button>
           </CardFooter>
@@ -160,10 +192,58 @@ export default function PricingPage() {
         </Card>
       </div>
 
+      {/* Demo Information Dialog */}
+      <Dialog open={isDemoInfoDialogOpen} onOpenChange={(open) => {
+        setIsDemoInfoDialogOpen(open);
+        if (!open) setDemoInfoData(initialDemoInfoData);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-6 w-6 text-accent"/> Start SmarterCat Demo
+            </DialogTitle>
+            <DialogDescription>
+              Please provide some basic information to activate your demo access. This information helps us tailor your experience.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="demoFullName">Full Name</Label>
+              <Input id="demoFullName" name="fullName" value={demoInfoData.fullName} onChange={handleDemoInfoInputChange} placeholder="e.g., Aisha Khan" />
+            </div>
+            <div>
+              <Label htmlFor="demoDob">Date of Birth</Label>
+              <Input id="demoDob" name="dob" type="date" value={demoInfoData.dob} onChange={handleDemoInfoInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="demoEducationBoard">Education Board</Label>
+              <Input id="demoEducationBoard" name="educationBoard" value={demoInfoData.educationBoard} onChange={handleDemoInfoInputChange} placeholder="e.g., BISE Lahore, Federal Board" />
+            </div>
+             <div>
+              <Label htmlFor="demoMobileNumber">Mobile Number</Label>
+              <Input id="demoMobileNumber" name="mobileNumber" type="tel" value={demoInfoData.mobileNumber} onChange={handleDemoInfoInputChange} placeholder="e.g., 03xxxxxxxxx" />
+            </div>
+            <div>
+              <Label htmlFor="demoEmail">Email Address</Label>
+              <Input id="demoEmail" name="email" type="email" value={demoInfoData.email} onChange={handleDemoInfoInputChange} placeholder="e.g., aisha.khan@example.com" />
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button type="button" variant="outline" onClick={() => setIsDemoInfoDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleActivateDemoSubmit}>
+              Activate Demo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Premium Subscription Dialog */}
       <Dialog open={isPremiumDialogOpen} onOpenChange={(open) => {
         setIsPremiumDialogOpen(open);
-        if (!open) setFormData(initialFormData); // Reset form if dialog is closed
+        if (!open) setPremiumFormData(initialPremiumFormData);
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -171,37 +251,45 @@ export default function PricingPage() {
                 <UserPlus className="h-6 w-6 text-primary"/> Subscribe to SmarterCat Premium
             </DialogTitle>
             <DialogDescription>
-              Please provide some basic information to proceed with your premium subscription. Payment details are for mock purposes only.
+              Please provide your information to proceed with your premium subscription. Payment details are for mock purposes only.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g., Aisha Khan" />
+              <Label htmlFor="premiumFullName">Full Name</Label>
+              <Input id="premiumFullName" name="fullName" value={premiumFormData.fullName} onChange={handlePremiumInputChange} placeholder="e.g., Aisha Khan" />
             </div>
             <div>
-              <Label htmlFor="dob">Date of Birth</Label>
-              <Input id="dob" name="dob" type="date" value={formData.dob} onChange={handleInputChange} />
+              <Label htmlFor="premiumDob">Date of Birth</Label>
+              <Input id="premiumDob" name="dob" type="date" value={premiumFormData.dob} onChange={handlePremiumInputChange} />
             </div>
             <div>
-              <Label htmlFor="educationBoard">Education Board</Label>
-              <Input id="educationBoard" name="educationBoard" value={formData.educationBoard} onChange={handleInputChange} placeholder="e.g., BISE Lahore, Federal Board" />
+              <Label htmlFor="premiumEducationBoard">Education Board</Label>
+              <Input id="premiumEducationBoard" name="educationBoard" value={premiumFormData.educationBoard} onChange={handlePremiumInputChange} placeholder="e.g., BISE Lahore, Federal Board" />
+            </div>
+             <div>
+              <Label htmlFor="premiumMobileNumber">Mobile Number</Label>
+              <Input id="premiumMobileNumber" name="mobileNumber" type="tel" value={premiumFormData.mobileNumber} onChange={handlePremiumInputChange} placeholder="e.g., 03xxxxxxxxx" />
+            </div>
+            <div>
+              <Label htmlFor="premiumEmail">Email Address</Label>
+              <Input id="premiumEmail" name="email" type="email" value={premiumFormData.email} onChange={handlePremiumInputChange} placeholder="e.g., aisha.khan@example.com" />
             </div>
             
             <div className="border-t pt-4 mt-4">
                 <p className="text-sm font-semibold mb-2 text-muted-foreground">Payment Details (Mock)</p>
                 <div>
                   <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input id="cardNumber" name="cardNumber" value={formData.cardNumber} onChange={handleInputChange} placeholder="•••• •••• •••• ••••" />
+                  <Input id="cardNumber" name="cardNumber" value={premiumFormData.cardNumber} onChange={handlePremiumInputChange} placeholder="•••• •••• •••• ••••" />
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <div>
                     <Label htmlFor="cardExpiry">Expiry Date (MM/YY)</Label>
-                    <Input id="cardExpiry" name="cardExpiry" value={formData.cardExpiry} onChange={handleInputChange} placeholder="MM/YY" />
+                    <Input id="cardExpiry" name="cardExpiry" value={premiumFormData.cardExpiry} onChange={handlePremiumInputChange} placeholder="MM/YY" />
                   </div>
                   <div>
                     <Label htmlFor="cardCvc">CVC</Label>
-                    <Input id="cardCvc" name="cardCvc" value={formData.cardCvc} onChange={handleInputChange} placeholder="•••" />
+                    <Input id="cardCvc" name="cardCvc" value={premiumFormData.cardCvc} onChange={handlePremiumInputChange} placeholder="•••" />
                   </div>
                 </div>
             </div>
