@@ -3,7 +3,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { SmarterCatLogo } from '@/components/icons/logo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain } from 'lucide-react';
@@ -13,7 +12,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/test/custom', label: 'Create Test', icon: Settings }, 
+  { href: '/test/custom', label: 'Create Test', icon: Settings },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/planner', label: 'AI Planner', icon: Brain },
   { href: '/history', label: 'History', icon: HistoryIcon },
@@ -41,12 +40,12 @@ export function Header() {
       </a>
     </Link>
   );
-  
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2" aria-label="SmarterCat Home">
-          <SmarterCatLogo />
+        <Link href="/" className="flex items-center" aria-label="SmarterCat Home">
+          <span className="text-2xl font-semibold text-primary">SmarterCat</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
@@ -75,8 +74,8 @@ export function Header() {
               <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0">
                 <SheetHeader className="p-4 border-b">
                    <SheetTitle className="sr-only">Main Menu</SheetTitle>
-                   <Link href="/" className="flex items-center gap-2" aria-label="SmarterCat Home" onClick={() => setIsSheetOpen(false)}>
-                    <SmarterCatLogo />
+                   <Link href="/" className="flex items-center" aria-label="SmarterCat Home" onClick={() => setIsSheetOpen(false)}>
+                    <span className="text-xl font-semibold text-primary">SmarterCat</span>
                   </Link>
                 </SheetHeader>
                 <div className="p-4">
