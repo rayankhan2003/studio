@@ -7,33 +7,26 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, CheckSquare, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckSquare, Clock, AlertTriangle } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { Subjects, syllabus, type Subject as SubjectType, type Chapter as ChapterType } from '@/lib/syllabus';
+import { type Subject as SubjectType, syllabus } from '@/lib/syllabus'; // Keep syllabus for chapter context if needed
+import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
 
 const DEFAULT_QUESTION_COUNT = 10;
-const DEFAULT_TOTAL_TEST_DURATION = 10 * 60; // 10 questions * 60 seconds
+const DEFAULT_TOTAL_TEST_DURATION = 10 * 60; // 10 questions * 60 seconds per question
 
-interface MockQuestion {
-  id: string;
-  subject: SubjectType;
-  chapter: string;
-  text: string;
-  options?: string[];
-  type: 'single-choice' | 'multiple-choice' | 'fill-in-the-blank' | 'true-false';
-  correctAnswer: string | string[];
-}
+interface QuestionForTest extends MockQuestionDefinition {}
 
 interface StoredTestReport {
   id: string;
   name: string;
   date: string;
   testType: 'custom' | 'mdcat';
-  mdcatYear?: number; // Only if testType is 'mdcat'
+  mdcatYear?: number;
   overallScorePercentage: number;
   subjectScores: Partial<Record<SubjectType, number>>; 
   chapterScores: Partial<Record<SubjectType, Record<string, number>>>; 
@@ -42,58 +35,82 @@ interface StoredTestReport {
     subject: SubjectType;
     chapter: string;
     text: string;
-    type: MockQuestion['type'];
+    type: QuestionForTest['type'];
     options?: string[];
     selectedAnswer: string | string[];
     correctAnswer: string | string[];
     isCorrect: boolean;
+    explanation?: string;
   }>;
 }
 
-const generateMockQuestions = (count: number, testName: string = "Question"): MockQuestion[] => {
-  const allSubjectKeys = Object.keys(Subjects) as (keyof typeof Subjects)[];
-  
-  return Array.from({ length: count }, (_, i) => {
-    const subjectKey = allSubjectKeys[i % allSubjectKeys.length];
-    const subjectName = Subjects[subjectKey];
-    const chaptersForSubject = syllabus[subjectName as SubjectType] || [{ name: 'General', topics: [] }];
-    const chapter = chaptersForSubject[i % chaptersForSubject.length] || { name: 'General', topics: [] };
+// Helper function to shuffle an array
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
 
-    const questionType = ['single-choice', 'multiple-choice', 'fill-in-the-blank', 'true-false'][i % 4];
-    let options: string[] | undefined = undefined;
-    let correctAnswer: string | string[];
+const getQuestionsForTest = (
+  questionCount: number,
+  selectedSubjectsParam: string | null,
+  selectedChaptersParam: string | null,
+  sourceParam: string | null // e.g., 'mdcat-2023'
+): QuestionForTest[] => {
+  let filteredQuestions: MockQuestionDefinition[] = [];
 
-    switch (questionType) {
-      case 'single-choice':
-        options = [`Option A for ${testName} Q${i+1}`, `Correct Answer for ${testName} Q${i+1}`, `Option C for ${testName} Q${i+1}`, `Option D for ${testName} Q${i+1}`];
-        correctAnswer = options[1]; 
-        break;
-      case 'multiple-choice':
-        options = [`Correct Opt W for ${testName} Q${i+1}`, `Correct Opt X for ${testName} Q${i+1}`, `Option Y for ${testName} Q${i+1}`, `Option Z for ${testName} Q${i+1}`, `Option V for ${testName} Q${i+1}`];
-        correctAnswer = [options[0], options[1]];
-        break;
-      case 'fill-in-the-blank':
-        correctAnswer = `AnswerFor${testName}Q${i+1}`;
-        break;
-      case 'true-false':
-        options = ['True', 'False'] 
-        correctAnswer = (i % 2 === 0) ? 'True' : 'False'; 
-        break;
-      default: 
-        options = [`Opt A${i}`, `Opt B${i}`];
-        correctAnswer = `Opt A${i}`;
+  if (sourceParam && sourceParam.startsWith('mdcat-')) {
+    // For MDCAT, try to get a mix from all subjects, or be more specific if we had year-specific questions
+    // This is a simplified mock: takes 'questionCount' from the general DB, trying to balance subjects.
+    const targetPerSubject = Math.ceil(questionCount / Object.keys(syllabus).length);
+    const subjectsInSyllabus = Object.keys(syllabus) as SubjectType[];
+    
+    subjectsInSyllabus.forEach(subject => {
+      const subjectQuestions = mockQuestionsDb.filter(q => q.subject === subject);
+      filteredQuestions.push(...shuffleArray(subjectQuestions).slice(0, targetPerSubject));
+    });
+    // Ensure we have 'questionCount' questions, might oversample some subjects if others are lacking
+     if (filteredQuestions.length < questionCount) {
+        const needed = questionCount - filteredQuestions.length;
+        const additionalQs = shuffleArray(mockQuestionsDb.filter(q => !filteredQuestions.find(fq => fq.id === q.id))).slice(0, needed);
+        filteredQuestions.push(...additionalQs);
     }
+    filteredQuestions = shuffleArray(filteredQuestions).slice(0, questionCount);
 
-    return { 
-      id: `q${i + 1}`, 
-      subject: subjectName,
-      chapter: chapter.name,
-      text: `This is mock question number ${i + 1} for ${subjectName} - ${chapter.name} (Test: ${testName}). What is the answer?`, 
-      options: options, 
-      type: questionType as MockQuestion['type'],
-      correctAnswer: correctAnswer
-    };
-  });
+  } else if (selectedSubjectsParam && selectedChaptersParam) {
+    const subjects = selectedSubjectsParam.split(',');
+    const chapterSelections = selectedChaptersParam.split(','); // "SubjectName:ChapterName"
+
+    const chapterMap: Record<SubjectType, Set<string>> = {} as any;
+    chapterSelections.forEach(cs => {
+      const [subj, chap] = cs.split(':');
+      if (subj && chap) {
+        if (!chapterMap[subj as SubjectType]) {
+          chapterMap[subj as SubjectType] = new Set();
+        }
+        chapterMap[subj as SubjectType].add(chap);
+      }
+    });
+    
+    mockQuestionsDb.forEach(q => {
+      if (chapterMap[q.subject]?.has(q.chapter)) {
+        filteredQuestions.push(q);
+      }
+    });
+    filteredQuestions = shuffleArray(filteredQuestions).slice(0, questionCount);
+  } else {
+    // Fallback to random questions if no specific criteria (should not happen with custom flow)
+    filteredQuestions = shuffleArray(mockQuestionsDb).slice(0, questionCount);
+  }
+  
+  // Ensure exactly questionCount questions if possible, or all available if less
+  if (filteredQuestions.length > questionCount) {
+    return shuffleArray(filteredQuestions).slice(0, questionCount);
+  }
+  return shuffleArray(filteredQuestions); // Return all if less than requested, or exact if equal
 };
 
 
@@ -101,13 +118,19 @@ export default function TestPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const testId = params.testId as string; 
+  const testId = params.testId as string; // e.g., "custom-session" or "mdcat-session-2023"
 
   const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || DEFAULT_QUESTION_COUNT;
   const parsedTotalDuration = parseInt(searchParams.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
-  const testNameFromParams = searchParams.get('testName') || `Test (${testId})`;
+  const testNameFromParams = searchParams.get('testName') || `Test (${testId.replace('-session', '')})`;
+  const subjectsParam = searchParams.get('subjects');
+  const chaptersParam = searchParams.get('chapters');
+  const sourceParam = searchParams.get('source'); // For MDCAT papers
 
-  const questions = useMemo(() => generateMockQuestions(parsedQuestionCount, testNameFromParams), [parsedQuestionCount, testNameFromParams]);
+  const questions = useMemo(() => 
+    getQuestionsForTest(parsedQuestionCount, subjectsParam, chaptersParam, sourceParam),
+  [parsedQuestionCount, subjectsParam, chaptersParam, sourceParam]);
+  
   const TOTAL_TEST_DURATION = useMemo(() => parsedTotalDuration, [parsedTotalDuration]);
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -119,7 +142,6 @@ export default function TestPage() {
 
   useEffect(() => {
     setTimeLeft(TOTAL_TEST_DURATION); 
-
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
@@ -130,7 +152,6 @@ export default function TestPage() {
         return prevTime - 1;
       });
     }, 1000);
-    
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [TOTAL_TEST_DURATION, testSubmitted]); 
@@ -142,7 +163,8 @@ export default function TestPage() {
     }
     const attemptedQuestionsCount = questions.filter(q => isQuestionAttempted(q.id)).length;
     setProgress((attemptedQuestionsCount / questions.length) * 100);
-  }, [answers, questions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers, questions.length]); // Depend on questions.length as well
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -173,7 +195,7 @@ export default function TestPage() {
     }
   };
 
-  const isAnswerCorrect = (question: MockQuestion, userAnswer: string | string[] | undefined): boolean => {
+  const isAnswerCorrect = (question: QuestionForTest, userAnswer: string | string[] | undefined): boolean => {
     if (userAnswer === undefined) return false;
 
     if (question.type === 'multiple-choice') {
@@ -185,7 +207,6 @@ export default function TestPage() {
     }
     return userAnswer === question.correctAnswer;
   };
-
 
   const handleSubmit = () => {
     if (testSubmitted) return;
@@ -204,7 +225,6 @@ export default function TestPage() {
 
       if (!chapterResults[q.subject]) chapterResults[q.subject] = {};
       if (!subjectResults[q.subject]) subjectResults[q.subject] = { correct: 0, total: 0 };
-      
       if (!chapterResults[q.subject][q.chapter]) chapterResults[q.subject][q.chapter] = { correct: 0, total: 0 };
 
       chapterResults[q.subject][q.chapter].total++;
@@ -226,6 +246,7 @@ export default function TestPage() {
         selectedAnswer: userAnswer || (q.type === 'multiple-choice' ? [] : ''),
         correctAnswer: q.correctAnswer,
         isCorrect: correct,
+        explanation: q.explanation,
       });
     });
 
@@ -251,21 +272,21 @@ export default function TestPage() {
     const existingHistoryString = localStorage.getItem('prepwiseTestHistory');
     const existingHistory: StoredTestReport[] = existingHistoryString ? JSON.parse(existingHistoryString) : [];
     
-    const reportId = `${testId}-${Date.now()}`;
-    let testType: 'custom' | 'mdcat' = 'custom';
-    let mdcatYear: number | undefined = undefined;
+    const reportId = `${testId.replace('-session', '')}-${Date.now()}`;
+    let determinedTestType: 'custom' | 'mdcat' = 'custom';
+    let mdcatYearVal: number | undefined = undefined;
 
-    if (testId.startsWith('mdcat-')) {
-      testType = 'mdcat';
-      mdcatYear = parseInt(testId.split('-')[1]);
+    if (sourceParam && sourceParam.startsWith('mdcat-')) {
+      determinedTestType = 'mdcat';
+      mdcatYearVal = parseInt(sourceParam.split('-')[1]) || undefined;
     }
     
     const newTestReport: StoredTestReport = {
       id: reportId,
-      name: testNameFromParams || (testType === 'mdcat' ? `MDCAT ${mdcatYear}` : `Test #${existingHistory.length + 1}`),
+      name: testNameFromParams,
       date: new Date().toISOString().split('T')[0],
-      testType: testType,
-      mdcatYear: mdcatYear,
+      testType: determinedTestType,
+      mdcatYear: mdcatYearVal,
       overallScorePercentage: overallScorePercentage,
       subjectScores: finalSubjectScores,
       chapterScores: finalChapterScores,
@@ -278,7 +299,6 @@ export default function TestPage() {
     router.push(`/test/${reportId}/review`); 
   };
 
-
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -288,11 +308,9 @@ export default function TestPage() {
   const isQuestionAttempted = (questionId: string): boolean => {
     const answerExists = Object.prototype.hasOwnProperty.call(answers, questionId);
     if (!answerExists) return false;
-    
     const answerValue = answers[questionId];
     if (Array.isArray(answerValue)) return answerValue.length > 0;
     if (typeof answerValue === 'string') return answerValue.trim() !== ''; 
-    
     return false; 
   };
 
@@ -302,24 +320,34 @@ export default function TestPage() {
 
   if (questions.length === 0) {
     return (
-        <div className="flex justify-center items-center h-screen">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Loading Test...</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p>Please wait while the test is being prepared or check your configuration.</p>
-                    <p className="text-sm text-muted-foreground mt-2">Ensure questionCount and totalDuration are provided in URL parameters if this is a custom test.</p>
-                </CardContent>
-            </Card>
-        </div>
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)] py-12">
+        <Card className="w-full max-w-lg text-center shadow-xl">
+          <CardHeader>
+            <div className="mx-auto mb-4 p-3 bg-destructive/10 rounded-full w-fit">
+              <AlertTriangle className="h-10 w-10 text-destructive" />
+            </div>
+            <CardTitle>No Questions Available</CardTitle>
+            <CardDescription>
+              We couldn't find any questions matching your criteria for this test. This might be due to a very specific filter or no mock questions being available for the selected combination.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Please try adjusting your selections on the custom test page or ensure mock data is available.</p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => router.push('/test/custom')} className="w-full">
+              Back to Test Setup
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-6xl mx-auto py-4 md:py-8">
       <ScrollArea className="w-full md:w-40 h-auto md:h-[calc(100vh-12rem)] py-3 rounded-lg bg-card border shadow-sm flex-shrink-0">
-        <div className="px-2 grid grid-cols-3 gap-2">
+        <div className="px-2 grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {questions.map((question, index) => (
             <Button
               key={question.id}
@@ -343,12 +371,12 @@ export default function TestPage() {
       <div className="flex-1 min-w-0">
         <Card className="shadow-xl">
           <CardHeader>
-            <div className="flex justify-between items-center mb-4">
-              <CardTitle className="text-2xl">{testNameFromParams}: {currentQuestion.subject} - {currentQuestion.chapter}</CardTitle>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+              <CardTitle className="text-2xl flex-grow">{testNameFromParams}: {currentQuestion?.subject} - {currentQuestion?.chapter}</CardTitle>
               <Button 
                 variant="ghost" 
                 onClick={toggleTimerDisplay} 
-                className="p-2 border rounded-md bg-muted hover:bg-muted/80"
+                className="p-2 border rounded-md bg-muted hover:bg-muted/80 w-full sm:w-auto"
                 aria-label="Toggle timer display mode"
               >
                 <Clock className="h-6 w-6 text-primary mr-2" />
@@ -359,13 +387,13 @@ export default function TestPage() {
             </div>
             <Progress value={progress} className="w-full h-2" />
             <CardDescription className="mt-2">
-              Question {currentQuestionIndex + 1} of {questions.length} ({isQuestionAttempted(currentQuestion.id) ? 'Attempted' : 'Unattempted'})
+              Question {currentQuestionIndex + 1} of {questions.length} ({isQuestionAttempted(currentQuestion?.id) ? 'Attempted' : 'Unattempted'})
             </CardDescription>
           </CardHeader>
           <CardContent className="min-h-[250px] md:min-h-[300px] py-6">
-            <h2 className="text-xl font-semibold mb-6">{currentQuestion.text}</h2>
+            <h2 className="text-xl font-semibold mb-6">{currentQuestion?.text}</h2>
             
-            {currentQuestion.type === 'single-choice' && (
+            {currentQuestion?.type === 'single-choice' && (
               <RadioGroup
                 value={answers[currentQuestion.id] as string || ''}
                 onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
@@ -382,7 +410,7 @@ export default function TestPage() {
               </RadioGroup>
             )}
 
-            {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
+            {currentQuestion?.type === 'multiple-choice' && currentQuestion.options && (
               <div className="space-y-3">
                 {currentQuestion.options.map((option, index) => (
                   <div key={index} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
@@ -399,7 +427,7 @@ export default function TestPage() {
               </div>
             )}
             
-            {currentQuestion.type === 'fill-in-the-blank' && (
+            {currentQuestion?.type === 'fill-in-the-blank' && (
                <Input 
                   type="text" 
                   value={(answers[currentQuestion.id] as string) || ''}
@@ -409,7 +437,7 @@ export default function TestPage() {
                />
             )}
 
-            {currentQuestion.type === 'true-false' && (
+            {currentQuestion?.type === 'true-false' && (
               <RadioGroup
                 value={answers[currentQuestion.id] as string || ''}
                 onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
@@ -445,4 +473,3 @@ export default function TestPage() {
     </div>
   );
 }
-
