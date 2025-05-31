@@ -1,6 +1,6 @@
 
 // src/lib/mock-questions-db.ts
-import { type Subject, Subjects, syllabus, type Chapter } from './syllabus';
+import { type Subject, Subjects, syllabus, type Chapter, allSubjects } from './syllabus';
 
 export interface MockQuestionDefinition {
   id: string;
