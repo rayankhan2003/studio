@@ -33,8 +33,8 @@ export type StudyPlanInput = z.infer<typeof StudyPlanInputSchema>;
 export const DailyActivitySchema = z.object({
   date: z.string().describe('Date for the activity (YYYY-MM-DD or descriptive like "Week 1, Day 1").'),
   activityType: z.enum(['Study', 'Test', 'Review', 'Rest']).describe('Type of activity for the day.'),
-  subjectFocus: SubjectEnum.optional().describe('Primary subject to focus on for "Study" or "Test" activities.'),
-  chapterFocus: z.array(z.string()).optional().describe('Specific chapters or topics to cover for "Study" or "Test" activities.'),
+  subjectFocus: SubjectEnum.optional().describe('Primary subject to focus on. Mandatory for "Test" or "Review" activities. Optional for "Study".'),
+  chapterFocus: z.array(z.string()).optional().describe('Specific chapters or topics from the syllabus for the subjectFocus to cover for "Study" or "Test" activities. Must be an array of chapter names.'),
   details: z.string().optional().describe('Additional details or notes for the day\'s plan, especially for "Test" type, specify number of tests/questions.'),
 });
 
@@ -89,15 +89,15 @@ Instructions for Plan Generation:
 2.  Create a structured daily schedule. For each entry in the schedule, provide:
     - \`date\`: (Use relative dates like "Week 1, Day 1", "Week 1, Day 2", etc. for clarity in plans longer than a few weeks. For very short plans, "YYYY-MM-DD" is acceptable).
     - \`activityType\`: "Study", "Test", "Review", or "Rest".
-    - \`subjectFocus\`: (Applicable for "Study", "Test", "Review". Can be a single subject).
-    - \`chapterFocus\`: An array of specific chapter names for "Study" or "Test" activities. Ensure the plan covers ALL chapters from the syllabus for the main subjects over the total duration.
+    - \`subjectFocus\`: (Mandatory for "Test" or "Review" activities. Optional for "Study". Must be a single subject from the syllabus list provided above, e.g., "Biology").
+    - \`chapterFocus\`: (Applicable for "Study" or "Test" activities. An array of specific chapter names FROM THE SYLLABUS for the given \`subjectFocus\`. Ensure the plan covers ALL chapters from the syllabus for the main subjects over the total duration. Example: ["Cell Structure & Function", "Bioenergetics"] for Biology).
     - \`details\`: Additional notes.
         - For \`activityType: "Study"\`: Briefly mention what to do (e.g., "Thoroughly read concepts, make concise notes, and solve 10-15 practice MCQs per chapter.").
-        - For \`activityType: "Test"\`: Crucially, provide a specific recommendation for testing on the \`chapterFocus\`. Example formats:
+        - For \`activityType: "Test"\`: Crucially, provide a specific recommendation for testing on the \`chapterFocus\`. Ensure \`subjectFocus\` is provided. Example formats:
           "Test on chapters: {{#each chapterFocus}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}. Recommended: Attempt 2 tests of 20 questions each."
           "Test on chapters: {{#each chapterFocus}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}. Recommended: One comprehensive test of 40-50 questions."
           "Recommended: Focus on {{subjectFocus}}. Attempt 25 questions from {{#if chapterFocus}}{{#each chapterFocus}}{{.}}{{#unless @last}} & {{/unless}}{{/each}}{{else}}the subject{{/if}}."
-          The number of questions should be appropriate for the chapters covered. Assume a typical test segment is 20-30 questions. Calculate the total number of tests or questions the student should aim for based on the chapters studied and available time.
+          The number of questions should be appropriate for the chapters covered. Assume a typical test segment is 20-30 questions.
 3.  Prioritize Weaker Areas: Allocate more time and earlier review/test cycles for subjects/chapters where past performance is low or goals are high.
 4.  Comprehensive Coverage: Distribute the study of ALL chapters from the syllabus across the available days, ensuring everything is covered at least once before the final date.
 5.  Balanced Schedule: Mix study, tests, reviews, and rest. Don't overload days. Distribute subjects.
@@ -106,11 +106,11 @@ Instructions for Plan Generation:
 
 Output Format:
 Return the plan as a JSON object with "schedule" (an array of daily activities) and "aiGeneralAdvice".
-Each schedule item: { "date", "activityType", "subjectFocus" (optional), "chapterFocus" (optional array of strings), "details" (optional string) }.
+Each schedule item: { "date", "activityType", "subjectFocus" (mandatory for Test/Review), "chapterFocus" (optional array of strings from syllabus), "details" (optional string) }.
 
 Example for a Test activity:
 { "date": "Week 3, Day 2", "activityType": "Test", "subjectFocus": "Physics", "chapterFocus": ["Force & Motion", "Work & Energy"], "details": "Test on chapters: Force & Motion, Work & Energy. Recommended: Attempt 1 test of 30 questions covering both." }
-Ensure chapterFocus is always an array, even if it's empty or has one chapter.
+Ensure chapterFocus is always an array of strings (chapter names from syllabus for the subjectFocus), even if it's empty or has one chapter. If no specific chapters for a Test activity, provide an empty array for chapterFocus.
 
 Begin generating the plan now.
 `,
@@ -132,16 +132,19 @@ const studyPlannerFlow = ai.defineFlow(
 
     const {output} = await studyPlannerPrompt(templateInput);
     if (!output) {
-      throw new Error('AI failed to generate a study plan.');
+      throw new Error('AI failed to generate a study plan output.');
     }
-    // Ensure the output structure, especially for optional fields in the schedule
-    const validatedSchedule = output.schedule?.map(item => ({
+    if (!output.schedule) {
+        throw new Error('AI generated a plan but it has no schedule.');
+    }
+    
+    const validatedSchedule = output.schedule.map(item => ({
       date: item.date || 'N/A',
       activityType: item.activityType || 'Study',
-      subjectFocus: item.subjectFocus,
-      chapterFocus: item.chapterFocus || [], // Ensure chapterFocus is always an array
+      subjectFocus: item.subjectFocus, 
+      chapterFocus: Array.isArray(item.chapterFocus) ? item.chapterFocus.filter(cf => typeof cf === 'string') : [], // Ensure chapterFocus is an array of strings
       details: item.details
-    })) || [];
+    }));
 
     return {
       schedule: validatedSchedule,

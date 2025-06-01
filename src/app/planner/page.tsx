@@ -18,7 +18,7 @@ import { allSubjects, Subjects, type Subject as SubjectType } from '@/lib/syllab
 import { generateStudyPlan, type StudyPlanInput, type StudyPlanOutput, type DailyActivity } from '@/ai/flows/study-plan-flow';
 import { useToast } from '@/hooks/use-toast';
 
-type SubjectGoals = Partial<Record<SubjectType, number>>;
+type SubjectGoals = Partial<Record<SubjectType, number | undefined>>;
 
 export default function AiPlannerPage() {
   const { toast } = useToast();
@@ -42,25 +42,46 @@ export default function AiPlannerPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleGoalChange = (subject: SubjectType, value: string) => {
+    if (value === '') {
+      setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
+      return;
+    }
     const newGoal = parseInt(value);
     if (!isNaN(newGoal) && newGoal >= 0 && newGoal <= 100) {
       setSubjectGoals(prev => ({ ...prev, [subject]: newGoal }));
-    } else if (value === '') {
-       setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
+    } else {
+      // If user types something invalid but not empty, we might want to keep the old valid value
+      // or just let the input show the invalid text until they fix it or clear it.
+      // For now, let's allow the input to show the invalid text, validation happens on submit via AI constraints.
+      // Or, to be stricter on the input field:
+      // setSubjectGoals(prev => ({ ...prev, [subject]: prev[subject] })); // Revert to previous if invalid
     }
   };
 
   const handleSetupTest = (activity: DailyActivity) => {
+    if (!activity.subjectFocus) {
+      toast({
+        title: "Cannot Setup Test",
+        description: "The AI plan for this test activity is missing a subject focus. Please regenerate the plan or report this issue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const queryParams = new URLSearchParams();
-    if (activity.subjectFocus) {
-      queryParams.set('subjects', activity.subjectFocus);
+    queryParams.set('subjects', activity.subjectFocus); // subjectFocus should be a single subject string for a Test
+
+    if (activity.chapterFocus && Array.isArray(activity.chapterFocus) && activity.chapterFocus.length > 0) {
+      const chapterStrings = activity.chapterFocus
+        .map(cf => `${activity.subjectFocus}:${cf}`) // Use the validated subjectFocus
+        .join(',');
+      if (chapterStrings) {
+        queryParams.set('chapters', chapterStrings);
+      }
     }
-    if (activity.chapterFocus && activity.chapterFocus.length > 0 && activity.subjectFocus) {
-      queryParams.set('chapters', activity.chapterFocus.map(cf => `${activity.subjectFocus}:${cf}`).join(','));
-    }
-    // We could try to parse question count from details, but it's fragile.
-    // For now, let the user set it on the custom test page.
-    // queryParams.set('testName', `AI Plan: ${activity.date} - ${activity.subjectFocus || 'Test'}`);
+    
+    // You can optionally pre-fill the test name based on the plan
+    // queryParams.set('testName', `AI Plan: ${activity.date} - ${activity.subjectFocus}`);
     
     router.push(`/test/custom?${queryParams.toString()}`);
   };
@@ -75,7 +96,6 @@ export default function AiPlannerPage() {
     setError(null);
     setGeneratedPlan(null);
 
-    // Mock past performance for now. In a real app, fetch this from user data / localStorage.
     const mockPastPerformance: StudyPlanInput['pastPerformanceSummary'] = {
       [Subjects.BIOLOGY]: 60,
       [Subjects.CHEMISTRY]: 55,
@@ -85,12 +105,12 @@ export default function AiPlannerPage() {
     };
 
     const validSubjectGoals: Record<string, number> = {};
-    for (const subject of allSubjects) {
-        if (subjectGoals[subject] !== undefined) {
-            validSubjectGoals[subject] = subjectGoals[subject]!;
+    for (const subjectKey in subjectGoals) {
+        const subject = subjectKey as SubjectType;
+        if (subjectGoals[subject] !== undefined && subjectGoals[subject] !== null) {
+            validSubjectGoals[subject] = subjectGoals[subject] as number;
         }
     }
-
 
     const planInput: StudyPlanInput = {
       finalPreparationDate: format(finalDate, 'yyyy-MM-dd'),
@@ -101,12 +121,17 @@ export default function AiPlannerPage() {
 
     try {
       const result = await generateStudyPlan(planInput);
-      setGeneratedPlan(result);
-      toast({ title: "Study Plan Generated!", description: "Your personalized plan is ready." });
+      if (result && result.schedule) {
+        setGeneratedPlan(result);
+        toast({ title: "Study Plan Generated!", description: "Your personalized plan is ready." });
+      } else {
+        throw new Error("AI did not return a valid plan structure.");
+      }
     } catch (e: any) {
       console.error("Error generating plan:", e);
-      setError(e.message || "An unexpected error occurred while generating the plan.");
-      toast({ title: "Generation Failed", description: e.message || "Could not generate study plan.", variant: "destructive" });
+      const errorMessage = e.message || "An unexpected error occurred while generating the plan.";
+      setError(errorMessage);
+      toast({ title: "Generation Failed", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +200,7 @@ export default function AiPlannerPage() {
                   <Input
                     id={`goal-${subject}`}
                     type="number"
-                    value={subjectGoals[subject] || ''}
+                    value={subjectGoals[subject] === undefined ? '' : String(subjectGoals[subject])}
                     onChange={(e) => handleGoalChange(subject, e.target.value)}
                     placeholder="e.g., 85"
                     min="0"
@@ -208,6 +233,13 @@ export default function AiPlannerPage() {
         </CardFooter>
       </Card>
 
+      {isLoading && (
+        <div className="flex justify-center items-center mt-6 p-6">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="ml-4 text-lg text-muted-foreground">Generating your plan, please wait...</p>
+        </div>
+      )}
+
       {error && (
         <Alert variant="destructive" className="mt-6">
           <AlertTitle>Error Generating Plan</AlertTitle>
@@ -215,7 +247,7 @@ export default function AiPlannerPage() {
         </Alert>
       )}
 
-      {generatedPlan && (
+      {generatedPlan && !isLoading && (
         <Card className="shadow-lg mt-8">
           <CardHeader className="bg-primary/10">
             <CardTitle className="text-xl sm:text-2xl flex items-center gap-2 text-primary">
@@ -256,11 +288,11 @@ export default function AiPlannerPage() {
                     {item.details && (
                       <p className="text-xs sm:text-sm text-muted-foreground mt-1">Notes: {item.details}</p>
                     )}
-                    {item.activityType === 'Test' && (item.subjectFocus || (item.chapterFocus && item.chapterFocus.length > 0)) && (
+                    {item.activityType === 'Test' && item.subjectFocus && (
                        <Button 
                          variant="outline" 
                          size="sm" 
-                         className="mt-3 w-full sm:w-auto"
+                         className="mt-3 w-full sm:w-auto text-xs sm:text-sm"
                          onClick={() => handleSetupTest(item)}
                        >
                          <Settings className="mr-2 h-4 w-4" /> Setup This Test
@@ -270,7 +302,7 @@ export default function AiPlannerPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">The AI couldn't generate a schedule based on the inputs. Try adjusting them.</p>
+              <p className="text-muted-foreground text-center py-4">The AI couldn't generate a schedule based on the inputs. Try adjusting them, such as extending the final preparation date or modifying goals.</p>
             )}
             <Alert className="mt-6 bg-accent/5 border-accent/20">
               <Info className="h-4 w-4 text-accent/80" />
@@ -291,3 +323,4 @@ export default function AiPlannerPage() {
     </div>
   );
 }
+
