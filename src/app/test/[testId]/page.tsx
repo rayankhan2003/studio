@@ -106,12 +106,16 @@ const getQuestionsForTest = (
       }
     });
   } else {
+    // Fallback if no specific subject/chapter selection, or not an MDCAT test
+    // This case might need review depending on desired behavior for direct access without params
     filteredQuestions = shuffleArray(mockQuestionsDb);
   }
 
   if (filteredQuestions.length === 0) return []; 
 
-  return shuffleArray(filteredQuestions).slice(0, questionCount);
+  // Ensure we don't try to slice more questions than available
+  const actualCountToSlice = Math.min(questionCount, filteredQuestions.length);
+  return shuffleArray(filteredQuestions).slice(0, actualCountToSlice);
 };
 
 
@@ -122,7 +126,7 @@ export default function TestPage() {
   const testId = params.testId as string; 
 
   const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || DEFAULT_QUESTION_COUNT;
-  const parsedTotalDuration = parseInt(search_params.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
+  const parsedTotalDuration = parseInt(searchParams.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
   const testNameFromParams = searchParams.get('testName') || `Test (${testId.replace('-session', '')})`;
   const subjectsParam = searchParams.get('subjects');
   const chaptersParam = searchParams.get('chapters');
@@ -332,13 +336,6 @@ export default function TestPage() {
   const toggleTimerDisplay = () => {
     setTimerDisplayMode(prev => prev === 'remaining' ? 'total' : 'remaining');
   };
-
-  if (questions.length === 0 && !testId.startsWith('custom-session') && !testId.startsWith('mdcat-session')) {
-     // This case might occur if directly navigating to /test/some-random-id without query params
-     // and it's not a review page.
-     // However, the main check for no questions is handled by getQuestionsForTest returning []
-     // and the UI handling below this for custom tests.
-  }
 
   if (questions.length === 0 && (testId.startsWith('custom-session') || testId.startsWith('mdcat-session'))) {
     return (
