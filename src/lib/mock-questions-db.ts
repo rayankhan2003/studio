@@ -13,6 +13,8 @@ export interface MockQuestionDefinition {
   explanation?: string; // Optional explanation
 }
 
+const sanitizeForId = (name: string) => name.replace(/[^a-zA-Z0-9]/g, ''); // Removes spaces and special characters
+
 const generateQuestionsForChapter = (subject: Subject, chapter: Chapter, numQuestions: number): MockQuestionDefinition[] => {
   const questions: MockQuestionDefinition[] = [];
   for (let i = 1; i <= numQuestions; i++) {
@@ -31,7 +33,7 @@ const generateQuestionsForChapter = (subject: Subject, chapter: Chapter, numQues
         if (correctAnswer.length === 0 && options.length > 0) correctAnswer = [options[0]]; // Ensure at least one correct if logic fails
         break;
       case 'fill-in-the-blank':
-        correctAnswer = `AnswerFor${subject.replace(/\s+/g, '')}${chapter.name.replace(/\s+/g, '')}Q${i}`;
+        correctAnswer = `AnswerFor${sanitizeForId(subject)}${sanitizeForId(chapter.name)}Q${i}`;
         break;
       case 'true-false':
       default: // Default to true-false if type somehow unknown
@@ -41,7 +43,7 @@ const generateQuestionsForChapter = (subject: Subject, chapter: Chapter, numQues
     }
 
     questions.push({
-      id: `mq_${subject.slice(0,3)}_${chapter.name.slice(0,3)}_${i}`,
+      id: `mq_${subject.slice(0,3)}_${sanitizeForId(chapter.name)}_${i}`, // Changed to use sanitized full chapter name
       subject: subject,
       chapter: chapter.name,
       text: `This is mock question #${i} for the chapter "${chapter.name}" in ${subject}. What is the correct answer?`,
