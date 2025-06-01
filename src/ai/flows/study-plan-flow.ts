@@ -18,7 +18,14 @@ import {z} from 'genkit';
 import { Subjects, allSubjects, syllabus } from '@/lib/syllabus';
 
 // Define an enum for subjects to be used in Zod schema
-const SubjectEnum = z.enum(allSubjects as [string, ...string[]]);
+// Using a literal array here for better compatibility with 'use server'
+const SubjectEnum = z.enum([
+  Subjects.BIOLOGY,
+  Subjects.CHEMISTRY,
+  Subjects.PHYSICS,
+  Subjects.ENGLISH,
+  Subjects.LOGICAL_REASONING
+]);
 
 
 const StudyPlanInputSchema = z.object({
@@ -126,8 +133,8 @@ const studyPlannerFlow = ai.defineFlow(
     // Make allSubjects and syllabusData available to the Handlebars template
     const templateInput = {
       ...input,
-      allSubjects: allSubjects, // Pass the actual list of subjects
-      syllabusData: syllabus // Pass the syllabus
+      allSubjects: allSubjects, // Pass the actual list of subjects from import
+      syllabusData: syllabus // Pass the syllabus from import
     };
 
     const {output} = await studyPlannerPrompt(templateInput);
