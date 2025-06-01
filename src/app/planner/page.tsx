@@ -35,7 +35,7 @@ export default function AiPlannerPage() {
     });
     return initialGoals;
   });
-  const [studyHoursPerDay, setStudyHoursPerDay] = useState<string>('4');
+  const [studyHoursPerDay, setStudyHoursPerDay] = useState<string>('4'); // Store as string for input field
 
   const [generatedPlan, setGeneratedPlan] = useState<StudyPlanOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,14 +49,44 @@ export default function AiPlannerPage() {
     const newGoal = parseInt(value);
     if (!isNaN(newGoal) && newGoal >= 0 && newGoal <= 100) {
       setSubjectGoals(prev => ({ ...prev, [subject]: newGoal }));
+    } else if (value.trim() !== '' && isNaN(newGoal)) {
+        // If user typed non-numeric text, keep current valid goal or undefined
+        // but allow input to show the invalid text. Actual validation on submit.
+        // Or, to be stricter and clear if invalid:
+        // setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
+        // For now, we let the input show what user typed, Zod will catch it.
+        // The important part is to ensure we don't set NaN in the state that's used for submission.
+        // Let's ensure the *actual state* for submission is clean:
+        if (isNaN(newGoal)) {
+             // if it's not a number, we don't update the state with NaN
+             // we might want to show a temporary error on the input or just let Zod catch it
+        }
+    }
+    // To ensure the input field reflects what user is typing, even if invalid,
+    // but the actual 'subjectGoals' state for submission is clean:
+    // This is tricky. For now, the `subjectGoals` state *will* hold NaN if typed.
+    // The fix is in handleSubmit to filter out NaN.
+  };
+  
+  // Stricter handler for subject goal input directly reflecting in state used for submission
+  const handleStrictGoalChange = (subject: SubjectType, value: string) => {
+    if (value === '') {
+      setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
+      return;
+    }
+    const parsedValue = parseInt(value);
+    if (!isNaN(parsedValue) && parsedValue >= 0 && parsedValue <= 100) {
+      setSubjectGoals(prev => ({ ...prev, [subject]: parsedValue }));
     } else {
-      // If user types something invalid but not empty, we might want to keep the old valid value
-      // or just let the input show the invalid text until they fix it or clear it.
-      // For now, let's allow the input to show the invalid text, validation happens on submit via AI constraints.
-      // Or, to be stricter on the input field:
-      // setSubjectGoals(prev => ({ ...prev, [subject]: prev[subject] })); // Revert to previous if invalid
+      // If input is invalid but not empty (e.g. "abc", "150"),
+      // we can either clear it, keep the old valid value, or reflect NaN temporarily
+      // For robust submission, ensure only valid numbers or undefined are in subjectGoals
+      // Let's clear it or revert, to avoid sending NaN. For now, clearing:
+      setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
+       toast({ title: "Input Info", description: `Goal for ${subject} must be a number between 0-100. Cleared.`, variant: "default" });
     }
   };
+
 
   const handleSetupTest = (activity: DailyActivity) => {
     if (!activity.subjectFocus) {
@@ -69,19 +99,16 @@ export default function AiPlannerPage() {
     }
 
     const queryParams = new URLSearchParams();
-    queryParams.set('subjects', activity.subjectFocus); // subjectFocus should be a single subject string for a Test
+    queryParams.set('subjects', activity.subjectFocus);
 
     if (activity.chapterFocus && Array.isArray(activity.chapterFocus) && activity.chapterFocus.length > 0) {
       const chapterStrings = activity.chapterFocus
-        .map(cf => `${activity.subjectFocus}:${cf}`) // Use the validated subjectFocus
+        .map(cf => `${activity.subjectFocus}:${cf}`)
         .join(',');
       if (chapterStrings) {
         queryParams.set('chapters', chapterStrings);
       }
     }
-    
-    // You can optionally pre-fill the test name based on the plan
-    // queryParams.set('testName', `AI Plan: ${activity.date} - ${activity.subjectFocus}`);
     
     router.push(`/test/custom?${queryParams.toString()}`);
   };
@@ -107,31 +134,51 @@ export default function AiPlannerPage() {
     const validSubjectGoals: Record<string, number> = {};
     for (const subjectKey in subjectGoals) {
         const subject = subjectKey as SubjectType;
-        if (subjectGoals[subject] !== undefined && subjectGoals[subject] !== null) {
-            validSubjectGoals[subject] = subjectGoals[subject] as number;
+        const goalValue = subjectGoals[subject];
+        if (typeof goalValue === 'number' && !isNaN(goalValue) && goalValue >= 0 && goalValue <= 100) {
+            validSubjectGoals[subject] = goalValue;
         }
     }
+
+    const parsedStudyHours = parseInt(studyHoursPerDay);
+    const validStudyHours = !isNaN(parsedStudyHours) && parsedStudyHours >= 1 && parsedStudyHours <= 16 ? parsedStudyHours : undefined;
+
 
     const planInput: StudyPlanInput = {
       finalPreparationDate: format(finalDate, 'yyyy-MM-dd'),
       subjectGoals: validSubjectGoals,
       pastPerformanceSummary: mockPastPerformance,
-      studyHoursPerDay: parseInt(studyHoursPerDay) || undefined,
+      studyHoursPerDay: validStudyHours,
     };
 
     try {
       const result = await generateStudyPlan(planInput);
       if (result && result.schedule) {
-        setGeneratedPlan(result);
-        toast({ title: "Study Plan Generated!", description: "Your personalized plan is ready." });
+        if (result.schedule.length === 0) {
+            setGeneratedPlan(result); // Still set plan to show empty message
+            toast({ title: "Plan Generated (Empty)", description: "AI generated a plan, but the schedule is empty. Try different inputs." });
+        } else {
+            setGeneratedPlan(result);
+            toast({ title: "Study Plan Generated!", description: "Your personalized plan is ready." });
+        }
       } else {
         throw new Error("AI did not return a valid plan structure.");
       }
     } catch (e: any) {
-      console.error("Error generating plan:", e);
-      const errorMessage = e.message || "An unexpected error occurred while generating the plan.";
+      console.error("Error generating plan details:", e);
+      let errorMessage = "An unexpected error occurred while generating the plan.";
+      if (e.message) {
+        errorMessage = e.message;
+      }
+      // Check for specific Genkit/Zod validation error messages
+      if (e.cause && typeof e.cause === 'object' && e.cause.message) {
+        errorMessage += ` Details: ${e.cause.message}`;
+      } else if (e.details) { // Genkit errors sometimes have a details field
+        errorMessage += ` Details: ${JSON.stringify(e.details)}`;
+      }
+
       setError(errorMessage);
-      toast({ title: "Generation Failed", description: errorMessage, variant: "destructive" });
+      toast({ title: "Generation Failed", description: errorMessage, variant: "destructive", duration: 7000 });
     } finally {
       setIsLoading(false);
     }
@@ -200,9 +247,11 @@ export default function AiPlannerPage() {
                   <Input
                     id={`goal-${subject}`}
                     type="number"
+                    // Use a local state for input value if you want to allow typing "abc" temporarily
+                    // For now, this directly tries to set the goal which handleStrictGoalChange cleans
                     value={subjectGoals[subject] === undefined ? '' : String(subjectGoals[subject])}
-                    onChange={(e) => handleGoalChange(subject, e.target.value)}
-                    placeholder="e.g., 85"
+                    onChange={(e) => handleStrictGoalChange(subject, e.target.value)}
+                    placeholder="e.g., 85 (0-100)"
                     min="0"
                     max="100"
                     className="text-sm sm:text-base"
@@ -289,9 +338,9 @@ export default function AiPlannerPage() {
                       <p className="text-xs sm:text-sm text-muted-foreground mt-1">Notes: {item.details}</p>
                     )}
                     {item.activityType === 'Test' && item.subjectFocus && (
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
+                       <Button
+                         variant="outline"
+                         size="sm"
                          className="mt-3 w-full sm:w-auto text-xs sm:text-sm"
                          onClick={() => handleSetupTest(item)}
                        >
@@ -323,4 +372,3 @@ export default function AiPlannerPage() {
     </div>
   );
 }
-
