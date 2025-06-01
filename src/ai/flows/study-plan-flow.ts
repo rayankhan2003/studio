@@ -17,20 +17,21 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { Subjects, allSubjects, syllabus } from '@/lib/syllabus';
 
-// Define an enum for subjects locally for schema use
-const SubjectEnum = z.enum([
+// Define an array of subject string literals for Zod enum
+const subjectEnumValues = [
   Subjects.BIOLOGY,
   Subjects.CHEMISTRY,
   Subjects.PHYSICS,
   Subjects.ENGLISH,
   Subjects.LOGICAL_REASONING
-]);
+] as const; // Use 'as const' for literal types
 
 // Define the schema for DailyActivity locally, as it's used by StudyPlanOutputSchema
+// This will be defined inline in the output schema for the prompt
 const DailyActivitySchemaInternal = z.object({
   date: z.string().describe('Date for the activity (YYYY-MM-DD or descriptive like "Week 1, Day 1").'),
   activityType: z.enum(['Study', 'Test', 'Review', 'Rest']).describe('Type of activity for the day.'),
-  subjectFocus: SubjectEnum.optional().describe('Primary subject to focus on. Mandatory for "Test" or "Review" activities. Optional for "Study".'),
+  subjectFocus: z.enum(subjectEnumValues).optional().describe('Primary subject to focus on. Mandatory for "Test" or "Review" activities. Optional for "Study".'),
   chapterFocus: z.array(z.string()).optional().describe('Specific chapters or topics from the syllabus for the subjectFocus to cover for "Study" or "Test" activities. Must be an array of chapter names.'),
   details: z.string().optional().describe('Additional details or notes for the day\'s plan, especially for "Test" type, specify number of tests/questions.'),
 });
@@ -39,21 +40,20 @@ export type DailyActivity = z.infer<typeof DailyActivitySchemaInternal>;
 
 // --- Study Plan Generation ---
 
-// Define input type for generateStudyPlan (schema will be inlined in definePrompt)
-const StudyPlanInputSchemaInternal = z.object({
+// Define input/output types for exported functions using z.infer from schemas defined inline below
+const StudyPlanInputSchemaForTypes = z.object({
   finalPreparationDate: z.string().date().describe('The target final date for preparation (YYYY-MM-DD).'),
-  subjectGoals: z.record(SubjectEnum, z.number().min(0).max(100).optional()).describe('A map of subjects to target percentage scores (e.g., {"Biology": 85, "Physics": 75}).'),
-  pastPerformanceSummary: z.record(SubjectEnum, z.number().min(0).max(100).optional()).describe('A summary of past average performance scores per subject (e.g., {"Biology": 60, "Chemistry": 55}). This helps identify weaker areas.'),
+  subjectGoals: z.record(z.enum(subjectEnumValues), z.number().min(0).max(100).optional()).describe('A map of subjects to target percentage scores (e.g., {"Biology": 85, "Physics": 75}).'),
+  pastPerformanceSummary: z.record(z.enum(subjectEnumValues), z.number().min(0).max(100).optional()).describe('A summary of past average performance scores per subject (e.g., {"Biology": 60, "Chemistry": 55}). This helps identify weaker areas.'),
   studyHoursPerDay: z.number().min(1).max(16).optional().describe('Optional: Average number of hours the student can commit to studying per day.'),
 });
-export type StudyPlanInput = z.infer<typeof StudyPlanInputSchemaInternal>;
+export type StudyPlanInput = z.infer<typeof StudyPlanInputSchemaForTypes>;
 
-// Define output type for generateStudyPlan (schema will be inlined in definePrompt)
-const StudyPlanOutputSchemaInternal = z.object({
+const StudyPlanOutputSchemaForTypes = z.object({
   schedule: z.array(DailyActivitySchemaInternal).describe('A detailed study schedule, broken down by day or study blocks.'),
   aiGeneralAdvice: z.string().optional().describe('General advice or motivational message from the AI regarding the study plan.'),
 });
-export type StudyPlanOutput = z.infer<typeof StudyPlanOutputSchemaInternal>;
+export type StudyPlanOutput = z.infer<typeof StudyPlanOutputSchemaForTypes>;
 
 
 export async function generateStudyPlan(input: StudyPlanInput): Promise<StudyPlanOutput> {
@@ -62,8 +62,31 @@ export async function generateStudyPlan(input: StudyPlanInput): Promise<StudyPla
 
 const studyPlannerPrompt = ai.definePrompt({
   name: 'studyPlannerPrompt',
-  input: {schema: StudyPlanInputSchemaInternal }, // Use the internally defined schema constant
-  output: {schema: StudyPlanOutputSchemaInternal }, // Use the internally defined schema constant
+  input: {
+    schema: z.object({
+      finalPreparationDate: z.string().date().describe('The target final date for preparation (YYYY-MM-DD).'),
+      subjectGoals: z.record(z.enum(subjectEnumValues), z.number().min(0).max(100).optional()).describe('A map of subjects to target percentage scores (e.g., {"Biology": 85, "Physics": 75}).'),
+      pastPerformanceSummary: z.record(z.enum(subjectEnumValues), z.number().min(0).max(100).optional()).describe('A summary of past average performance scores per subject (e.g., {"Biology": 60, "Chemistry": 55}). This helps identify weaker areas.'),
+      studyHoursPerDay: z.number().min(1).max(16).optional().describe('Optional: Average number of hours the student can commit to studying per day.'),
+      // Fields for Handlebars context, not part of user input for the flow
+      allSubjects: z.array(z.string()),
+      syllabusData: z.record(z.string(), z.array(z.object({ name: z.string(), topics: z.array(z.string()).optional() }))),
+    })
+  },
+  output: {
+    schema: z.object({
+      schedule: z.array(
+        z.object({
+          date: z.string().describe('Date for the activity (YYYY-MM-DD or descriptive like "Week 1, Day 1").'),
+          activityType: z.enum(['Study', 'Test', 'Review', 'Rest']).describe('Type of activity for the day.'),
+          subjectFocus: z.enum(subjectEnumValues).optional().describe('Primary subject to focus on. Mandatory for "Test" or "Review" activities. Optional for "Study".'),
+          chapterFocus: z.array(z.string()).optional().describe('Specific chapters or topics from the syllabus for the subjectFocus to cover for "Study" or "Test" activities. Must be an array of chapter names.'),
+          details: z.string().optional().describe('Additional details or notes for the day\'s plan, especially for "Test" type, specify number of tests/questions.'),
+        })
+      ).describe('A detailed study schedule, broken down by day or study blocks.'),
+      aiGeneralAdvice: z.string().optional().describe('General advice or motivational message from the AI regarding the study plan.'),
+    })
+  },
   prompt: `You are an expert AI Study Planner for students preparing for competitive exams like the MDCAT.
 Your task is to generate a personalized study timetable to help the student cover the entire syllabus and achieve their goals by the final preparation date. Assume each chapter in the syllabus is comprehensive and requires dedicated study and practice (e.g., may contain hundreds of potential practice questions).
 
@@ -128,17 +151,20 @@ Begin generating the plan now.
 const studyPlannerFlow = ai.defineFlow(
   {
     name: 'studyPlannerFlow',
-    inputSchema: StudyPlanInputSchemaInternal, // Use the internally defined schema constant
-    outputSchema: StudyPlanOutputSchemaInternal, // Use the internally defined schema constant
+    inputSchema: StudyPlanInputSchemaForTypes, // Use the schema for the exported type
+    outputSchema: StudyPlanOutputSchemaForTypes, // Use the schema for the exported type
   },
   async (input) => {
     const templateInput = {
       ...input,
-      allSubjects: allSubjects,
-      syllabusData: syllabus
+      allSubjects: allSubjects, // from import
+      syllabusData: syllabus    // from import
     };
 
-    const {output} = await studyPlannerPrompt(templateInput);
+    // Cast templateInput to the schema type expected by the prompt
+    const typedTemplateInput = templateInput as z.infer<typeof studyPlannerPrompt.inputSchema>;
+
+    const {output} = await studyPlannerPrompt(typedTemplateInput);
     if (!output) {
       throw new Error('AI failed to generate a study plan output.');
     }
@@ -163,25 +189,23 @@ const studyPlannerFlow = ai.defineFlow(
 
 // --- Reset Study Plan Functionality ---
 
-// Define input type (schema will be inlined in defineFlow)
-const ResetStudyPlanInputSchemaInternal = z.object({
+const ResetStudyPlanInputSchemaForTypes = z.object({
   planId: z.string().optional().describe('Optional ID of the plan to reset.'),
   reason: z.string().optional().describe('Optional reason for resetting the plan.'),
 });
-export type ResetStudyPlanInput = z.infer<typeof ResetStudyPlanInputSchemaInternal>;
+export type ResetStudyPlanInput = z.infer<typeof ResetStudyPlanInputSchemaForTypes>;
 
-// Define output type (schema will be inlined in defineFlow)
-const ResetStudyPlanOutputSchemaInternal = z.object({
+const ResetStudyPlanOutputSchemaForTypes = z.object({
   status: z.string().describe('Status message indicating the result of the reset operation.'),
   details: z.string().optional().describe('Optional details about the reset operation.'),
 });
-export type ResetStudyPlanOutput = z.infer<typeof ResetStudyPlanOutputSchemaInternal>;
+export type ResetStudyPlanOutput = z.infer<typeof ResetStudyPlanOutputSchemaForTypes>;
 
 const resetStudyPlanFlowInternal = ai.defineFlow(
     {
         name: 'resetStudyPlanFlowInternal',
-        inputSchema: ResetStudyPlanInputSchemaInternal, // Use internal schema constant
-        outputSchema: ResetStudyPlanOutputSchemaInternal, // Use internal schema constant
+        inputSchema: ResetStudyPlanInputSchemaForTypes,
+        outputSchema: ResetStudyPlanOutputSchemaForTypes,
     },
     async (flowInput) => {
         console.log('Attempting to reset study plan with input:', flowInput);
