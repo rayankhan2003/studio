@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { toast } from '@/hooks/use-toast';
 import { allSubjects, syllabus, type Subject, type Chapter } from '@/lib/syllabus';
-import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive } from 'lucide-react';
-import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
+import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive, ChevronDown } from 'lucide-react';
+import { mockQuestionsDb } from '@/lib/mock-questions-db';
+import { cn } from '@/lib/utils';
 
 
 const questionCountPresets = [5, 10, 15, 20, 30, 50, 100]; 
@@ -238,24 +239,32 @@ export default function CustomTestPage() {
               >
                 {allSubjects.map((subject) => (
                   <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md">
-                    <AccordionTrigger className="py-3 hover:no-underline px-3">
-                      <div className="flex items-center space-x-3 flex-1">
-                        <Checkbox
-                          id={`select-all-${subject}`}
-                          checked={getSubjectCheckboxState(subject)}
-                          onCheckedChange={(checked) => {
-                            handleSubjectSelectAll(subject, checked);
-                          }}
-                          onClick={(e) => e.stopPropagation()} 
-                          aria-label={`Select all chapters in ${subject}`}
-                        />
-                        <Label 
-                          htmlFor={`select-all-${subject}`} 
-                          className="text-lg font-semibold text-foreground cursor-pointer"
-                          onClick={(e) => e.stopPropagation()} 
-                        >
-                          {subject} ({selectedChaptersMap[subject]?.size || 0} / {syllabus[subject].length} chapters)
-                        </Label>
+                    <AccordionTrigger asChild>
+                      <div
+                        className={cn(
+                          "flex flex-1 items-center justify-between py-3 px-3 font-medium transition-all hover:no-underline rounded-md cursor-pointer group",
+                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:outline-none"
+                        )}
+                      >
+                        <div className="flex items-center space-x-3 flex-1">
+                          <Checkbox
+                            id={`select-all-${subject}`}
+                            checked={getSubjectCheckboxState(subject)}
+                            onCheckedChange={(checked) => {
+                              handleSubjectSelectAll(subject, checked);
+                            }}
+                            onClick={(e) => e.stopPropagation()} 
+                            aria-label={`Select all chapters in ${subject}`}
+                          />
+                          <Label 
+                            htmlFor={`select-all-${subject}`} 
+                            className="text-lg font-semibold text-foreground cursor-pointer"
+                            onClick={(e) => e.stopPropagation()} 
+                          >
+                            {subject} ({selectedChaptersMap[subject]?.size || 0} / {syllabus[subject].length} chapters)
+                          </Label>
+                        </div>
+                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-2 pb-4 pl-4 border-t mt-2">
