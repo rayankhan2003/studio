@@ -21,7 +21,7 @@ import { Subjects, allSubjects, syllabus } from '@/lib/syllabus';
 const SubjectEnum = z.enum(allSubjects as [string, ...string[]]);
 
 
-export const StudyPlanInputSchema = z.object({
+const StudyPlanInputSchema = z.object({
   finalPreparationDate: z.string().date().describe('The target final date for preparation (YYYY-MM-DD).'),
   subjectGoals: z.record(SubjectEnum, z.number().min(0).max(100).optional()).describe('A map of subjects to target percentage scores (e.g., {"Biology": 85, "Physics": 75}).'),
   pastPerformanceSummary: z.record(SubjectEnum, z.number().min(0).max(100).optional()).describe('A summary of past average performance scores per subject (e.g., {"Biology": 60, "Chemistry": 55}). This helps identify weaker areas.'),
@@ -30,7 +30,7 @@ export const StudyPlanInputSchema = z.object({
 
 export type StudyPlanInput = z.infer<typeof StudyPlanInputSchema>;
 
-export const DailyActivitySchema = z.object({
+const DailyActivitySchema = z.object({
   date: z.string().describe('Date for the activity (YYYY-MM-DD or descriptive like "Week 1, Day 1").'),
   activityType: z.enum(['Study', 'Test', 'Review', 'Rest']).describe('Type of activity for the day.'),
   subjectFocus: SubjectEnum.optional().describe('Primary subject to focus on. Mandatory for "Test" or "Review" activities. Optional for "Study".'),
@@ -40,7 +40,7 @@ export const DailyActivitySchema = z.object({
 
 export type DailyActivity = z.infer<typeof DailyActivitySchema>;
 
-export const StudyPlanOutputSchema = z.object({
+const StudyPlanOutputSchema = z.object({
   schedule: z.array(DailyActivitySchema).describe('A detailed study schedule, broken down by day or study blocks.'),
   aiGeneralAdvice: z.string().optional().describe('General advice or motivational message from the AI regarding the study plan.'),
 });
@@ -154,13 +154,13 @@ const studyPlannerFlow = ai.defineFlow(
 );
 
 // Placeholder Schema and Types for Reset Functionality
-export const ResetStudyPlanInputSchema = z.object({
+const ResetStudyPlanInputSchema = z.object({
   planId: z.string().optional().describe('Optional ID of the plan to reset.'),
   reason: z.string().optional().describe('Optional reason for resetting the plan.'),
 });
 export type ResetStudyPlanInput = z.infer<typeof ResetStudyPlanInputSchema>;
 
-export const ResetStudyPlanOutputSchema = z.object({
+const ResetStudyPlanOutputSchema = z.object({
   status: z.string().describe('Status message indicating the result of the reset operation.'),
   details: z.string().optional().describe('Optional details about the reset operation.'),
 });
