@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, CalendarClock, Send } from "lucide-react";
+import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, Send } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -138,11 +138,8 @@ export default function HomePage() {
 
       <section className="w-full py-10 sm:py-12 bg-accent/10 rounded-lg">
         <div className="container px-4 md:px-6 text-center">
-           <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
-             <CalendarClock className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
-          </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl text-primary">
-            📅 Make Your MDCAT Prep a Journey — Not a Struggle
+            Make Your MDCAT Prep a Journey — Not a Struggle
           </h2>
           <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             With SmarterCat, your preparation is <strong>calculated</strong>, <strong>goal-driven</strong>, and <strong>data-backed</strong>. Whether it's your daily schedule, chapter mastery, or your final MDCAT strategy, you’ll always know <strong>where you stand</strong> — and what to do next.
