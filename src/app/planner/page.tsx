@@ -47,7 +47,7 @@ export default function AiPlannerPage() {
        setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
     }
   };
-  
+
   const handleSubmit = async () => {
     if (!finalDate) {
       toast({ title: "Input Error", description: "Please select a final preparation date.", variant: "destructive" });
@@ -66,7 +66,7 @@ export default function AiPlannerPage() {
       [Subjects.ENGLISH]: 70,
       [Subjects.LOGICAL_REASONING]: 65,
     };
-    
+
     const validSubjectGoals: Record<string, number> = {};
     for (const subject of allSubjects) {
         if (subjectGoals[subject] !== undefined) {
@@ -98,26 +98,26 @@ export default function AiPlannerPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <Brain className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold tracking-tight">AI Insight Planner</h1>
+        <Brain className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">AI Insight Planner</h1>
       </div>
 
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>Create Your Personalized Study Plan</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">Create Your Personalized Study Plan</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Set your final exam date, subject goals, and available study time. Our AI will generate a tailored study schedule to help you prepare effectively.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6 items-start">
             <div>
-              <Label htmlFor="finalDate" className="block mb-2 font-semibold">Final Preparation Date</Label>
+              <Label htmlFor="finalDate" className="block mb-2 font-semibold text-sm sm:text-base">Final Preparation Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
-                    className={`w-full justify-start text-left font-normal ${!finalDate && "text-muted-foreground"}`}
+                    className={`w-full justify-start text-left font-normal text-sm sm:text-base ${!finalDate && "text-muted-foreground"}`}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {finalDate ? format(finalDate, "PPP") : <span>Pick a date</span>}
@@ -135,7 +135,7 @@ export default function AiPlannerPage() {
               </Popover>
             </div>
             <div>
-              <Label htmlFor="studyHours" className="block mb-2 font-semibold">Average Study Hours Per Day (Optional)</Label>
+              <Label htmlFor="studyHours" className="block mb-2 font-semibold text-sm sm:text-base">Average Study Hours Per Day (Optional)</Label>
               <Input
                 id="studyHours"
                 type="number"
@@ -144,6 +144,7 @@ export default function AiPlannerPage() {
                 placeholder="e.g., 4"
                 min="1"
                 max="16"
+                className="text-sm sm:text-base"
               />
             </div>
           </div>
@@ -153,7 +154,7 @@ export default function AiPlannerPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {allSubjects.map(subject => (
                 <div key={subject} className="space-y-1">
-                  <Label htmlFor={`goal-${subject}`}>{subject}</Label>
+                  <Label htmlFor={`goal-${subject}`} className="text-sm sm:text-base">{subject}</Label>
                   <Input
                     id={`goal-${subject}`}
                     type="number"
@@ -162,6 +163,7 @@ export default function AiPlannerPage() {
                     placeholder="e.g., 85"
                     min="0"
                     max="100"
+                    className="text-sm sm:text-base"
                   />
                 </div>
               ))}
@@ -169,7 +171,7 @@ export default function AiPlannerPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch gap-4">
-          <Button onClick={handleSubmit} disabled={isLoading || !finalDate} size="lg">
+          <Button onClick={handleSubmit} disabled={isLoading || !finalDate} size="lg" className="text-base sm:text-lg py-3 sm:py-6">
             {isLoading ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
@@ -179,8 +181,8 @@ export default function AiPlannerPage() {
           </Button>
           <Alert variant="default" className="bg-primary/5 border-primary/20">
             <Info className="h-4 w-4 text-primary/80" />
-            <AlertTitle className="text-primary/90">How it works</AlertTitle>
-            <AlertDescription className="text-xs">
+            <AlertTitle className="text-primary/90 font-semibold">How it works</AlertTitle>
+            <AlertDescription className="text-xs text-muted-foreground">
               The AI considers your final date, goals, and (mocked) past performance to create a schedule.
               It will try to allocate more time to subjects where your goals are high or past scores were lower.
               The plan will include study blocks, suggested test days, and review periods.
@@ -199,11 +201,11 @@ export default function AiPlannerPage() {
       {generatedPlan && (
         <Card className="shadow-lg mt-8">
           <CardHeader className="bg-primary/10">
-            <CardTitle className="text-2xl flex items-center gap-2 text-primary">
+            <CardTitle className="text-xl sm:text-2xl flex items-center gap-2 text-primary">
               <Sparkles className="h-6 w-6 text-accent" /> Your AI-Generated Study Plan
             </CardTitle>
             {generatedPlan.aiGeneralAdvice && (
-              <CardDescription className="pt-2 text-primary/80">{generatedPlan.aiGeneralAdvice}</CardDescription>
+              <CardDescription className="pt-2 text-primary/80 text-sm sm:text-base">{generatedPlan.aiGeneralAdvice}</CardDescription>
             )}
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
@@ -212,8 +214,8 @@ export default function AiPlannerPage() {
                 {generatedPlan.schedule.map((item: DailyActivity, index: number) => (
                   <li key={index} className="p-4 border rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-1">
-                      <p className="font-semibold text-lg text-primary">{item.date}</p>
-                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium
+                      <p className="font-semibold text-md sm:text-lg text-primary">{item.date}</p>
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium mt-1 sm:mt-0
                         ${item.activityType === 'Study' ? 'bg-blue-100 text-blue-700' :
                           item.activityType === 'Test' ? 'bg-green-100 text-green-700' :
                           item.activityType === 'Review' ? 'bg-yellow-100 text-yellow-700' :
@@ -222,20 +224,20 @@ export default function AiPlannerPage() {
                       </span>
                     </div>
                     {item.subjectFocus && (
-                      <p className="text-md font-medium flex items-center gap-1">
+                      <p className="text-sm sm:text-md font-medium flex items-center gap-1 mt-1">
                         <BookOpen className="h-4 w-4 text-muted-foreground" /> Subject: {item.subjectFocus}
                       </p>
                     )}
                     {item.chapterFocus && item.chapterFocus.length > 0 && (
                        <div className="mt-1">
-                         <p className="text-sm text-muted-foreground">Chapters/Topics:</p>
-                         <ul className="list-disc list-inside pl-2 text-sm">
+                         <p className="text-xs sm:text-sm text-muted-foreground">Chapters/Topics:</p>
+                         <ul className="list-disc list-inside pl-2 text-xs sm:text-sm">
                            {item.chapterFocus.map(cf => <li key={cf}>{cf}</li>)}
                          </ul>
                        </div>
                     )}
                     {item.details && (
-                      <p className="text-sm text-muted-foreground mt-1">Notes: {item.details}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Notes: {item.details}</p>
                     )}
                   </li>
                 ))}
@@ -245,8 +247,8 @@ export default function AiPlannerPage() {
             )}
             <Alert className="mt-6 bg-accent/5 border-accent/20">
               <Info className="h-4 w-4 text-accent/80" />
-              <AlertTitle className="text-accent/90">Next Steps & Future Features</AlertTitle>
-              <AlertDescription className="text-xs space-y-1">
+              <AlertTitle className="text-accent/90 font-semibold">Next Steps & Future Features</AlertTitle>
+              <AlertDescription className="text-xs space-y-1 text-muted-foreground">
                 <p>This is your initial AI-generated plan. In future versions, this page will include:</p>
                 <ul className="list-disc list-inside pl-4">
                   <li>Dynamic progress tracking against this plan.</li>

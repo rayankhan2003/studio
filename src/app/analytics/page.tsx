@@ -29,12 +29,12 @@ interface StoredTestReport {
 const initialOverallPerformance = {
   averageScore: 0,
   testsTaken: 0,
-  overallProgress: 65, 
+  overallProgress: 65,
 };
 
 const initialSubjectScoreProgressionData: Array<Record<string, any>> = [];
 
-const initialChapterPerformanceHistoryData: Record<Subject, Record<string, { testName: string; score: number }[]>> = 
+const initialChapterPerformanceHistoryData: Record<Subject, Record<string, { testName: string; score: number }[]>> =
   allSubjects.reduce((acc, subj) => {
     acc[subj] = {};
     syllabus[subj].forEach(chap => {
@@ -43,7 +43,7 @@ const initialChapterPerformanceHistoryData: Record<Subject, Record<string, { tes
     return acc;
   }, {} as Record<Subject, Record<string, { testName: string; score: number }[]>>);
 
-const initialTimeSpentData = [ 
+const initialTimeSpentData = [
   { name: Subjects.BIOLOGY, avgTimePerQuestion: 1.5 },
   { name: Subjects.CHEMISTRY, avgTimePerQuestion: 2.0 },
   { name: Subjects.PHYSICS, avgTimePerQuestion: 2.2 },
@@ -84,14 +84,14 @@ export default function AnalyticsPage() {
     const storedHistoryString = localStorage.getItem('prepwiseTestHistory');
     let storedHistory: StoredTestReport[] = storedHistoryString ? JSON.parse(storedHistoryString) : [];
 
-    storedHistory = storedHistory.filter(report => 
+    storedHistory = storedHistory.filter(report =>
       analyticsView === 'custom' ? report.testType === 'custom' : report.testType === 'mdcat'
     );
-    
+
     let newTotalScoreSum = 0;
     let newTestsTaken = 0;
     const newSubjectProgression: typeof initialSubjectScoreProgressionData = [];
-    const newChapterHistory: typeof initialChapterPerformanceHistoryData = 
+    const newChapterHistory: typeof initialChapterPerformanceHistoryData =
       allSubjects.reduce((acc, subj) => {
         acc[subj] = {};
         syllabus[subj].forEach(chap => {
@@ -103,9 +103,9 @@ export default function AnalyticsPage() {
     if (storedHistory.length > 0) {
       newTestsTaken = storedHistory.length;
       storedHistory.forEach(report => {
-        const progressionEntry: Record<string, any> = { 
-          name: report.testType === 'mdcat' ? `MDCAT ${report.mdcatYear}` : report.name, 
-          date: report.date 
+        const progressionEntry: Record<string, any> = {
+          name: report.testType === 'mdcat' ? `MDCAT ${report.mdcatYear}` : report.name,
+          date: report.date
         };
         let currentTestSubjectScoreSum = 0;
         let currentTestSubjectCount = 0;
@@ -137,7 +137,7 @@ export default function AnalyticsPage() {
         });
       });
     }
-    
+
     setSubjectScoreProgressionData(newSubjectProgression);
     setChapterPerformanceHistoryData(newChapterHistory);
     setOverallPerformance(prev => ({
@@ -162,10 +162,10 @@ export default function AnalyticsPage() {
     if (subjectScoreProgressionData.length === 0) {
       return allSubjects.map(subject => ({ name: subject, averageScore: 0 }));
     }
-  
-    const subjectTotals: Record<Subject, { sum: number, count: number }> = 
+
+    const subjectTotals: Record<Subject, { sum: number, count: number }> =
       allSubjects.reduce((acc, s) => { acc[s] = { sum: 0, count: 0 }; return acc; }, {} as any);
-  
+
     subjectScoreProgressionData.forEach(test => {
       allSubjects.forEach(subject => {
         if (test[subject] !== undefined && typeof test[subject] === 'number') {
@@ -174,13 +174,13 @@ export default function AnalyticsPage() {
         }
       });
     });
-  
+
     return allSubjects.map(subject => {
       const avg = subjectTotals[subject].count > 0 ? subjectTotals[subject].sum / subjectTotals[subject].count : 0;
       return { name: subject, averageScore: parseFloat(avg.toFixed(1)) };
     });
   }, [subjectScoreProgressionData]);
-  
+
 
   const chapterProficiencyChartData = useMemo(() => {
     const subjectChapters = syllabus[selectedSubjectForChapterChart];
@@ -197,7 +197,7 @@ export default function AnalyticsPage() {
         const numA = parseInt(a.match(/Test #?(\d+)/)?.[1] || a.match(/MDCAT (\d+)/)?.[1] || '0');
         const numB = parseInt(b.match(/Test #?(\d+)/)?.[1] || b.match(/MDCAT (\d+)/)?.[1] || '0');
         if (numA !== numB) return numA - numB;
-        
+
         const dateA = subjectScoreProgressionData.find(d => d.name === a)?.date;
         const dateB = subjectScoreProgressionData.find(d => d.name === b)?.date;
         if (dateA && dateB) return new Date(dateA).getTime() - new Date(dateB).getTime();
@@ -209,12 +209,12 @@ export default function AnalyticsPage() {
       subjectChapters.forEach(chapter => {
         const history = historyForSelectedSubject[chapter.name];
         const testEntry = history?.find(entry => entry.testName === testName);
-        dataPoint[chapter.name] = testEntry ? testEntry.score : 0; 
+        dataPoint[chapter.name] = testEntry ? testEntry.score : 0;
       });
       return dataPoint;
     });
   }, [selectedSubjectForChapterChart, chapterPerformanceHistoryData, subjectScoreProgressionData]);
-  
+
   const handleSetGoal = () => {
     if (!goalDialogChapter || !goalDialogTargetScore) {
       toast({ title: "Error", description: "Please select a chapter and enter a target score.", variant: "destructive" });
@@ -235,9 +235,9 @@ export default function AnalyticsPage() {
     }));
     toast({ title: "Goal Set!", description: `Target for ${goalDialogChapter} (${goalDialogSubject}) set to ${target}%.` });
     setIsSetGoalDialogOpen(false);
-    setGoalDialogTargetScore(''); 
+    setGoalDialogTargetScore('');
   };
-  
+
   const openGoalDialog = (subject?: Subject, chapter?: string) => {
     const currentSubject = subject || selectedSubjectForChapterChart || allSubjects[0];
     setGoalDialogSubject(currentSubject);
@@ -257,15 +257,15 @@ export default function AnalyticsPage() {
             <BarChart3 className="mr-3 h-8 w-8 text-primary" />
             Performance Analytics
           </h1>
-          <div className="flex gap-4 items-center"> {/* Controls for Tabs and Filter */}
-              <TabsList> {/* TabsList is a child of Tabs */}
-                <TabsTrigger value="custom">Custom Tests</TabsTrigger>
-                <TabsTrigger value="mdcat" className="flex items-center gap-1">
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center w-full sm:w-auto"> {/* Controls for Tabs and Filter */}
+              <TabsList className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto"> {/* TabsList is a child of Tabs */}
+                <TabsTrigger value="custom" className="w-full">Custom Tests</TabsTrigger>
+                <TabsTrigger value="mdcat" className="flex items-center gap-1 w-full">
                   <Archive className="h-4 w-4" /> Past MDCAT
                 </TabsTrigger>
               </TabsList>
               <Select value={filterPeriod} onValueChange={setFilterPeriod} disabled>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filter period" />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
               </Select>
           </div>
         </div>
-      
+
         <TabsContent value={analyticsView} className="mt-6 space-y-8"> {/* Content block, child of Tabs */}
           <Card className="shadow-lg">
             <CardHeader>
@@ -284,7 +284,7 @@ export default function AnalyticsPage() {
               </CardTitle>
               <CardDescription>Your cumulative performance for the selected test type.</CardDescription>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-3 gap-6">
+            <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
               <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
                 <h3 className="text-4xl font-bold text-primary">{overallPerformance.averageScore.toFixed(1)}%</h3>
                 <p className="text-sm text-muted-foreground">Average Score</p>
@@ -293,13 +293,13 @@ export default function AnalyticsPage() {
                 <h3 className="text-4xl font-bold text-primary">{overallPerformance.testsTaken}</h3>
                 <p className="text-sm text-muted-foreground">Tests Taken</p>
               </div>
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg space-y-2">
+              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg space-y-2 sm:col-span-2 md:col-span-1">
                 <Progress value={overallPerformance.averageScore} className="w-full h-3" />
                 <p className="text-sm text-muted-foreground">Overall Average: {overallPerformance.averageScore.toFixed(1)}%</p>
               </div>
             </CardContent>
           </Card>
-          
+
           <div className="grid lg:grid-cols-2 gap-8">
             <Card className="shadow-lg">
               <CardHeader>
@@ -309,17 +309,17 @@ export default function AnalyticsPage() {
                 </CardTitle>
                 <CardDescription>Track your scores across different subjects over time for {analyticsView === 'custom' ? 'custom tests' : 'past MDCAT tests'}.</CardDescription>
               </CardHeader>
-              <CardContent className="h-[400px]">
+              <CardContent className="h-[350px] sm:h-[400px]">
               {subjectScoreProgressionData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={subjectScoreProgressionData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]}/>
+                    <XAxis dataKey="name" tick={{fontSize: 12}} />
+                    <YAxis domain={[0, 100]} tick={{fontSize: 12}}/>
                     <Tooltip />
-                    <Legend />
+                    <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
                     {allSubjects.map(subject => (
-                      <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject]} strokeWidth={2} activeDot={{ r: 6 }} connectNulls />
+                      <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject]} strokeWidth={2} activeDot={{ r: 6 }} connectNulls dot={{r:3}} />
                     ))}
                   </LineChart>
                 </ResponsiveContainer>
@@ -337,17 +337,19 @@ export default function AnalyticsPage() {
                 </CardTitle>
                 <CardDescription>Your average performance in each subject for {analyticsView === 'custom' ? 'custom tests' : 'past MDCAT tests'}.</CardDescription>
               </CardHeader>
-              <CardContent className="h-[400px]">
+              <CardContent className="h-[350px] sm:h-[400px]">
                 {overallSubjectAverageScores.some(s => s.averageScore > 0) ? (
                     <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                        data={overallSubjectAverageScores.filter(s => s.averageScore > 0)} 
+                        data={overallSubjectAverageScores.filter(s => s.averageScore > 0)}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={120}
+                        label={({ name, percent, value }) => `${name}: ${Number(value).toFixed(1)}%`}
+                        outerRadius="80%"
+                        innerRadius="50%"
+                        paddingAngle={2}
                         fill="#8884d8"
                         dataKey="averageScore"
                         nameKey="name"
@@ -357,7 +359,7 @@ export default function AnalyticsPage() {
                         ))}
                         </Pie>
                         <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name]} />
-                        <Legend />
+                        <Legend wrapperStyle={{fontSize: "0.8rem"}} />
                     </PieChart>
                     </ResponsiveContainer>
                 ) : (
@@ -369,7 +371,7 @@ export default function AnalyticsPage() {
 
           <Card className="shadow-lg">
             <CardHeader>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex-1">
                   <CardTitle className="text-xl flex items-center gap-2">
                     <BookOpen className="h-6 w-6 text-accent" />
@@ -377,12 +379,12 @@ export default function AnalyticsPage() {
                   </CardTitle>
                   <CardDescription>Track your performance in each chapter over time for {analyticsView === 'custom' ? 'custom tests' : 'past MDCAT tests'}.</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openGoalDialog()}>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                    <Button variant="outline" size="sm" onClick={() => openGoalDialog()} className="w-full sm:w-auto">
                       <Goal className="mr-2 h-4 w-4" /> Set/Edit Chapter Goal
                     </Button>
                     <Select value={selectedSubjectForChapterChart} onValueChange={(value) => setSelectedSubjectForChapterChart(value as Subject)}>
-                      <SelectTrigger className="w-full md:w-[200px]">
+                      <SelectTrigger className="w-full sm:w-[200px] md:w-[220px]">
                         <SelectValue placeholder="Select Subject" />
                       </SelectTrigger>
                       <SelectContent>
@@ -394,18 +396,18 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="h-[450px]">
+            <CardContent className="h-[400px] md:h-[450px]">
               {chapterProficiencyChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chapterProficiencyChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip 
+                    <XAxis dataKey="name" tick={{fontSize: 10}} />
+                    <YAxis domain={[0, 100]} tick={{fontSize: 12}} />
+                    <Tooltip
                       formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
                       labelFormatter={(label: string) => `Attempt: ${label}`}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
                     {syllabus[selectedSubjectForChapterChart]?.map((chapter, index) => {
                       const goal = chapterGoals[selectedSubjectForChapterChart]?.[chapter.name];
                       return (
@@ -417,12 +419,12 @@ export default function AnalyticsPage() {
                             strokeWidth={2}
                             activeDot={{ r: 6 }}
                             dot={{r:3}}
-                            connectNulls 
+                            connectNulls
                           />
                           {goal !== undefined && (
                             <ReferenceLine
                               y={goal}
-                              label={{ value: `${chapter.name} Goal: ${goal}%`, position: 'insideTopRight', fill: chapterLineColors[index % chapterLineColors.length], dy: -5, dx:5, fontSize: '0.75rem' }}
+                              label={{ value: `${chapter.name} Goal: ${goal}%`, position: 'insideTopRight', fill: chapterLineColors[index % chapterLineColors.length], dy: -5, dx:5, fontSize: '0.7rem' }}
                               stroke={chapterLineColors[index % chapterLineColors.length]}
                               strokeDasharray="3 3"
                               strokeWidth={1.5}
@@ -439,7 +441,7 @@ export default function AnalyticsPage() {
               )}
             </CardContent>
           </Card>
-          
+
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2">
@@ -448,15 +450,15 @@ export default function AnalyticsPage() {
               </CardTitle>
               <CardDescription>Analyze your speed and time management across subjects (currently static mock data).</CardDescription>
             </CardHeader>
-            <CardContent className="h-[400px]">
+            <CardContent className="h-[350px] sm:h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
-                <RechartsBarChart data={timeSpentData} layout="vertical">
+                <RechartsBarChart data={timeSpentData} layout="vertical" margin={{ right: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={120} />
+                  <XAxis type="number" tick={{fontSize: 12}} />
+                  <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10, width: 95, textAnchor: 'start'}} interval={0} />
                   <Tooltip formatter={(value: number) => [`${value.toFixed(1)} mins`, "Avg. Time"]} />
-                  <Legend />
-                  <Bar dataKey="avgTimePerQuestion" name="Avg. Time (mins)" fill="hsl(var(--chart-5))" radius={[0, 4, 4, 0]} />
+                  <Legend wrapperStyle={{fontSize: "0.8rem"}} />
+                  <Bar dataKey="avgTimePerQuestion" name="Avg. Time (mins)" fill="hsl(var(--chart-5))" radius={[0, 4, 4, 0]} barSize={20} />
                 </RechartsBarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -466,7 +468,7 @@ export default function AnalyticsPage() {
 
 
       <Dialog open={isSetGoalDialogOpen} onOpenChange={setIsSetGoalDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Set Chapter Performance Goal</DialogTitle>
             <DialogDescription>
@@ -493,8 +495,8 @@ export default function AnalyticsPage() {
               <Label htmlFor="goal-chapter" className="text-right">
                 Chapter
               </Label>
-              <Select 
-                value={goalDialogChapter} 
+              <Select
+                value={goalDialogChapter}
                 onValueChange={(value) => setGoalDialogChapter(value)}
                 disabled={!syllabus[goalDialogSubject] || syllabus[goalDialogSubject].length === 0}
               >
@@ -533,4 +535,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-    

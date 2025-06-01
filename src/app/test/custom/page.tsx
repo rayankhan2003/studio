@@ -18,7 +18,7 @@ import { mockQuestionsDb } from '@/lib/mock-questions-db';
 import { cn } from '@/lib/utils';
 
 
-const questionCountPresets = [5, 10, 15, 20, 30, 50, 100]; 
+const questionCountPresets = [5, 10, 15, 20, 30, 50, 100];
 const timePerQuestionOptions = [
   { label: '30 seconds', value: 30 },
   { label: '45 seconds', value: 45 },
@@ -69,7 +69,7 @@ export default function CustomTestPage() {
   const totalSelectedChaptersCount = useMemo(() => {
     return Object.values(selectedChaptersMap).reduce((acc, chaptersSet) => acc + chaptersSet.size, 0);
   }, [selectedChaptersMap]);
-  
+
   const totalAvailableQuestionsFromSelection = useMemo(() => {
     let count = 0;
     allSubjects.forEach(subject => {
@@ -139,9 +139,9 @@ export default function CustomTestPage() {
       return;
     }
     if (actualQuestionCount > totalAvailableQuestionsFromSelection && totalAvailableQuestionsFromSelection > 0) {
-      toast({ 
-        title: "Warning", 
-        description: `You requested ${actualQuestionCount} questions, but selected chapters have ${totalAvailableQuestionsFromSelection} questions. The test will use ${totalAvailableQuestionsFromSelection} questions.`, 
+      toast({
+        title: "Warning",
+        description: `You requested ${actualQuestionCount} questions, but selected chapters have only ${totalAvailableQuestionsFromSelection}. The test will use ${totalAvailableQuestionsFromSelection} questions.`,
         variant: "default",
         duration: 7000,
       });
@@ -155,9 +155,9 @@ export default function CustomTestPage() {
       });
       return;
     }
-    
+
     toast({ title: "Custom Test Starting!", description: "Redirecting..." });
-    
+
     const selectedSubjectsForQuery: string[] = [];
     const selectedChaptersForQuery: string[] = [];
 
@@ -177,13 +177,13 @@ export default function CustomTestPage() {
       subjects: selectedSubjectsForQuery.join(','), // e.g. Biology,Chemistry
       chapters: selectedChaptersForQuery.join(',') // e.g. Biology:Cell Structure,Physics:Force & Motion
     });
-    
-    router.push(`/test/custom-session?${queryParams.toString()}`); 
+
+    router.push(`/test/custom-session?${queryParams.toString()}`);
   };
 
   const handleStartMdcatTest = (year: number) => {
     toast({ title: `MDCAT ${year} Test Starting!`, description: `Simulating MDCAT ${year}.` });
-    
+
     const queryParams = new URLSearchParams({
       questionCount: String(MOCK_MDCAT_QUESTION_COUNT),
       totalDuration: String(MOCK_MDCAT_TOTAL_DURATION_SECONDS),
@@ -192,7 +192,7 @@ export default function CustomTestPage() {
     });
     router.push(`/test/mdcat-session-${year}?${queryParams.toString()}`);
   };
-  
+
   const getSelectedChaptersForPreview = () => {
     const preview: { subject: string, chapters: string[] }[] = [];
     allSubjects.forEach(subject => {
@@ -206,43 +206,46 @@ export default function CustomTestPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3 mb-8">
-        <Settings className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold tracking-tight">Configure Your Test</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
+        <div className="flex items-center gap-3">
+          <Settings className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold tracking-tight">Configure Your Test</h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-2xl">
                 <ListChecks className="h-6 w-6 text-primary" /> Create a Custom Test
               </CardTitle>
               <CardDescription>Choose subjects, chapters, question count, and time limits.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="testName" className="font-semibold">Test Name (Optional)</Label>
-                <Input 
-                  id="testName" 
-                  value={testName} 
-                  onChange={(e) => setTestName(e.target.value)} 
+                <Label htmlFor="testName" className="font-semibold text-base">Test Name (Optional)</Label>
+                <Input
+                  id="testName"
+                  value={testName}
+                  onChange={(e) => setTestName(e.target.value)}
                   placeholder="e.g., Biology Midterm Prep"
-                  className="mt-1"
+                  className="mt-1 text-base"
                 />
               </div>
-              <Accordion 
-                type="multiple" 
-                className="w-full space-y-3" 
+              <Accordion
+                type="multiple"
+                className="w-full space-y-3"
                 value={activeAccordionItems}
                 onValueChange={setActiveAccordionItems}
               >
                 {allSubjects.map((subject) => (
-                  <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md">
+                  <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md shadow-sm">
                     <AccordionTrigger asChild>
                       <div
                         className={cn(
-                          "flex flex-1 items-center justify-between py-3 px-3 font-medium transition-all hover:no-underline rounded-md cursor-pointer group",
+                          "flex flex-1 items-center justify-between py-3 px-3 font-medium transition-all hover:no-underline rounded-t-md cursor-pointer group hover:bg-accent/10",
+                          activeAccordionItems.includes(subject) ? "bg-accent/5" : "",
                           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:outline-none"
                         )}
                       >
@@ -253,21 +256,22 @@ export default function CustomTestPage() {
                             onCheckedChange={(checked) => {
                               handleSubjectSelectAll(subject, checked);
                             }}
-                            onClick={(e) => e.stopPropagation()} 
+                            onClick={(e) => e.stopPropagation()}
                             aria-label={`Select all chapters in ${subject}`}
+                            className="h-5 w-5"
                           />
-                          <Label 
-                            htmlFor={`select-all-${subject}`} 
+                          <Label
+                            htmlFor={`select-all-${subject}`}
                             className="text-lg font-semibold text-foreground cursor-pointer"
-                            onClick={(e) => e.stopPropagation()} 
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {subject} ({selectedChaptersMap[subject]?.size || 0} / {syllabus[subject].length} chapters)
                           </Label>
                         </div>
-                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180 text-primary" />
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-4 pl-4 border-t mt-2">
+                    <AccordionContent className="pt-3 pb-4 px-4 border-t mt-0 bg-background">
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
                         {syllabus[subject].map((chapter: Chapter) => (
                           <div key={chapter.name} className="flex items-center space-x-2">
@@ -275,6 +279,7 @@ export default function CustomTestPage() {
                               id={`${subject}-${chapter.name.replace(/\s+/g, '-')}`}
                               checked={selectedChaptersMap[subject]?.has(chapter.name)}
                               onCheckedChange={(checked) => handleChapterSelect(subject, chapter.name, !!checked)}
+                              className="h-4 w-4"
                             />
                             <Label htmlFor={`${subject}-${chapter.name.replace(/\s+/g, '-')}`} className="font-normal text-sm text-muted-foreground cursor-pointer">
                               {chapter.name}
@@ -287,22 +292,12 @@ export default function CustomTestPage() {
                 ))}
               </Accordion>
             </CardContent>
-             <CardFooter className="border-t pt-6">
-                <Button 
-                    size="lg" 
-                    className="w-full" 
-                    onClick={handleStartCustomTest}
-                    disabled={totalSelectedChaptersCount === 0 || actualQuestionCount <= 0 || (totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0) }
-                  >
-                    <PlayCircle className="mr-2 h-5 w-5" /> Start Custom Test
-                </Button>
-            </CardFooter>
           </Card>
 
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl">
                   <Hash className="h-6 w-6 text-primary" /> Question Count
                 </CardTitle>
               </CardHeader>
@@ -310,15 +305,15 @@ export default function CustomTestPage() {
                 <RadioGroup
                   value={questionCountMode}
                   onValueChange={(value) => setQuestionCountMode(value as 'preset' | 'custom')}
-                  className="space-y-2"
+                  className="space-y-3"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="preset" id="preset" />
-                    <Label htmlFor="preset">Choose from presets</Label>
+                    <Label htmlFor="preset" className="text-base">Choose from presets</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="custom" id="custom" />
-                    <Label htmlFor="custom">Enter custom number</Label>
+                    <Label htmlFor="custom" className="text-base">Enter custom number</Label>
                   </div>
                 </RadioGroup>
 
@@ -327,12 +322,12 @@ export default function CustomTestPage() {
                     value={String(selectedPresetQuestions)}
                     onValueChange={(value) => setSelectedPresetQuestions(Number(value))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-base">
                       <SelectValue placeholder="Select number of questions" />
                     </SelectTrigger>
                     <SelectContent>
                       {questionCountPresets.map(count => (
-                        <SelectItem key={count} value={String(count)}>{count} questions</SelectItem>
+                        <SelectItem key={count} value={String(count)} className="text-base">{count} questions</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -344,17 +339,18 @@ export default function CustomTestPage() {
                     value={customQuestionCount}
                     onChange={(e) => setCustomQuestionCount(e.target.value)}
                     min="1"
+                    className="text-base"
                   />
                 )}
                  {actualQuestionCount > totalAvailableQuestionsFromSelection && totalSelectedChaptersCount > 0 && totalAvailableQuestionsFromSelection > 0 && (
-                    <p className="text-xs text-orange-600 flex items-start gap-1">
-                      <AlertCircle size={14} className="flex-shrink-0 mt-0.5"/>
+                    <p className="text-xs text-orange-600 flex items-start gap-1 pt-1">
+                      <AlertCircle size={16} className="flex-shrink-0 mt-0.5"/>
                       <span>Selected topics have approx. {totalAvailableQuestionsFromSelection} questions. Test will use this count.</span>
                     </p>
                 )}
                 {totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0 && (
-                   <p className="text-xs text-red-600 flex items-start gap-1">
-                      <AlertCircle size={14} className="flex-shrink-0 mt-0.5"/>
+                   <p className="text-xs text-red-600 flex items-start gap-1 pt-1">
+                      <AlertCircle size={16} className="flex-shrink-0 mt-0.5"/>
                       <span>No questions found for the current selection. Please select more chapters/subjects.</span>
                     </p>
                 )}
@@ -363,7 +359,7 @@ export default function CustomTestPage() {
 
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl">
                   <Clock className="h-6 w-6 text-primary" /> Time per Question
                 </CardTitle>
               </CardHeader>
@@ -372,28 +368,40 @@ export default function CustomTestPage() {
                   value={String(timePerQuestion)}
                   onValueChange={(value) => setTimePerQuestion(Number(value))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-base">
                     <SelectValue placeholder="Select time per question" />
                   </SelectTrigger>
                   <SelectContent>
                     {timePerQuestionOptions.map(opt => (
-                      <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                      <SelectItem key={opt.value} value={String(opt.value)} className="text-base">{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </CardContent>
             </Card>
           </div>
+
+          <div className="mt-8">
+            <Button
+                size="lg"
+                className="w-full text-lg py-6"
+                onClick={handleStartCustomTest}
+                disabled={totalSelectedChaptersCount === 0 || actualQuestionCount <= 0 || (totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0) }
+              >
+                <PlayCircle className="mr-2 h-6 w-6" /> Start Custom Test
+            </Button>
+          </div>
+
         </div>
-        
+
         <div className="lg:col-span-1 space-y-6">
           <Card className="shadow-lg sticky top-20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Info className="h-6 w-6 text-accent" /> Custom Test Preview
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
+            <CardContent className="space-y-3 text-base">
                <div>
                 <h4 className="font-semibold mb-1">Test Name:</h4>
                 <p className="text-primary font-semibold">{testName || "Custom Test"}</p>
@@ -401,7 +409,7 @@ export default function CustomTestPage() {
               <div>
                 <h4 className="font-semibold mb-1">Selected Chapters ({totalSelectedChaptersCount}):</h4>
                 {totalSelectedChaptersCount > 0 ? (
-                  <div className="max-h-32 overflow-y-auto space-y-1 text-xs bg-muted/50 p-2 rounded-md border">
+                  <div className="max-h-40 overflow-y-auto space-y-1 text-sm bg-muted/50 p-3 rounded-md border">
                   {getSelectedChaptersForPreview().map(item => (
                     <div key={item.subject}>
                       <strong className="text-primary/90">{item.subject}:</strong> {item.chapters.join(', ')}
@@ -421,18 +429,18 @@ export default function CustomTestPage() {
 
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Archive className="h-6 w-6 text-primary" /> Practice Past MDCAT Papers
               </CardTitle>
               <CardDescription>Attempt full past papers to simulate exam conditions (mock data).</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {pastMDCATYears.slice(0, 6).map(year => ( // Show a few recent years
                 <Button
                   key={year}
                   variant="outline"
                   onClick={() => handleStartMdcatTest(year)}
-                  className="w-full"
+                  className="w-full text-base py-3"
                 >
                   MDCAT {year}
                 </Button>

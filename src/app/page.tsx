@@ -60,49 +60,49 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="flex flex-col items-center space-y-16 py-8">
+    <div className="flex flex-col items-center space-y-12 sm:space-y-16 py-8">
       <section className="w-full text-center container px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
            <Image
-            src="https://placehold.co/150x150.png"
-            width="120"
-            height="120"
+            src="https://placehold.co/120x120.png"
+            width="100"
+            height="100"
             alt="SmarterCat Logo Large"
             data-ai-hint="cat studying"
-            className="mx-auto mb-6 rounded-full shadow-lg"
+            className="mx-auto mb-6 rounded-full shadow-lg sm:w-120 sm:h-120"
           />
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary/80">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary/80">
             🩺 Crack MDCAT 2025 with Confidence
           </h1>
-          <p className="mt-6 text-xl text-muted-foreground">
+          <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-muted-foreground">
             Your Personalized Study Companion
           </p>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Welcome to the most powerful MDCAT preparation platform built for <strong>ambitious students</strong> like you. Whether you're aiming for <strong>top government medical colleges</strong> or just starting your journey, we give you <strong>all the tools you need to succeed</strong> — from smart tests to intelligent planning and goal setting.
           </p>
         </div>
       </section>
 
-      <section id="why-smartercat" className="w-full py-12 bg-muted/50 rounded-lg">
+      <section id="why-smartercat" className="w-full py-10 sm:py-12 bg-muted/50 rounded-lg">
         <div className="container px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl">
               🚀 Why Thousands of MDCAT Students Will Trust SmarterCat
             </h2>
           </div>
-          <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {features.map((feature, index) => (
               <Card key={feature.title} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
                 <CardHeader className="flex-shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-md w-fit">
-                      <feature.icon className="w-8 h-8 text-primary" />
+                      <feature.icon className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl">{feature.title}</CardTitle>
+                    <CardTitle className="text-xl sm:text-2xl">{feature.title}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <ul className="space-y-2 text-muted-foreground list-disc list-inside pl-2">
+                  <ul className="space-y-2 text-sm sm:text-base text-muted-foreground list-disc list-inside pl-2">
                     {feature.description.map((item, idx) => (
                       <li key={idx}>{item}</li>
                     ))}
@@ -114,21 +114,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="w-full py-12 text-center container px-4 md:px-6">
+      <section className="w-full py-10 sm:py-12 text-center container px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
           <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
-             <Target className="w-10 h-10 text-primary" />
+             <Target className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl">
             🧠 Study Smarter, Score Higher
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground">
             The key to cracking MDCAT isn't just hard work — it's <strong>smart strategy</strong>. With our platform, you’ll:
           </p>
-          <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left text-muted-foreground">
+          <ul className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-left text-sm sm:text-base text-muted-foreground">
             {["Set clear goals", "Follow a dynamic AI plan", "Adapt as you learn", "Track real progress", "Stay motivated with purpose"].map(item => (
               <li key={item} className="flex items-center p-3 bg-card border rounded-md shadow-sm">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 sm:mr-3 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -136,37 +136,37 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="w-full py-12 bg-accent/10 rounded-lg">
+      <section className="w-full py-10 sm:py-12 bg-accent/10 rounded-lg">
         <div className="container px-4 md:px-6 text-center">
            <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
-             <CalendarClock className="w-10 h-10 text-primary" />
+             <CalendarClock className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-primary">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl text-primary">
             📅 Make Your MDCAT Prep a Journey — Not a Struggle
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             With SmarterCat, your preparation is <strong>calculated</strong>, <strong>goal-driven</strong>, and <strong>data-backed</strong>. Whether it's your daily schedule, chapter mastery, or your final MDCAT strategy, you’ll always know <strong>where you stand</strong> — and what to do next.
           </p>
         </div>
       </section>
 
-      <section className="w-full py-16 text-center container px-4 md:px-6">
+      <section className="w-full py-12 sm:py-16 text-center container px-4 md:px-6">
         <div className="max-w-2xl mx-auto">
            <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
-             <Send className="w-10 h-10 text-primary" />
+             <Send className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl mb-3">
             Join Now — Demo Access Available!
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
+          <p className="text-md sm:text-lg text-muted-foreground mb-6 sm:mb-8">
             Thousands of students will trust SmarterCat to generate their personal study plans, track their progress with real data, create smart tests, simulate the real exam, and reach their MBBS/BDS dreams.
           </p>
           <Link href="/account">
-            <Button size="lg" className="text-lg py-7 px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/50 transition-shadow">
+            <Button size="lg" className="text-md sm:text-lg py-3 px-6 sm:py-7 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/50 transition-shadow">
               Register Now & Start Your Journey
             </Button>
           </Link>
-           <p className="mt-4 text-sm text-muted-foreground">
+           <p className="mt-4 text-xs sm:text-sm text-muted-foreground">
             Check our <Link href="/pricing" className="underline hover:text-primary">Pricing Page</Link> for Demo and Premium plan details.
           </p>
         </div>
