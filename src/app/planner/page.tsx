@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -11,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, CalendarIcon, Brain, Info, ListChecks, Sparkles, BookOpen } from 'lucide-react';
+import { Loader2, CalendarIcon, Brain, Info, ListChecks, Sparkles, BookOpen, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { allSubjects, Subjects, type Subject as SubjectType } from '@/lib/syllabus';
 import { generateStudyPlan, type StudyPlanInput, type StudyPlanOutput, type DailyActivity } from '@/ai/flows/study-plan-flow';
@@ -21,6 +22,7 @@ type SubjectGoals = Partial<Record<SubjectType, number>>;
 
 export default function AiPlannerPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [finalDate, setFinalDate] = useState<Date | undefined>(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 30); // Default to 30 days from now
@@ -46,6 +48,21 @@ export default function AiPlannerPage() {
     } else if (value === '') {
        setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
     }
+  };
+
+  const handleSetupTest = (activity: DailyActivity) => {
+    const queryParams = new URLSearchParams();
+    if (activity.subjectFocus) {
+      queryParams.set('subjects', activity.subjectFocus);
+    }
+    if (activity.chapterFocus && activity.chapterFocus.length > 0 && activity.subjectFocus) {
+      queryParams.set('chapters', activity.chapterFocus.map(cf => `${activity.subjectFocus}:${cf}`).join(','));
+    }
+    // We could try to parse question count from details, but it's fragile.
+    // For now, let the user set it on the custom test page.
+    // queryParams.set('testName', `AI Plan: ${activity.date} - ${activity.subjectFocus || 'Test'}`);
+    
+    router.push(`/test/custom?${queryParams.toString()}`);
   };
 
   const handleSubmit = async () => {
@@ -185,7 +202,7 @@ export default function AiPlannerPage() {
             <AlertDescription className="text-xs text-muted-foreground">
               The AI considers your final date, goals, and (mocked) past performance to create a schedule.
               It will try to allocate more time to subjects where your goals are high or past scores were lower.
-              The plan will include study blocks, suggested test days, and review periods.
+              The plan will include study blocks, suggested test days (with chapter focus and question recommendations), and review periods.
             </AlertDescription>
           </Alert>
         </CardFooter>
@@ -239,6 +256,16 @@ export default function AiPlannerPage() {
                     {item.details && (
                       <p className="text-xs sm:text-sm text-muted-foreground mt-1">Notes: {item.details}</p>
                     )}
+                    {item.activityType === 'Test' && (item.subjectFocus || (item.chapterFocus && item.chapterFocus.length > 0)) && (
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="mt-3 w-full sm:w-auto"
+                         onClick={() => handleSetupTest(item)}
+                       >
+                         <Settings className="mr-2 h-4 w-4" /> Setup This Test
+                       </Button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -249,7 +276,7 @@ export default function AiPlannerPage() {
               <Info className="h-4 w-4 text-accent/80" />
               <AlertTitle className="text-accent/90 font-semibold">Next Steps & Future Features</AlertTitle>
               <AlertDescription className="text-xs space-y-1 text-muted-foreground">
-                <p>This is your initial AI-generated plan. In future versions, this page will include:</p>
+                <p>This is your initial AI-generated plan. You can use the "Setup This Test" button to pre-fill subject and chapters on the custom test page. Future versions may include:</p>
                 <ul className="list-disc list-inside pl-4">
                   <li>Dynamic progress tracking against this plan.</li>
                   <li>Automatic plan adjustments by the AI if you're ahead or behind.</li>

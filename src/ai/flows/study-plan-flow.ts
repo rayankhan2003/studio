@@ -34,8 +34,8 @@ export const DailyActivitySchema = z.object({
   date: z.string().describe('Date for the activity (YYYY-MM-DD or descriptive like "Week 1, Day 1").'),
   activityType: z.enum(['Study', 'Test', 'Review', 'Rest']).describe('Type of activity for the day.'),
   subjectFocus: SubjectEnum.optional().describe('Primary subject to focus on for "Study" or "Test" activities.'),
-  chapterFocus: z.array(z.string()).optional().describe('Specific chapters or topics to cover for "Study" activities.'),
-  details: z.string().optional().describe('Additional details or notes for the day\'s plan.'),
+  chapterFocus: z.array(z.string()).optional().describe('Specific chapters or topics to cover for "Study" or "Test" activities.'),
+  details: z.string().optional().describe('Additional details or notes for the day\'s plan, especially for "Test" type, specify number of tests/questions.'),
 });
 
 export type DailyActivity = z.infer<typeof DailyActivitySchema>;
@@ -56,7 +56,7 @@ const studyPlannerPrompt = ai.definePrompt({
   input: {schema: StudyPlanInputSchema},
   output: {schema: StudyPlanOutputSchema},
   prompt: `You are an expert AI Study Planner for students preparing for competitive exams like the MDCAT.
-Your task is to generate a personalized study timetable to help the student stay on track and achieve their goals by the final preparation date.
+Your task is to generate a personalized study timetable to help the student cover the entire syllabus and achieve their goals by the final preparation date. Assume each chapter in the syllabus is comprehensive and requires dedicated study and practice (e.g., may contain hundreds of potential practice questions).
 
 Student Inputs:
 - Final Preparation Date: {{finalPreparationDate}}
@@ -75,7 +75,7 @@ Student Inputs:
 {{#if studyHoursPerDay}}
 - Available Study Hours Per Day: {{studyHoursPerDay}} hours
 {{else}}
-- Available Study Hours Per Day: Not specified. Assume a standard balanced load.
+- Available Study Hours Per Day: Not specified. Assume a standard balanced load (e.g., 4-6 hours).
 {{/if}}
 
 Syllabus Overview:
@@ -84,24 +84,33 @@ Subject: {{@key}}
 Chapters: {{#each this}}{{.name}}{{#unless @last}}, {{/unless}}{{/each}}
 {{/each}}
 
-
 Instructions for Plan Generation:
-1.  Calculate the total number of days available until the final preparation date.
-2.  Create a structured daily or weekly schedule. For each entry in the schedule, specify the date (can be relative like "Week 1, Day 1" or absolute "YYYY-MM-DD"), activityType ("Study", "Test", "Review", "Rest"), subjectFocus (if applicable), chapterFocus (specific chapters/topics for "Study" type, can be an array), and any brief details.
-3.  Prioritize Weaker Areas: Allocate more time and focus to subjects/chapters where the student's past performance is lower than their goals, or generally low if no specific goals are set for that subject.
-4.  Goal-Oriented: Ensure the plan aims to help the student achieve their stated subjectGoals.
-5.  Comprehensive Coverage: Try to cover all relevant chapters from the syllabus for the main subjects (Biology, Chemistry, Physics, English, Logical Reasoning) before the final date.
-6.  Balanced Schedule: Include a mix of focused study sessions, practice tests (e.g., chapter tests, subject tests, full mock tests), and dedicated review days. Also, incorporate short rest days or lighter days.
-7.  Realistic Load: If studyHoursPerDay is provided, try to align the daily workload with it. If not, assume a reasonable study load.
-8.  AI Advice: Provide a short, encouraging general piece of advice for the student based on their plan.
+1.  Calculate the total number of study days available until the \`finalPreparationDate\`.
+2.  Create a structured daily schedule. For each entry in the schedule, provide:
+    - \`date\`: (Use relative dates like "Week 1, Day 1", "Week 1, Day 2", etc. for clarity in plans longer than a few weeks. For very short plans, "YYYY-MM-DD" is acceptable).
+    - \`activityType\`: "Study", "Test", "Review", or "Rest".
+    - \`subjectFocus\`: (Applicable for "Study", "Test", "Review". Can be a single subject).
+    - \`chapterFocus\`: An array of specific chapter names for "Study" or "Test" activities. Ensure the plan covers ALL chapters from the syllabus for the main subjects over the total duration.
+    - \`details\`: Additional notes.
+        - For \`activityType: "Study"\`: Briefly mention what to do (e.g., "Thoroughly read concepts, make concise notes, and solve 10-15 practice MCQs per chapter.").
+        - For \`activityType: "Test"\`: Crucially, provide a specific recommendation for testing on the \`chapterFocus\`. Example formats:
+          "Test on chapters: {{#each chapterFocus}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}. Recommended: Attempt 2 tests of 20 questions each."
+          "Test on chapters: {{#each chapterFocus}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}. Recommended: One comprehensive test of 40-50 questions."
+          "Recommended: Focus on {{subjectFocus}}. Attempt 25 questions from {{#if chapterFocus}}{{#each chapterFocus}}{{.}}{{#unless @last}} & {{/unless}}{{/each}}{{else}}the subject{{/if}}."
+          The number of questions should be appropriate for the chapters covered. Assume a typical test segment is 20-30 questions. Calculate the total number of tests or questions the student should aim for based on the chapters studied and available time.
+3.  Prioritize Weaker Areas: Allocate more time and earlier review/test cycles for subjects/chapters where past performance is low or goals are high.
+4.  Comprehensive Coverage: Distribute the study of ALL chapters from the syllabus across the available days, ensuring everything is covered at least once before the final date.
+5.  Balanced Schedule: Mix study, tests, reviews, and rest. Don't overload days. Distribute subjects.
+6.  Realistic Load: If \`studyHoursPerDay\` is given, tailor daily tasks to fit. If not provided, assume about 4-6 hours of focused study.
+7.  AI Advice: Provide a short, encouraging general piece of advice related to consistency and strategy.
 
 Output Format:
-Return the plan as a JSON object with two keys: "schedule" (an array of daily/weekly activities) and "aiGeneralAdvice" (a string).
-Each item in the "schedule" array should be an object with "date", "activityType", "subjectFocus" (optional), "chapterFocus" (optional array of strings), and "details" (optional).
+Return the plan as a JSON object with "schedule" (an array of daily activities) and "aiGeneralAdvice".
+Each schedule item: { "date", "activityType", "subjectFocus" (optional), "chapterFocus" (optional array of strings), "details" (optional string) }.
 
-Example for a schedule item:
-{ "date": "2024-08-15", "activityType": "Study", "subjectFocus": "Biology", "chapterFocus": ["Cell Structure & Function", "Bioenergetics"], "details": "Review notes and practice 10 MCQs from each chapter." }
-{ "date": "2024-08-16", "activityType": "Test", "subjectFocus": "Physics", "details": "Take a full mock test on Physics - Section 1 (Force & Motion, Work & Energy)." }
+Example for a Test activity:
+{ "date": "Week 3, Day 2", "activityType": "Test", "subjectFocus": "Physics", "chapterFocus": ["Force & Motion", "Work & Energy"], "details": "Test on chapters: Force & Motion, Work & Energy. Recommended: Attempt 1 test of 30 questions covering both." }
+Ensure chapterFocus is always an array, even if it's empty or has one chapter.
 
 Begin generating the plan now.
 `,
@@ -130,7 +139,7 @@ const studyPlannerFlow = ai.defineFlow(
       date: item.date || 'N/A',
       activityType: item.activityType || 'Study',
       subjectFocus: item.subjectFocus,
-      chapterFocus: item.chapterFocus || [],
+      chapterFocus: item.chapterFocus || [], // Ensure chapterFocus is always an array
       details: item.details
     })) || [];
 
@@ -166,3 +175,4 @@ export async function resetStudyPlan(input: ResetStudyPlanInput): Promise<ResetS
     details: input.planId ? `Plan ID ${input.planId} was targeted for reset.` : 'No specific plan ID provided for reset.',
   };
 }
+

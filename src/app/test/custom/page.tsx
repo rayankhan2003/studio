@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -38,6 +38,7 @@ type SelectedChaptersMap = Record<Subject, Set<string>>;
 
 export default function CustomTestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const initialSelectedChapters = (): SelectedChaptersMap => {
     const state: Partial<SelectedChaptersMap> = {};
@@ -53,14 +54,57 @@ export default function CustomTestPage() {
   const [customQuestionCount, setCustomQuestionCount] = useState<string>('10');
   const [timePerQuestion, setTimePerQuestion] = useState<number>(timePerQuestionOptions[2].value);
   const [activeAccordionItems, setActiveAccordionItems] = useState<string[]>([]);
-  const [testName, setTestName] = useState<string>('My Custom Test');
+  const [testName, setTestName] = useState<string>('');
 
 
   useEffect(() => {
-    if (allSubjects.length > 0) {
-      // setActiveAccordionItems([allSubjects[0]]); // Optionally auto-open first subject
+    const subjectsQuery = searchParams.get('subjects');
+    const chaptersQuery = searchParams.get('chapters'); // e.g., "Biology:Cell Structure,Physics:Force & Motion"
+    const testNameQuery = searchParams.get('testName');
+
+    if (testNameQuery) {
+        setTestName(testNameQuery);
+    } else {
+        setTestName('My Custom Test');
     }
-  }, []);
+
+    if (subjectsQuery || chaptersQuery) {
+      const newSelectedChaptersMap: SelectedChaptersMap = initialSelectedChapters();
+      const subjectsToOpenInAccordion: Set<string> = new Set();
+
+      if (subjectsQuery) {
+        const subjectsArray = subjectsQuery.split(',');
+        subjectsArray.forEach(subjStr => {
+          if (allSubjects.includes(subjStr as Subject)) {
+            subjectsToOpenInAccordion.add(subjStr);
+            // If only subjects are passed, select all their chapters by default
+            if (!chaptersQuery) {
+                 syllabus[subjStr as Subject].forEach(chap => newSelectedChaptersMap[subjStr as Subject].add(chap.name));
+            }
+          }
+        });
+      }
+      
+      if (chaptersQuery) {
+        const chapterSelections = chaptersQuery.split(',');
+        chapterSelections.forEach(cs => {
+          const [subj, chap] = cs.split(':');
+          if (subj && chap && allSubjects.includes(subj as Subject) && syllabus[subj as Subject].find(c => c.name === chap)) {
+            newSelectedChaptersMap[subj as Subject].add(chap);
+            subjectsToOpenInAccordion.add(subj);
+          }
+        });
+      }
+      setSelectedChaptersMap(newSelectedChaptersMap);
+      setActiveAccordionItems(Array.from(subjectsToOpenInAccordion));
+    } else {
+      // Default behavior if no query params: optionally auto-open first subject
+      if (allSubjects.length > 0 && activeAccordionItems.length === 0) {
+        // setActiveAccordionItems([allSubjects[0]]); 
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only re-run when searchParams change
 
   const actualQuestionCount = useMemo(() => {
     return questionCountMode === 'preset' ? selectedPresetQuestions : parseInt(customQuestionCount) || 0;
@@ -88,11 +132,10 @@ export default function CustomTestPage() {
 
   const handleSubjectSelectAll = (subject: Subject, checked: boolean | 'indeterminate') => {
     setSelectedChaptersMap(prev => {
-      const newSubjectChapters = new Set<string>(); // Start fresh
+      const newSubjectChapters = new Set<string>(); 
       if (checked === true) {
         syllabus[subject].forEach(ch => newSubjectChapters.add(ch.name));
       }
-      // If 'indeterminate' or false, it effectively clears or sets based on 'checked'
       return { ...prev, [subject]: newSubjectChapters };
     });
   };
@@ -131,17 +174,20 @@ export default function CustomTestPage() {
 
   const handleStartCustomTest = () => {
     if (totalSelectedChaptersCount === 0) {
-      toast({ title: "Error", description: "Please select at least one chapter.", variant: "destructive" });
+      toast({ title: "Error", description: "Please select at least one chapter from at least one subject.", variant: "destructive" });
       return;
     }
     if (actualQuestionCount <= 0) {
       toast({ title: "Error", description: "Number of questions must be greater than 0.", variant: "destructive" });
       return;
     }
+    
+    const finalQuestionCount = Math.min(actualQuestionCount, totalAvailableQuestionsFromSelection > 0 ? totalAvailableQuestionsFromSelection : actualQuestionCount);
+
     if (actualQuestionCount > totalAvailableQuestionsFromSelection && totalAvailableQuestionsFromSelection > 0) {
       toast({
         title: "Warning",
-        description: `You requested ${actualQuestionCount} questions, but selected chapters have only ${totalAvailableQuestionsFromSelection}. The test will use ${totalAvailableQuestionsFromSelection} questions.`,
+        description: `You requested ${actualQuestionCount} questions, but selected topics have only ${totalAvailableQuestionsFromSelection}. The test will use ${totalAvailableQuestionsFromSelection} questions.`,
         variant: "default",
         duration: 7000,
       });
@@ -149,12 +195,17 @@ export default function CustomTestPage() {
      if (totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0) {
       toast({
         title: "No Questions Found",
-        description: "No questions available for the selected chapters. Please expand your selection.",
+        description: "No questions available for the selected chapters. Please expand your selection or check the mock database.",
         variant: "destructive",
         duration: 5000,
       });
       return;
     }
+    if (finalQuestionCount <=0) {
+        toast({ title: "Error", description: "Calculated question count is zero. Please check selections.", variant: "destructive" });
+        return;
+    }
+
 
     toast({ title: "Custom Test Starting!", description: "Redirecting..." });
 
@@ -164,18 +215,18 @@ export default function CustomTestPage() {
     allSubjects.forEach(subject => {
       const chapters = Array.from(selectedChaptersMap[subject]);
       if (chapters.length > 0) {
-        selectedSubjectsForQuery.push(subject);
+        selectedSubjectsForQuery.push(subject); // Keep this for broader subject context if needed
         chapters.forEach(ch => selectedChaptersForQuery.push(`${subject}:${ch}`));
       }
     });
 
 
     const queryParams = new URLSearchParams({
-      questionCount: String(Math.min(actualQuestionCount, totalAvailableQuestionsFromSelection > 0 ? totalAvailableQuestionsFromSelection : actualQuestionCount)),
-      totalDuration: String(totalTestDuration),
+      questionCount: String(finalQuestionCount),
+      totalDuration: String(finalQuestionCount * timePerQuestion), // Recalculate duration based on final question count
       testName: testName || "Custom SmarterCat Test",
-      subjects: selectedSubjectsForQuery.join(','), // e.g. Biology,Chemistry
-      chapters: selectedChaptersForQuery.join(',') // e.g. Biology:Cell Structure,Physics:Force & Motion
+      subjects: selectedSubjectsForQuery.join(','),
+      chapters: selectedChaptersForQuery.join(',') 
     });
 
     router.push(`/test/custom-session?${queryParams.toString()}`);
@@ -188,7 +239,7 @@ export default function CustomTestPage() {
       questionCount: String(MOCK_MDCAT_QUESTION_COUNT),
       totalDuration: String(MOCK_MDCAT_TOTAL_DURATION_SECONDS),
       testName: `MDCAT ${year} (Practice)`,
-      source: `mdcat-${year}` // Indicate it's an MDCAT paper
+      source: `mdcat-${year}` 
     });
     router.push(`/test/mdcat-session-${year}?${queryParams.toString()}`);
   };
@@ -224,13 +275,13 @@ export default function CustomTestPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="testName" className="font-semibold text-base">Test Name (Optional)</Label>
+                <Label htmlFor="testName" className="font-semibold text-base mb-1 block">Test Name</Label>
                 <Input
                   id="testName"
                   value={testName}
                   onChange={(e) => setTestName(e.target.value)}
                   placeholder="e.g., Biology Midterm Prep"
-                  className="mt-1 text-base"
+                  className="text-base"
                 />
               </div>
               <Accordion
@@ -242,28 +293,26 @@ export default function CustomTestPage() {
                 {allSubjects.map((subject) => (
                   <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md shadow-sm">
                     <AccordionTrigger asChild>
-                      <div
+                       <div
                         className={cn(
                           "flex flex-1 items-center justify-between py-3 px-3 font-medium transition-all hover:no-underline rounded-t-md cursor-pointer group hover:bg-accent/10",
-                          activeAccordionItems.includes(subject) ? "bg-accent/5" : "",
-                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:outline-none"
+                          activeAccordionItems.includes(subject) ? "bg-accent/5" : ""
                         )}
                       >
-                        <div className="flex items-center space-x-3 flex-1">
+                        <div className="flex items-center space-x-3 flex-1" onClick={(e) => e.stopPropagation()} >
                           <Checkbox
                             id={`select-all-${subject}`}
                             checked={getSubjectCheckboxState(subject)}
                             onCheckedChange={(checked) => {
                               handleSubjectSelectAll(subject, checked);
                             }}
-                            onClick={(e) => e.stopPropagation()}
                             aria-label={`Select all chapters in ${subject}`}
                             className="h-5 w-5"
                           />
                           <Label
                             htmlFor={`select-all-${subject}`}
                             className="text-lg font-semibold text-foreground cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
+                           
                           >
                             {subject} ({selectedChaptersMap[subject]?.size || 0} / {syllabus[subject].length} chapters)
                           </Label>
@@ -309,11 +358,11 @@ export default function CustomTestPage() {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="preset" id="preset" />
-                    <Label htmlFor="preset" className="text-base">Choose from presets</Label>
+                    <Label htmlFor="preset" className="text-sm sm:text-base">Choose from presets</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="custom" id="custom" />
-                    <Label htmlFor="custom" className="text-base">Enter custom number</Label>
+                    <Label htmlFor="custom" className="text-sm sm:text-base">Enter custom number</Label>
                   </div>
                 </RadioGroup>
 
@@ -322,12 +371,12 @@ export default function CustomTestPage() {
                     value={String(selectedPresetQuestions)}
                     onValueChange={(value) => setSelectedPresetQuestions(Number(value))}
                   >
-                    <SelectTrigger className="text-base">
+                    <SelectTrigger className="text-sm sm:text-base">
                       <SelectValue placeholder="Select number of questions" />
                     </SelectTrigger>
                     <SelectContent>
                       {questionCountPresets.map(count => (
-                        <SelectItem key={count} value={String(count)} className="text-base">{count} questions</SelectItem>
+                        <SelectItem key={count} value={String(count)} className="text-sm sm:text-base">{count} questions</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -339,7 +388,7 @@ export default function CustomTestPage() {
                     value={customQuestionCount}
                     onChange={(e) => setCustomQuestionCount(e.target.value)}
                     min="1"
-                    className="text-base"
+                    className="text-sm sm:text-base"
                   />
                 )}
                  {actualQuestionCount > totalAvailableQuestionsFromSelection && totalSelectedChaptersCount > 0 && totalAvailableQuestionsFromSelection > 0 && (
@@ -368,12 +417,12 @@ export default function CustomTestPage() {
                   value={String(timePerQuestion)}
                   onValueChange={(value) => setTimePerQuestion(Number(value))}
                 >
-                  <SelectTrigger className="text-base">
+                  <SelectTrigger className="text-sm sm:text-base">
                     <SelectValue placeholder="Select time per question" />
                   </SelectTrigger>
                   <SelectContent>
                     {timePerQuestionOptions.map(opt => (
-                      <SelectItem key={opt.value} value={String(opt.value)} className="text-base">{opt.label}</SelectItem>
+                      <SelectItem key={opt.value} value={String(opt.value)} className="text-sm sm:text-base">{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -401,7 +450,7 @@ export default function CustomTestPage() {
                 <Info className="h-6 w-6 text-accent" /> Custom Test Preview
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-base">
+            <CardContent className="space-y-3 text-sm sm:text-base">
                <div>
                 <h4 className="font-semibold mb-1">Test Name:</h4>
                 <p className="text-primary font-semibold">{testName || "Custom Test"}</p>
@@ -409,7 +458,7 @@ export default function CustomTestPage() {
               <div>
                 <h4 className="font-semibold mb-1">Selected Chapters ({totalSelectedChaptersCount}):</h4>
                 {totalSelectedChaptersCount > 0 ? (
-                  <div className="max-h-40 overflow-y-auto space-y-1 text-sm bg-muted/50 p-3 rounded-md border">
+                  <div className="max-h-40 overflow-y-auto space-y-1 text-xs sm:text-sm bg-muted/50 p-3 rounded-md border">
                   {getSelectedChaptersForPreview().map(item => (
                     <div key={item.subject}>
                       <strong className="text-primary/90">{item.subject}:</strong> {item.chapters.join(', ')}
@@ -440,7 +489,7 @@ export default function CustomTestPage() {
                   key={year}
                   variant="outline"
                   onClick={() => handleStartMdcatTest(year)}
-                  className="w-full text-base py-3"
+                  className="w-full text-sm sm:text-base py-3"
                 >
                   MDCAT {year}
                 </Button>
