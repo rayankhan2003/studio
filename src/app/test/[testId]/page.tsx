@@ -13,8 +13,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { type Subject as SubjectType, syllabus } from '@/lib/syllabus'; // Keep syllabus for chapter context if needed
+import { type Subject as SubjectType, syllabus } from '@/lib/syllabus';
 import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const DEFAULT_QUESTION_COUNT = 10;
 const DEFAULT_TOTAL_TEST_DURATION = 10 * 60; // 10 questions * 60 seconds per question
@@ -44,7 +54,6 @@ interface StoredTestReport {
   }>;
 }
 
-// Helper function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];
   for (let i = newArray.length - 1; i > 0; i--) {
@@ -58,13 +67,11 @@ const getQuestionsForTest = (
   questionCount: number,
   selectedSubjectsParam: string | null,
   selectedChaptersParam: string | null,
-  sourceParam: string | null // e.g., 'mdcat-2023'
+  sourceParam: string | null
 ): QuestionForTest[] => {
   let filteredQuestions: MockQuestionDefinition[] = [];
 
   if (sourceParam && sourceParam.startsWith('mdcat-')) {
-    // For MDCAT, try to get a mix from all subjects, or be more specific if we had year-specific questions
-    // This is a simplified mock: takes 'questionCount' from the general DB, trying to balance subjects.
     const targetPerSubject = Math.ceil(questionCount / Object.keys(syllabus).length);
     const subjectsInSyllabus = Object.keys(syllabus) as SubjectType[];
 
@@ -72,7 +79,6 @@ const getQuestionsForTest = (
       const subjectQuestions = mockQuestionsDb.filter(q => q.subject === subject);
       filteredQuestions.push(...shuffleArray(subjectQuestions).slice(0, targetPerSubject));
     });
-    // Ensure we have 'questionCount' questions, might oversample some subjects if others are lacking
      if (filteredQuestions.length < questionCount && mockQuestionsDb.length > 0) {
         const needed = questionCount - filteredQuestions.length;
         const additionalQs = shuffleArray(mockQuestionsDb.filter(q => !filteredQuestions.find(fq => fq.id === q.id))).slice(0, needed);
@@ -81,8 +87,7 @@ const getQuestionsForTest = (
     filteredQuestions = shuffleArray(filteredQuestions).slice(0, questionCount);
 
   } else if (selectedSubjectsParam && selectedChaptersParam) {
-    // const subjects = selectedSubjectsParam.split(','); // Not directly used for filtering if chapters are specific enough
-    const chapterSelections = selectedChaptersParam.split(','); // "SubjectName:ChapterName"
+    const chapterSelections = selectedChaptersParam.split(','); 
 
     const chapterMap: Record<SubjectType, Set<string>> = {} as any;
     chapterSelections.forEach(cs => {
@@ -100,14 +105,11 @@ const getQuestionsForTest = (
         filteredQuestions.push(q);
       }
     });
-    // filteredQuestions = shuffleArray(filteredQuestions).slice(0, questionCount); // This was potentially slicing too early if count > available
   } else {
-    // Fallback to random questions if no specific criteria (should ideally not happen with custom flow)
     filteredQuestions = shuffleArray(mockQuestionsDb);
   }
 
-  // Ensure exactly questionCount questions if possible, or all available if less
-  if (filteredQuestions.length === 0) return []; // Return empty if no questions match
+  if (filteredQuestions.length === 0) return []; 
 
   return shuffleArray(filteredQuestions).slice(0, questionCount);
 };
@@ -117,14 +119,14 @@ export default function TestPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const testId = params.testId as string; // e.g., "custom-session" or "mdcat-session-2023"
+  const testId = params.testId as string; 
 
   const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || DEFAULT_QUESTION_COUNT;
-  const parsedTotalDuration = parseInt(searchParams.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
+  const parsedTotalDuration = parseInt(search_params.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
   const testNameFromParams = searchParams.get('testName') || `Test (${testId.replace('-session', '')})`;
   const subjectsParam = searchParams.get('subjects');
   const chaptersParam = searchParams.get('chapters');
-  const sourceParam = searchParams.get('source'); // For MDCAT papers
+  const sourceParam = searchParams.get('source'); 
 
   const questions = useMemo(() =>
     getQuestionsForTest(parsedQuestionCount, subjectsParam, chaptersParam, sourceParam),
@@ -138,22 +140,32 @@ export default function TestPage() {
   const [progress, setProgress] = useState(0);
   const [timerDisplayMode, setTimerDisplayMode] = useState<'remaining' | 'total'>('remaining');
   const [testSubmitted, setTestSubmitted] = useState(false);
+  const [isConfirmSubmitDialogOpen, setIsConfirmSubmitDialogOpen] = useState(false);
+  const [unansweredQuestionsCount, setUnansweredQuestionsCount] = useState(0);
 
+  const isQuestionAttempted = (questionId: string): boolean => {
+    const answerExists = Object.prototype.hasOwnProperty.call(answers, questionId);
+    if (!answerExists) return false;
+    const answerValue = answers[questionId];
+    if (Array.isArray(answerValue)) return answerValue.length > 0;
+    if (typeof answerValue === 'string') return answerValue.trim() !== '';
+    return false;
+  };
+  
   useEffect(() => {
     setTimeLeft(TOTAL_TEST_DURATION);
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timer);
-          if (!testSubmitted) handleSubmit();
+          if (!testSubmitted) handleSubmitTest(true); // Auto-submit when timer ends
           return 0;
         }
         return prevTime - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [TOTAL_TEST_DURATION, testSubmitted]);
+  }, [TOTAL_TEST_DURATION, testSubmitted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (questions.length === 0) {
@@ -162,8 +174,7 @@ export default function TestPage() {
     }
     const attemptedQuestionsCount = questions.filter(q => isQuestionAttempted(q.id)).length;
     setProgress((attemptedQuestionsCount / questions.length) * 100);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answers, questions]); // Depend on questions as well
+  }, [answers, questions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -207,7 +218,7 @@ export default function TestPage() {
     return userAnswer === question.correctAnswer;
   };
 
-  const handleSubmit = () => {
+  const proceedToSubmitTest = () => {
     if (testSubmitted) return;
     setTestSubmitted(true);
 
@@ -298,26 +309,38 @@ export default function TestPage() {
     router.push(`/test/${reportId}/review`);
   };
 
+  const handleSubmitTest = (isAutoSubmit = false) => {
+    if (testSubmitted) return;
+
+    const attemptedQuestionsCount = questions.filter(q => isQuestionAttempted(q.id)).length;
+    const localUnansweredCount = questions.length - attemptedQuestionsCount;
+
+    if (!isAutoSubmit && localUnansweredCount > 0) {
+      setUnansweredQuestionsCount(localUnansweredCount);
+      setIsConfirmSubmitDialogOpen(true);
+      return;
+    }
+    proceedToSubmitTest();
+  };
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const isQuestionAttempted = (questionId: string): boolean => {
-    const answerExists = Object.prototype.hasOwnProperty.call(answers, questionId);
-    if (!answerExists) return false;
-    const answerValue = answers[questionId];
-    if (Array.isArray(answerValue)) return answerValue.length > 0;
-    if (typeof answerValue === 'string') return answerValue.trim() !== '';
-    return false;
-  };
-
   const toggleTimerDisplay = () => {
     setTimerDisplayMode(prev => prev === 'remaining' ? 'total' : 'remaining');
   };
 
-  if (questions.length === 0) {
+  if (questions.length === 0 && !testId.startsWith('custom-session') && !testId.startsWith('mdcat-session')) {
+     // This case might occur if directly navigating to /test/some-random-id without query params
+     // and it's not a review page.
+     // However, the main check for no questions is handled by getQuestionsForTest returning []
+     // and the UI handling below this for custom tests.
+  }
+
+  if (questions.length === 0 && (testId.startsWith('custom-session') || testId.startsWith('mdcat-session'))) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)] py-12 px-4">
         <Card className="w-full max-w-lg text-center shadow-xl">
@@ -345,7 +368,7 @@ export default function TestPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-7xl mx-auto py-4 md:py-8 px-2 sm:px-4">
-      <ScrollArea className="w-full md:w-48 lg:w-56 h-auto md:h-[calc(100vh-12rem)] py-3 rounded-lg bg-card border shadow-sm flex-shrink-0 mb-4 md:mb-0">
+      <ScrollArea className="w-full md:w-48 lg:w-56 h-auto md:max-h-[calc(100vh-12rem)] py-3 rounded-lg bg-card border shadow-sm flex-shrink-0 mb-4 md:mb-0">
         <div className="px-2 grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {questions.map((question, index) => (
             <Button
@@ -457,21 +480,43 @@ export default function TestPage() {
             )}
           </CardContent>
           <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
-            <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0} className="w-full sm:w-auto text-sm sm:text-base py-2">
+            <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0} className="w-full sm:w-auto text-sm sm:text-base py-2 sm:py-2.5">
               <ChevronLeft className="mr-2 h-4 w-4" /> Previous
             </Button>
             {currentQuestionIndex === questions.length - 1 ? (
-              <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto text-sm sm:text-base py-2" disabled={testSubmitted}>
+              <Button onClick={() => handleSubmitTest(false)} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto text-sm sm:text-base py-2 sm:py-2.5" disabled={testSubmitted}>
                 <CheckSquare className="mr-2 h-4 w-4" /> Submit Test
               </Button>
             ) : (
-              <Button onClick={handleNext} className="w-full sm:w-auto text-sm sm:text-base py-2">
+              <Button onClick={handleNext} className="w-full sm:w-auto text-sm sm:text-base py-2 sm:py-2.5">
                 Next <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             )}
           </CardFooter>
         </Card>
       </div>
+
+      <AlertDialog open={isConfirmSubmitDialogOpen} onOpenChange={setIsConfirmSubmitDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Submission</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have {unansweredQuestionsCount} unanswered question(s). Are you sure you want to submit the test?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Review Questions</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setIsConfirmSubmitDialogOpen(false);
+              proceedToSubmitTest();
+            }}>
+              Submit Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
+    
