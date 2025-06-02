@@ -367,24 +367,30 @@ export default function TestPage() {
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-7xl mx-auto py-4 md:py-8 px-2 sm:px-4">
       <ScrollArea className="w-full md:w-48 lg:w-56 h-auto md:max-h-[calc(100vh-12rem)] py-3 rounded-lg bg-card border shadow-sm flex-shrink-0 mb-4 md:mb-0">
         <div className="px-2 grid grid-cols-5 sm:grid-cols-6 md:grid-cols-5 lg:grid-cols-5 gap-2">
-          {questions.map((question, index) => (
-            <Button
-              key={question.id}
-              onClick={() => setCurrentQuestionIndex(index)}
-              variant="outline"
-              size="sm"
-              className={cn(
-                "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out p-1",
-                isQuestionAttempted(question.id) ?
-                  'bg-green-500 border-green-600 hover:bg-green-600/90 text-white' :
-                  'bg-yellow-300 border-yellow-400 hover:bg-yellow-400/90 text-yellow-800',
-                currentQuestionIndex === index ? 'ring-2 ring-primary ring-offset-background ring-offset-2' : ''
-              )}
-              title={`Question ${index + 1}`}
-            >
-              {index + 1}
-            </Button>
-          ))}
+          {questions.map((question, index) => {
+            const isCurrent = currentQuestionIndex === index;
+            const attempted = isQuestionAttempted(question.id);
+            return (
+              <Button
+                key={question.id}
+                onClick={() => setCurrentQuestionIndex(index)}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out p-1",
+                  isCurrent
+                    ? (attempted ? 'bg-primary/80 text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2' : 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2')
+                    : attempted
+                      ? 'bg-green-500 border-green-600 hover:bg-green-600/90 text-white'
+                      : 'bg-card hover:bg-muted text-foreground',
+                  isCurrent && 'shadow-lg'
+                )}
+                title={`Question ${index + 1}${attempted ? ' (Attempted)' : ' (Unattempted)'}`}
+              >
+                {index + 1}
+              </Button>
+            );
+          })}
         </div>
       </ScrollArea>
 

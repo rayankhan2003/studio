@@ -242,9 +242,14 @@ export default function AnalyticsPage() {
     const currentSubject = subject || selectedSubjectForChapterChart || allSubjects[0];
     setGoalDialogSubject(currentSubject);
     const chaptersForSubject = syllabus[currentSubject];
-    const currentChapter = chapter || (chaptersForSubject.length > 0 ? chaptersForSubject[0].name : '');
+    const currentChapter = chapter || (chaptersForSubject?.length > 0 ? chaptersForSubject[0].name : '');
     setGoalDialogChapter(currentChapter);
-    setGoalDialogTargetScore(chapterGoals[currentSubject]?.[currentChapter]?.toString() || '');
+
+    if (currentChapter) {
+      setGoalDialogTargetScore(chapterGoals[currentSubject]?.[currentChapter]?.toString() || '');
+    } else {
+      setGoalDialogTargetScore('');
+    }
     setIsSetGoalDialogOpen(true);
   };
 
@@ -535,3 +540,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
