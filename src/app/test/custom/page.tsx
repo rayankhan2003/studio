@@ -265,6 +265,7 @@ export default function CustomTestPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Main Configuration Column */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-lg">
             <CardHeader>
@@ -429,7 +430,8 @@ export default function CustomTestPage() {
               </CardContent>
             </Card>
           </div>
-
+          
+          {/* Start Custom Test Button - Moved here */}
           <div className="mt-8">
             <Button
                 size="lg"
@@ -440,9 +442,9 @@ export default function CustomTestPage() {
                 <PlayCircle className="mr-2 h-6 w-6" /> Start Custom Test
             </Button>
           </div>
-
         </div>
 
+        {/* Side Column for Preview and Past Papers */}
         <div className="lg:col-span-1 space-y-6">
           <Card className="shadow-lg sticky top-20">
             <CardHeader>

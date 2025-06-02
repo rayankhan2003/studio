@@ -3,12 +3,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, CreditCard, Smartphone, Banknote, ShieldCheck, UserPlus, Calendar, School, Phone, Mail } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, Banknote, ShieldCheck, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-
+import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -197,7 +197,7 @@ export default function PricingPage() {
         setIsDemoInfoDialogOpen(open);
         if (!open) setDemoInfoData(initialDemoInfoData);
       }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md lg:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-6 w-6 text-accent"/> Start SmarterCat Demo
@@ -245,7 +245,7 @@ export default function PricingPage() {
         setIsPremiumDialogOpen(open);
         if (!open) setPremiumFormData(initialPremiumFormData);
       }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md lg:max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-6 w-6 text-primary"/> Subscribe to SmarterCat Premium
@@ -254,35 +254,44 @@ export default function PricingPage() {
               Please provide your information to proceed with your premium subscription. Payment details are for mock purposes only.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="premiumFullName">Full Name</Label>
-              <Input id="premiumFullName" name="fullName" value={premiumFormData.fullName} onChange={handlePremiumInputChange} placeholder="e.g., Aisha Khan" />
-            </div>
-            <div>
-              <Label htmlFor="premiumDob">Date of Birth</Label>
-              <Input id="premiumDob" name="dob" type="date" value={premiumFormData.dob} onChange={handlePremiumInputChange} />
-            </div>
-            <div>
-              <Label htmlFor="premiumEducationBoard">Education Board</Label>
-              <Input id="premiumEducationBoard" name="educationBoard" value={premiumFormData.educationBoard} onChange={handlePremiumInputChange} placeholder="e.g., BISE Lahore, Federal Board" />
-            </div>
-             <div>
-              <Label htmlFor="premiumMobileNumber">Mobile Number</Label>
-              <Input id="premiumMobileNumber" name="mobileNumber" type="tel" value={premiumFormData.mobileNumber} onChange={handlePremiumInputChange} placeholder="e.g., 03xxxxxxxxx" />
-            </div>
-            <div>
-              <Label htmlFor="premiumEmail">Email Address</Label>
-              <Input id="premiumEmail" name="email" type="email" value={premiumFormData.email} onChange={handlePremiumInputChange} placeholder="e.g., aisha.khan@example.com" />
-            </div>
+          <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
+            <section className="space-y-4">
+                <h3 className="text-lg font-medium text-muted-foreground">Personal Information</h3>
+                <div>
+                  <Label htmlFor="premiumFullName">Full Name</Label>
+                  <Input id="premiumFullName" name="fullName" value={premiumFormData.fullName} onChange={handlePremiumInputChange} placeholder="e.g., Aisha Khan" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="premiumDob">Date of Birth</Label>
+                        <Input id="premiumDob" name="dob" type="date" value={premiumFormData.dob} onChange={handlePremiumInputChange} />
+                    </div>
+                    <div>
+                        <Label htmlFor="premiumEducationBoard">Education Board</Label>
+                        <Input id="premiumEducationBoard" name="educationBoard" value={premiumFormData.educationBoard} onChange={handlePremiumInputChange} placeholder="e.g., BISE Lahore" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="premiumMobileNumber">Mobile Number</Label>
+                        <Input id="premiumMobileNumber" name="mobileNumber" type="tel" value={premiumFormData.mobileNumber} onChange={handlePremiumInputChange} placeholder="e.g., 03xxxxxxxxx" />
+                    </div>
+                    <div>
+                        <Label htmlFor="premiumEmail">Email Address</Label>
+                        <Input id="premiumEmail" name="email" type="email" value={premiumFormData.email} onChange={handlePremiumInputChange} placeholder="e.g., name@example.com" />
+                    </div>
+                </div>
+            </section>
             
-            <div className="border-t pt-4 mt-4">
-                <p className="text-sm font-semibold mb-2 text-muted-foreground">Payment Details (Mock)</p>
+            <Separator />
+
+            <section className="space-y-4">
+                <h3 className="text-lg font-medium text-muted-foreground">Payment Details (Mock)</h3>
                 <div>
                   <Label htmlFor="cardNumber">Card Number</Label>
                   <Input id="cardNumber" name="cardNumber" value={premiumFormData.cardNumber} onChange={handlePremiumInputChange} placeholder="•••• •••• •••• ••••" />
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="cardExpiry">Expiry Date (MM/YY)</Label>
                     <Input id="cardExpiry" name="cardExpiry" value={premiumFormData.cardExpiry} onChange={handlePremiumInputChange} placeholder="MM/YY" />
@@ -292,9 +301,12 @@ export default function PricingPage() {
                     <Input id="cardCvc" name="cardCvc" value={premiumFormData.cardCvc} onChange={handlePremiumInputChange} placeholder="•••" />
                   </div>
                 </div>
-            </div>
+                 <p className="text-xs text-muted-foreground pt-2">
+                    This is a mock payment form. No real transaction will occur.
+                </p>
+            </section>
           </div>
-          <DialogFooter className="sm:justify-between">
+          <DialogFooter className="sm:justify-between pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setIsPremiumDialogOpen(false)}>
               Cancel
             </Button>
@@ -319,7 +331,7 @@ export default function PricingPage() {
               {paymentMethods.map((method) => (
                 <div key={method.name} className="flex flex-col items-center p-3 border rounded-md bg-muted/30">
                   <method.icon className="h-8 w-8 text-primary mb-1" />
-                  <span className="text-sm font-medium">{method.name}</span>
+                  <span className="text-sm font-medium text-center">{method.name}</span>
                 </div>
               ))}
             </div>
@@ -331,7 +343,7 @@ export default function PricingPage() {
             <CardTitle className="text-xl flex items-center gap-2">
               <ShieldCheck className="h-6 w-6 text-primary" /> Secure & Flexible
             </CardTitle>
-          </CardHeader>
+          </Header>
           <CardContent className="space-y-3 text-muted-foreground">
             <p>
               Your payment information is processed securely (mock).
@@ -363,4 +375,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
