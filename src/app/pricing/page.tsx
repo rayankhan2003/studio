@@ -1,12 +1,12 @@
 
 'use client';
 
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, CreditCard, Smartphone, Banknote, ShieldCheck, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -58,15 +58,13 @@ const initialDemoInfoData: DemoInfoData = {
   email: '',
 };
 
-
 export default function PricingPage() {
   const { toast } = useToast();
-  const [isPremiumDialogOpen, setIsPremiumDialogOpen] = useState(false);
+  const [isPremiumDialogOpen, setIsPremiumDialogOpen] = useState<boolean>(false);
   const [premiumFormData, setPremiumFormData] = useState<PremiumFormData>(initialPremiumFormData);
 
-  const [isDemoInfoDialogOpen, setIsDemoInfoDialogOpen] = useState(false);
+  const [isDemoInfoDialogOpen, setIsDemoInfoDialogOpen] = useState<boolean>(false);
   const [demoInfoData, setDemoInfoData] = useState<DemoInfoData>(initialDemoInfoData);
-
 
   const handlePremiumInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,26 +77,38 @@ export default function PricingPage() {
   };
 
   const handleActivateDemoSubmit = () => {
-    console.log("Mock Demo Activation Data:", demoInfoData);
+    if (!demoInfoData.fullName || !demoInfoData.email) {
+        toast({
+            title: "Missing Information",
+            description: "Please fill in at least Full Name and Email for the demo.",
+            variant: "destructive",
+        });
+        return;
+    }
     toast({
       title: "Demo Information Captured!",
       description: "You can now access up to 25 sample questions. (This is a mock feature)",
     });
     setIsDemoInfoDialogOpen(false);
     setDemoInfoData(initialDemoInfoData);
-     // Potentially redirect to /test/custom or a specific demo test
   };
   
   const handlePremiumSubscribeSubmit = () => {
-    // In a real app, this would validate data and then initiate payment.
-    console.log("Mock Premium Subscription Data:", premiumFormData);
+    if (!premiumFormData.fullName || !premiumFormData.email || !premiumFormData.cardNumber) {
+         toast({
+            title: "Missing Information",
+            description: "Please fill in Full Name, Email, and Card Number to subscribe.",
+            variant: "destructive",
+        });
+        return;
+    }
     toast({
       title: "Information Captured (Mock)",
       description: "Redirecting to payment gateway... You may receive an SMS from your bank for confirmation. (This is a mock action)",
       duration: 7000,
     });
     setIsPremiumDialogOpen(false);
-    setPremiumFormData(initialPremiumFormData); // Reset form
+    setPremiumFormData(initialPremiumFormData);
   };
 
   return (
