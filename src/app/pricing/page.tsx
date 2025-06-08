@@ -90,7 +90,7 @@ export default function PricingPage() {
       description: "You can now access up to 25 sample questions. (This is a mock feature)",
     });
     setIsDemoInfoDialogOpen(false);
-    setDemoInfoData(initialDemoInfoData);
+    setDemoInfoData(initialDemoInfoData); 
   };
   
   const handlePremiumSubscribeSubmit = () => {
