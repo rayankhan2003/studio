@@ -4,11 +4,10 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, CreditCard, Smartphone, Banknote, ShieldCheck, UserPlus } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -189,11 +188,11 @@ export default function PricingPage() {
               ))}
             </ul>
           </CardContent>
-           <CardFooter className="flex-col gap-2 mt-auto">
+          <CardFooter className="flex-col gap-2 mt-auto">
             <Button onClick={() => setIsPremiumDialogOpen(true)} className="w-full text-lg py-6">
               Subscribe Now
             </Button>
-             <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-muted-foreground text-center">
               By subscribing, you agree to our{" "}
               <Link href="/terms" className="underline hover:text-primary">Terms of Use</Link> and acknowledge
               our automatic renewal policy.
@@ -210,7 +209,7 @@ export default function PricingPage() {
         <DialogContent className="sm:max-w-md lg:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="h-6 w-6 text-accent"/> Start SmarterCat Demo
+              <UserPlus className="h-6 w-6 text-accent" /> Start SmarterCat Demo
             </DialogTitle>
             <DialogDescription>
               Please provide some basic information to activate your demo access. This information helps us tailor your experience.
@@ -229,7 +228,7 @@ export default function PricingPage() {
               <Label htmlFor="demoEducationBoard">Education Board</Label>
               <Input id="demoEducationBoard" name="educationBoard" value={demoInfoData.educationBoard} onChange={handleDemoInfoInputChange} placeholder="e.g., BISE Lahore, Federal Board" />
             </div>
-             <div>
+            <div>
               <Label htmlFor="demoMobileNumber">Mobile Number</Label>
               <Input id="demoMobileNumber" name="mobileNumber" type="tel" value={demoInfoData.mobileNumber} onChange={handleDemoInfoInputChange} placeholder="e.g., 03xxxxxxxxx" />
             </div>
@@ -249,139 +248,79 @@ export default function PricingPage() {
         </DialogContent>
       </Dialog>
 
-
       {/* Premium Subscription Dialog */}
       <Dialog open={isPremiumDialogOpen} onOpenChange={(open) => {
         setIsPremiumDialogOpen(open);
         if (!open) setPremiumFormData(initialPremiumFormData);
       }}>
-        <DialogContent className="sm:max-w-md lg:max-w-xl">
+        <DialogContent className="sm:max-w-md lg:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="h-6 w-6 text-primary"/> Subscribe to SmarterCat Premium
+              <CreditCard className="h-6 w-6 text-primary" /> Subscribe to SmarterCat Premium
             </DialogTitle>
             <DialogDescription>
-              Please provide your information to proceed with your premium subscription. Payment details are for mock purposes only.
+              Enter your details to unlock all premium features.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
-            <section className="space-y-4">
-                <h3 className="text-lg font-medium text-muted-foreground">Personal Information</h3>
-                <div>
-                  <Label htmlFor="premiumFullName">Full Name</Label>
-                  <Input id="premiumFullName" name="fullName" value={premiumFormData.fullName} onChange={handlePremiumInputChange} placeholder="e.g., Aisha Khan" />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <Label htmlFor="premiumDob">Date of Birth</Label>
-                        <Input id="premiumDob" name="dob" type="date" value={premiumFormData.dob} onChange={handlePremiumInputChange} />
-                    </div>
-                    <div>
-                        <Label htmlFor="premiumEducationBoard">Education Board</Label>
-                        <Input id="premiumEducationBoard" name="educationBoard" value={premiumFormData.educationBoard} onChange={handlePremiumInputChange} placeholder="e.g., BISE Lahore" />
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <Label htmlFor="premiumMobileNumber">Mobile Number</Label>
-                        <Input id="premiumMobileNumber" name="mobileNumber" type="tel" value={premiumFormData.mobileNumber} onChange={handlePremiumInputChange} placeholder="e.g., 03xxxxxxxxx" />
-                    </div>
-                    <div>
-                        <Label htmlFor="premiumEmail">Email Address</Label>
-                        <Input id="premiumEmail" name="email" type="email" value={premiumFormData.email} onChange={handlePremiumInputChange} placeholder="e.g., name@example.com" />
-                    </div>
-                </div>
-            </section>
-            
-            <Separator />
+          <div className="space-y-3 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            <h3 className="text-sm font-semibold text-muted-foreground col-span-full">Personal Information</h3>
+            <div>
+              <Label htmlFor="premiumFullName">Full Name</Label>
+              <Input id="premiumFullName" name="fullName" value={premiumFormData.fullName} onChange={handlePremiumInputChange} placeholder="As on your CNIC/Passport" />
+            </div>
+            <div>
+              <Label htmlFor="premiumDob">Date of Birth</Label>
+              <Input id="premiumDob" name="dob" type="date" value={premiumFormData.dob} onChange={handlePremiumInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="premiumEducationBoard">Education Board</Label>
+              <Input id="premiumEducationBoard" name="educationBoard" value={premiumFormData.educationBoard} onChange={handlePremiumInputChange} placeholder="e.g., BISE Lahore, Federal Board" />
+            </div>
+            <div>
+              <Label htmlFor="premiumMobileNumber">Mobile Number (for OTP)</Label>
+              <Input id="premiumMobileNumber" name="mobileNumber" type="tel" value={premiumFormData.mobileNumber} onChange={handlePremiumInputChange} placeholder="e.g., 03xxxxxxxxx" />
+            </div>
+             <div>
+              <Label htmlFor="premiumEmail">Email Address</Label>
+              <Input id="premiumEmail" name="email" type="email" value={premiumFormData.email} onChange={handlePremiumInputChange} placeholder="e.g., your.email@example.com" />
+            </div>
 
-            <section className="space-y-4">
-                <h3 className="text-lg font-medium text-muted-foreground">Payment Details (Mock)</h3>
-                <div>
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input id="cardNumber" name="cardNumber" value={premiumFormData.cardNumber} onChange={handlePremiumInputChange} placeholder="•••• •••• •••• ••••" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="cardExpiry">Expiry Date (MM/YY)</Label>
-                    <Input id="cardExpiry" name="cardExpiry" value={premiumFormData.cardExpiry} onChange={handlePremiumInputChange} placeholder="MM/YY" />
-                  </div>
-                  <div>
-                    <Label htmlFor="cardCvc">CVC</Label>
-                    <Input id="cardCvc" name="cardCvc" value={premiumFormData.cardCvc} onChange={handlePremiumInputChange} placeholder="•••" />
-                  </div>
-                </div>
-                 <p className="text-xs text-muted-foreground pt-2">
-                    This is a mock payment form. No real transaction will occur.
-                </p>
-            </section>
+            <h3 className="text-sm font-semibold text-muted-foreground col-span-full pt-2">Payment Details (Mock)</h3>
+             <div className="flex space-x-2 mb-2 overflow-x-auto py-1">
+                {paymentMethods.map(method => (
+                  <Button key={method.name} variant="outline" size="sm" className="flex-shrink-0 text-xs h-8 px-2">
+                    <method.icon className="h-3 w-3 mr-1.5" /> {method.name}
+                  </Button>
+                ))}
+              </div>
+            <div>
+              <Label htmlFor="premiumCardNumber">Card Number</Label>
+              <Input id="premiumCardNumber" name="cardNumber" value={premiumFormData.cardNumber} onChange={handlePremiumInputChange} placeholder="•••• •••• •••• ••••" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="premiumCardExpiry">Expiry Date</Label>
+                <Input id="premiumCardExpiry" name="cardExpiry" value={premiumFormData.cardExpiry} onChange={handlePremiumInputChange} placeholder="MM/YY" />
+              </div>
+              <div>
+                <Label htmlFor="premiumCardCvc">CVC/CVV</Label>
+                <Input id="premiumCardCvc" name="cardCvc" value={premiumFormData.cardCvc} onChange={handlePremiumInputChange} placeholder="•••" />
+              </div>
+            </div>
+             <p className="text-xs text-muted-foreground pt-1">
+                This is a mock payment form. No real transaction will occur.
+              </p>
           </div>
-          <DialogFooter className="sm:justify-between pt-4 border-t">
+          <DialogFooter className="sm:justify-between border-t pt-4">
             <Button type="button" variant="outline" onClick={() => setIsPremiumDialogOpen(false)}>
               Cancel
             </Button>
             <Button type="button" onClick={handlePremiumSubscribeSubmit}>
-              Proceed to Payment (Mock)
+              Pay 1000 PKR & Subscribe
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-
-      <div className="grid md:grid-cols-2 gap-8 items-start">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Banknote className="h-6 w-6 text-primary" /> Payment Options
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">We accept a variety of payment methods for your convenience (mock integration):</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {paymentMethods.map((method) => (
-                <div key={method.name} className="flex flex-col items-center p-3 border rounded-md bg-muted/30">
-                  <method.icon className="h-8 w-8 text-primary mb-1" />
-                  <span className="text-sm font-medium text-center">{method.name}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-primary" /> Secure & Flexible
-            </CardTitle>
-          </Header>
-          <CardContent className="space-y-3 text-muted-foreground">
-            <p>
-              Your payment information is processed securely (mock).
-            </p>
-            <p>
-              Subscriptions automatically renew each month. You can cancel your subscription at any time from your account settings.
-            </p>
-            <p>
-              If a payment fails, we'll notify you and attempt to process it again. You can update your payment method if needed.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <section className="text-center mt-16 pt-8 border-t">
-        <h2 className="text-2xl font-semibold mb-3">Frequently Asked Questions</h2>
-        <p className="text-muted-foreground mb-4 max-w-xl mx-auto">
-          Have more questions about our subscription? Visit our FAQ page or contact support.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link href="/faq">
-            <Button variant="outline">View FAQs</Button>
-          </Link>
-          <Link href="/contact">
-            <Button>Contact Support</Button>
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }
