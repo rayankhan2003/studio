@@ -272,7 +272,7 @@ export default function CustomTestPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
           <Settings className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold tracking-tight">Configure Your Test</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Make Your Test</h1>
         </div>
       </div>
       
