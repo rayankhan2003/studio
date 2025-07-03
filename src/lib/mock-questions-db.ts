@@ -128,7 +128,7 @@ mockQuestionsDb.push(
    {
     id: 'olevel_phys_kinematics_1',
     subject: CambridgeSubjects.PHYSICS,
-    chapter: 'Kinematics',
+    chapter: 'Motion, forces and energy',
     text: 'What is the definition of acceleration?',
     options: ['Rate of change of distance', 'Rate of change of velocity', 'Rate of change of displacement', 'Rate of change of speed'],
     type: 'single-choice',
