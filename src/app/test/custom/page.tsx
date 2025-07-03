@@ -460,7 +460,7 @@ export default function CustomTestPage() {
           </div>
 
           <div className="lg:col-span-1 space-y-6">
-            <Card className="shadow-lg sticky top-20">
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Info className="h-6 w-6 text-accent" /> Test Preview
