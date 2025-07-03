@@ -39,6 +39,171 @@ const chapterLineColors = [
   "hsl(var(--chart-4))", "hsl(var(--chart-5))", "hsl(var(--primary))", "hsl(var(--accent))",
 ];
 
+const AnalyticsDisplay = ({
+  currentView,
+  overallPerformance,
+  subjectScoreProgressionData,
+  availableSubjects,
+  overallSubjectAverageScores,
+  selectedSubjectForChapterChart,
+  setSelectedSubjectForChapterChart,
+  chapterProficiencyChartData,
+  availableSyllabus,
+}: any) => (
+  <div className="space-y-8">
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="text-xl flex items-center gap-2">
+          <Percent className="h-6 w-6 text-primary" />
+          Overall Performance Summary ({currentView})
+        </CardTitle>
+        <CardDescription>Your cumulative performance for the selected test type.</CardDescription>
+      </CardHeader>
+      <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+          <h3 className="text-4xl font-bold text-primary">{overallPerformance.averageScore.toFixed(1)}%</h3>
+          <p className="text-sm text-muted-foreground">Average Score</p>
+        </div>
+        <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+          <h3 className="text-4xl font-bold text-primary">{overallPerformance.testsTaken}</h3>
+          <p className="text-sm text-muted-foreground">Tests Taken</p>
+        </div>
+        <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg space-y-2 sm:col-span-2 md:col-span-1">
+          <Progress value={overallPerformance.averageScore} className="w-full h-3" />
+          <p className="text-sm text-muted-foreground">Overall Average: {overallPerformance.averageScore.toFixed(1)}%</p>
+        </div>
+      </CardContent>
+    </Card>
+    
+    <div className="grid lg:grid-cols-2 gap-8">
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <TrendingUp className="h-6 w-6 text-primary" />
+            Subject-wise Score Progression
+          </CardTitle>
+          <CardDescription>Track your scores across different subjects over time for {currentView} tests.</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[350px] sm:h-[400px]">
+          {subjectScoreProgressionData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={subjectScoreProgressionData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{fontSize: 12}} />
+                <YAxis domain={[0, 100]} tick={{fontSize: 12}}/>
+                <Tooltip />
+                <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
+                {availableSubjects.map((subject: string) => (
+                  <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject] || '#8884d8'} strokeWidth={2} activeDot={{ r: 6 }} connectNulls dot={{r:3}} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">No subject progression data available for this view.</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Target className="h-6 w-6 text-green-500" />
+            Average Score by Subject
+          </CardTitle>
+          <CardDescription>Your average performance in each subject for {currentView} tests.</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[350px] sm:h-[400px]">
+          {overallSubjectAverageScores.some((s: any) => s.averageScore > 0) ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={overallSubjectAverageScores.filter((s: any) => s.averageScore > 0)}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }: any) => `${name}: ${Number(value).toFixed(1)}%`}
+                  outerRadius="80%"
+                  innerRadius="50%"
+                  paddingAngle={2}
+                  fill="#8884d8"
+                  dataKey="averageScore"
+                  nameKey="name"
+                >
+                  {overallSubjectAverageScores.filter((s: any) => s.averageScore > 0).map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={subjectColors[entry.name] || '#8884d8'} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]} />
+                <Legend wrapperStyle={{fontSize: "0.8rem"}} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">No subject scores available for this view.</div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+    
+    <Card className="shadow-lg">
+      <CardHeader>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex-1">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <BookOpen className="h-6 w-6 text-accent" />
+              Chapter Proficiency Trend ({selectedSubjectForChapterChart || 'N/A'})
+            </CardTitle>
+            <CardDescription>Track your performance in each chapter over time for {currentView} tests.</CardDescription>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            {availableSubjects.length > 0 && (
+              <Select value={selectedSubjectForChapterChart} onValueChange={setSelectedSubjectForChapterChart}>
+                <SelectTrigger className="w-full sm:w-[200px] md:w-[220px]">
+                  <SelectValue placeholder="Select Subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSubjects.map((subject: string) => (
+                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="h-[400px] md:h-[450px]">
+        {chapterProficiencyChartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chapterProficiencyChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{fontSize: 10}} />
+              <YAxis domain={[0, 100]} tick={{fontSize: 12}} />
+              <Tooltip
+                formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
+                labelFormatter={(label: string) => `Attempt: ${label}`}
+              />
+              <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
+              {(availableSyllabus[selectedSubjectForChapterChart] || []).map((chapter: any, index: number) => (
+                <Line
+                  key={chapter.name}
+                  type="monotone"
+                  dataKey={chapter.name}
+                  stroke={chapterLineColors[index % chapterLineColors.length]}
+                  strokeWidth={2}
+                  activeDot={{ r: 6 }}
+                  dot={{r:3}}
+                  connectNulls
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">No chapter performance data available for {selectedSubjectForChapterChart || 'this subject'} in this view.</div>
+        )}
+      </CardContent>
+    </Card>
+  </div>
+);
+
 export default function AnalyticsPage() {
   const [isClient, setIsClient] = useState(false);
   const [analyticsView, setAnalyticsView] = useState<'mdcat' | 'cambridge'>('mdcat');
@@ -67,14 +232,14 @@ export default function AnalyticsPage() {
   }, [analyticsView, cambridgeLevel]);
 
   useEffect(() => {
-    if (availableSubjects.length > 0) {
-      if (!availableSubjects.includes(selectedSubjectForChapterChart)) {
+    if (isClient) {
+      if (availableSubjects.length > 0 && !availableSubjects.includes(selectedSubjectForChapterChart)) {
         setSelectedSubjectForChapterChart(availableSubjects[0]);
+      } else if (availableSubjects.length === 0) {
+        setSelectedSubjectForChapterChart('');
       }
-    } else {
-      setSelectedSubjectForChapterChart('');
     }
-  }, [availableSubjects, selectedSubjectForChapterChart]);
+  }, [availableSubjects, selectedSubjectForChapterChart, isClient]);
   
   useEffect(() => {
     if (!isClient) return;
@@ -215,161 +380,6 @@ export default function AnalyticsPage() {
     setGoalDialogTargetScore('');
   };
 
-  const analyticsContent = (
-    <div className="space-y-8">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Percent className="h-6 w-6 text-primary" />
-            Overall Performance Summary ({currentView})
-          </CardTitle>
-          <CardDescription>Your cumulative performance for the selected test type.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-            <h3 className="text-4xl font-bold text-primary">{overallPerformance.averageScore.toFixed(1)}%</h3>
-            <p className="text-sm text-muted-foreground">Average Score</p>
-          </div>
-          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-            <h3 className="text-4xl font-bold text-primary">{overallPerformance.testsTaken}</h3>
-            <p className="text-sm text-muted-foreground">Tests Taken</p>
-          </div>
-          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg space-y-2 sm:col-span-2 md:col-span-1">
-            <Progress value={overallPerformance.averageScore} className="w-full h-3" />
-            <p className="text-sm text-muted-foreground">Overall Average: {overallPerformance.averageScore.toFixed(1)}%</p>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="grid lg:grid-cols-2 gap-8">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              Subject-wise Score Progression
-            </CardTitle>
-            <CardDescription>Track your scores across different subjects over time for {currentView} tests.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px] sm:h-[400px]">
-            {subjectScoreProgressionData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={subjectScoreProgressionData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{fontSize: 12}} />
-                  <YAxis domain={[0, 100]} tick={{fontSize: 12}}/>
-                  <Tooltip />
-                  <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
-                  {availableSubjects.map(subject => (
-                    <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject] || '#8884d8'} strokeWidth={2} activeDot={{ r: 6 }} connectNulls dot={{r:3}} />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">No subject progression data available for this view.</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Target className="h-6 w-6 text-green-500" />
-              Average Score by Subject
-            </CardTitle>
-            <CardDescription>Your average performance in each subject for {currentView} tests.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[350px] sm:h-[400px]">
-            {overallSubjectAverageScores.some(s => s.averageScore > 0) ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={overallSubjectAverageScores.filter(s => s.averageScore > 0)}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${Number(value).toFixed(1)}%`}
-                    outerRadius="80%"
-                    innerRadius="50%"
-                    paddingAngle={2}
-                    fill="#8884d8"
-                    dataKey="averageScore"
-                    nameKey="name"
-                  >
-                    {overallSubjectAverageScores.filter(s => s.averageScore > 0).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={subjectColors[entry.name] || '#8884d8'} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]} />
-                  <Legend wrapperStyle={{fontSize: "0.8rem"}} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">No subject scores available for this view.</div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Card className="shadow-lg">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex-1">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <BookOpen className="h-6 w-6 text-accent" />
-                Chapter Proficiency Trend ({selectedSubjectForChapterChart || 'N/A'})
-              </CardTitle>
-              <CardDescription>Track your performance in each chapter over time for {currentView} tests.</CardDescription>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              {availableSubjects.length > 0 && (
-                <Select value={selectedSubjectForChapterChart} onValueChange={setSelectedSubjectForChapterChart}>
-                  <SelectTrigger className="w-full sm:w-[200px] md:w-[220px]">
-                    <SelectValue placeholder="Select Subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSubjects.map(subject => (
-                      <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="h-[400px] md:h-[450px]">
-          {chapterProficiencyChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chapterProficiencyChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{fontSize: 10}} />
-                <YAxis domain={[0, 100]} tick={{fontSize: 12}} />
-                <Tooltip
-                  formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
-                  labelFormatter={(label: string) => `Attempt: ${label}`}
-                />
-                <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
-                {(availableSyllabus[selectedSubjectForChapterChart] || []).map((chapter, index) => (
-                  <Line
-                    key={chapter.name}
-                    type="monotone"
-                    dataKey={chapter.name}
-                    stroke={chapterLineColors[index % chapterLineColors.length]}
-                    strokeWidth={2}
-                    activeDot={{ r: 6 }}
-                    dot={{r:3}}
-                    connectNulls
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">No chapter performance data available for {selectedSubjectForChapterChart || 'this subject'} in this view.</div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   if (!isClient) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -377,6 +387,18 @@ export default function AnalyticsPage() {
       </div>
     );
   }
+  
+  const analyticsDisplayProps = {
+    currentView,
+    overallPerformance,
+    subjectScoreProgressionData,
+    availableSubjects,
+    overallSubjectAverageScores,
+    selectedSubjectForChapterChart,
+    setSelectedSubjectForChapterChart,
+    chapterProficiencyChartData,
+    availableSyllabus,
+  };
 
   return (
     <div className="space-y-8">
@@ -397,23 +419,25 @@ export default function AnalyticsPage() {
         </div>
         
         <TabsContent value="mdcat" className="mt-6">
-            {analyticsContent}
+          <AnalyticsDisplay {...analyticsDisplayProps} />
         </TabsContent>
-        <TabsContent value="cambridge" className="mt-6 space-y-8">
+
+        <TabsContent value="cambridge" className="mt-6">
           <Tabs value={cambridgeLevel} onValueChange={(v) => setCambridgeLevel(v as 'O Level' | 'A Level')}>
             <TabsList className="mb-4">
               <TabsTrigger value="O Level">O Level</TabsTrigger>
               <TabsTrigger value="A Level">A Level</TabsTrigger>
             </TabsList>
             <TabsContent value="O Level">
-                {analyticsContent}
+              <AnalyticsDisplay {...analyticsDisplayProps} />
             </TabsContent>
             <TabsContent value="A Level">
-                {analyticsContent}
+              <AnalyticsDisplay {...analyticsDisplayProps} />
             </TabsContent>
           </Tabs>
         </TabsContent>
       </Tabs>
+
       <Dialog open={isSetGoalDialogOpen} onOpenChange={setIsSetGoalDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -432,7 +456,7 @@ export default function AnalyticsPage() {
                   <SelectValue placeholder="Select Subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableSubjects.map(subject => (
+                  {availableSubjects.map((subject: string) => (
                     <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                   ))}
                 </SelectContent>
@@ -449,9 +473,9 @@ export default function AnalyticsPage() {
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select Chapter" />
-                </Trigger>
+                </SelectTrigger>
                 <SelectContent>
-                  {availableSyllabus[goalDialogSubject]?.map(chapter => (
+                  {availableSyllabus[goalDialogSubject]?.map((chapter: any) => (
                     <SelectItem key={chapter.name} value={chapter.name}>{chapter.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -482,3 +506,5 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
+    
