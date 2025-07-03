@@ -139,7 +139,7 @@ mockQuestionsDb.push(
   {
     id: 'alevel_bio_molecules_1',
     subject: CambridgeSubjects.BIOLOGY,
-    chapter: 'Biological Molecules',
+    chapter: 'Biological molecules',
     text: 'Which of these is a polysaccharide?',
     options: ['Glucose', 'Fructose', 'Sucrose', 'Starch'],
     type: 'single-choice',
