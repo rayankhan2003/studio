@@ -13,7 +13,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { type Subject as SubjectType, syllabus } from '@/lib/syllabus';
 import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
 import {
   AlertDialog,
@@ -26,8 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const DEFAULT_QUESTION_COUNT = 10;
-const DEFAULT_TOTAL_TEST_DURATION = 10 * 60; // 10 questions * 60 seconds per question
+type Curriculum = 'MDCAT' | 'O Level' | 'A Level';
 
 interface QuestionForTest extends MockQuestionDefinition {}
 
@@ -35,14 +33,14 @@ interface StoredTestReport {
   id: string;
   name: string;
   date: string;
-  testType: 'custom' | 'mdcat';
-  mdcatYear?: number;
+  curriculum: Curriculum;
+  testType: 'Custom' | 'Past Paper';
   overallScorePercentage: number;
-  subjectScores: Partial<Record<SubjectType, number>>;
-  chapterScores: Partial<Record<SubjectType, Record<string, number>>>;
+  subjectScores: Partial<Record<string, number>>;
+  chapterScores: Partial<Record<string, Record<string, number>>>;
   rawQuestions: Array<{
     id: string;
-    subject: SubjectType;
+    subject: string;
     chapter: string;
     text: string;
     type: QuestionForTest['type'];
@@ -65,55 +63,31 @@ function shuffleArray<T>(array: T[]): T[] {
 
 const getQuestionsForTest = (
   questionCount: number,
+  curriculum: Curriculum,
   selectedSubjectsParam: string | null,
-  selectedChaptersParam: string | null,
-  sourceParam: string | null
+  selectedChaptersParam: string | null
 ): QuestionForTest[] => {
-  let filteredQuestions: MockQuestionDefinition[] = [];
+  let filteredQuestions: MockQuestionDefinition[] = mockQuestionsDb.filter(q => q.curriculum === curriculum);
 
-  if (sourceParam && sourceParam.startsWith('mdcat-')) {
-    const targetPerSubject = Math.ceil(questionCount / Object.keys(syllabus).length);
-    const subjectsInSyllabus = Object.keys(syllabus) as SubjectType[];
-
-    subjectsInSyllabus.forEach(subject => {
-      const subjectQuestions = mockQuestionsDb.filter(q => q.subject === subject);
-      filteredQuestions.push(...shuffleArray(subjectQuestions).slice(0, targetPerSubject));
-    });
-     if (filteredQuestions.length < questionCount && mockQuestionsDb.length > 0) {
-        const needed = questionCount - filteredQuestions.length;
-        const additionalQs = shuffleArray(mockQuestionsDb.filter(q => !filteredQuestions.find(fq => fq.id === q.id))).slice(0, needed);
-        filteredQuestions.push(...additionalQs);
-    }
-    filteredQuestions = shuffleArray(filteredQuestions).slice(0, questionCount);
-
-  } else if (selectedSubjectsParam && selectedChaptersParam) {
+  if (selectedSubjectsParam && selectedChaptersParam) {
     const chapterSelections = selectedChaptersParam.split(','); 
 
-    const chapterMap: Record<SubjectType, Set<string>> = {} as any;
+    const chapterMap: Record<string, Set<string>> = {} as any;
     chapterSelections.forEach(cs => {
       const [subj, chap] = cs.split(':');
       if (subj && chap) {
-        if (!chapterMap[subj as SubjectType]) {
-          chapterMap[subj as SubjectType] = new Set();
+        if (!chapterMap[subj]) {
+          chapterMap[subj] = new Set();
         }
-        chapterMap[subj as SubjectType].add(chap);
+        chapterMap[subj].add(chap);
       }
     });
 
-    mockQuestionsDb.forEach(q => {
-      if (chapterMap[q.subject]?.has(q.chapter)) {
-        filteredQuestions.push(q);
-      }
-    });
-  } else {
-    // Fallback if no specific subject/chapter selection, or not an MDCAT test
-    // This case might need review depending on desired behavior for direct access without params
-    filteredQuestions = shuffleArray(mockQuestionsDb);
+    filteredQuestions = filteredQuestions.filter(q => chapterMap[q.subject]?.has(q.chapter));
   }
-
+  
   if (filteredQuestions.length === 0) return []; 
 
-  // Ensure we don't try to slice more questions than available
   const actualCountToSlice = Math.min(questionCount, filteredQuestions.length);
   return shuffleArray(filteredQuestions).slice(0, actualCountToSlice);
 };
@@ -125,16 +99,17 @@ export default function TestPage() {
   const searchParams = useSearchParams();
   const testId = params.testId as string; 
 
-  const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || DEFAULT_QUESTION_COUNT;
-  const parsedTotalDuration = parseInt(searchParams.get('totalDuration') || '') || DEFAULT_TOTAL_TEST_DURATION;
-  const testNameFromParams = searchParams.get('testName') || `Test (${testId.replace('-session', '')})`;
+  const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || 10;
+  const parsedTotalDuration = parseInt(searchParams.get('totalDuration') || '') || 600;
+  const testNameFromParams = searchParams.get('testName') || `Test`;
+  const curriculum = (searchParams.get('curriculum') as Curriculum) || 'MDCAT';
   const subjectsParam = searchParams.get('subjects');
   const chaptersParam = searchParams.get('chapters');
-  const sourceParam = searchParams.get('source'); 
+  const testType = (searchParams.get('testType') as 'Custom' | 'Past Paper') || 'Custom';
 
   const questions = useMemo(() =>
-    getQuestionsForTest(parsedQuestionCount, subjectsParam, chaptersParam, sourceParam),
-  [parsedQuestionCount, subjectsParam, chaptersParam, sourceParam]);
+    getQuestionsForTest(parsedQuestionCount, curriculum, subjectsParam, chaptersParam),
+  [parsedQuestionCount, curriculum, subjectsParam, chaptersParam]);
 
   const TOTAL_TEST_DURATION = useMemo(() => parsedTotalDuration, [parsedTotalDuration]);
 
@@ -162,7 +137,7 @@ export default function TestPage() {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timer);
-          if (!testSubmitted) handleSubmitTest(true); // Auto-submit when timer ends
+          if (!testSubmitted) handleSubmitTest(true); 
           return 0;
         }
         return prevTime - 1;
@@ -205,7 +180,7 @@ export default function TestPage() {
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
 
@@ -226,8 +201,8 @@ export default function TestPage() {
     if (testSubmitted) return;
     setTestSubmitted(true);
 
-    const chapterResults: Record<SubjectType, Record<string, { correct: number, total: number }>> = {} as any;
-    const subjectResults: Record<SubjectType, { correct: number, total: number }> = {} as any;
+    const chapterResults: Record<string, Record<string, { correct: number, total: number }>> = {};
+    const subjectResults: Record<string, { correct: number, total: number }> = {};
     let overallCorrect = 0;
     let overallTotal = 0;
 
@@ -266,19 +241,17 @@ export default function TestPage() {
 
     const finalChapterScores: StoredTestReport['chapterScores'] = {};
     for (const subjectKey in chapterResults) {
-      const subject = subjectKey as SubjectType;
-      finalChapterScores[subject] = {};
-      for (const chapterName in chapterResults[subject]) {
-        const res = chapterResults[subject][chapterName];
-        finalChapterScores[subject]![chapterName] = res.total > 0 ? parseFloat(((res.correct / res.total) * 100).toFixed(1)) : 0;
+      finalChapterScores[subjectKey] = {};
+      for (const chapterName in chapterResults[subjectKey]) {
+        const res = chapterResults[subjectKey][chapterName];
+        finalChapterScores[subjectKey]![chapterName] = res.total > 0 ? parseFloat(((res.correct / res.total) * 100).toFixed(1)) : 0;
       }
     }
 
     const finalSubjectScores: StoredTestReport['subjectScores'] = {};
     for (const subjectKey in subjectResults) {
-      const subject = subjectKey as SubjectType;
-      const res = subjectResults[subject];
-      finalSubjectScores[subject] = res.total > 0 ? parseFloat(((res.correct / res.total) * 100).toFixed(1)) : 0;
+      const res = subjectResults[subjectKey];
+      finalSubjectScores[subjectKey] = res.total > 0 ? parseFloat(((res.correct / res.total) * 100).toFixed(1)) : 0;
     }
 
     const overallScorePercentage = overallTotal > 0 ? parseFloat(((overallCorrect / overallTotal) * 100).toFixed(1)) : 0;
@@ -287,20 +260,13 @@ export default function TestPage() {
     const existingHistory: StoredTestReport[] = existingHistoryString ? JSON.parse(existingHistoryString) : [];
 
     const reportId = `${testId.replace('-session', '')}-${Date.now()}`;
-    let determinedTestType: 'custom' | 'mdcat' = 'custom';
-    let mdcatYearVal: number | undefined = undefined;
-
-    if (sourceParam && sourceParam.startsWith('mdcat-')) {
-      determinedTestType = 'mdcat';
-      mdcatYearVal = parseInt(sourceParam.split('-')[1]) || undefined;
-    }
 
     const newTestReport: StoredTestReport = {
       id: reportId,
       name: testNameFromParams,
       date: new Date().toISOString().split('T')[0],
-      testType: determinedTestType,
-      mdcatYear: mdcatYearVal,
+      curriculum: curriculum,
+      testType: testType,
       overallScorePercentage: overallScorePercentage,
       subjectScores: finalSubjectScores,
       chapterScores: finalChapterScores,
@@ -337,7 +303,7 @@ export default function TestPage() {
     setTimerDisplayMode(prev => prev === 'remaining' ? 'total' : 'remaining');
   };
 
-  if (questions.length === 0 && (testId.startsWith('custom-session') || testId.startsWith('mdcat-session'))) {
+  if (questions.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)] py-12 px-4">
         <Card className="w-full max-w-lg text-center shadow-xl">
@@ -347,11 +313,11 @@ export default function TestPage() {
             </div>
             <CardTitle className="text-2xl">No Questions Available</CardTitle>
             <CardDescription>
-              We couldn't find any questions matching your criteria for this test. This might be due to a very specific filter or no mock questions being available for the selected combination.
+              We couldn't find any questions matching your criteria for this test ({curriculum}). This might be due to a very specific filter or no mock questions being available for the selected combination.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Please try adjusting your selections on the custom test page or ensure mock data is available.</p>
+            <p className="text-muted-foreground">Please try adjusting your selections on the test creation page.</p>
           </CardContent>
           <CardFooter>
             <Button onClick={() => router.push('/test/custom')} className="w-full text-lg py-3">
@@ -378,7 +344,7 @@ export default function TestPage() {
                 size="sm"
                 className={cn(
                   "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out p-1",
-                  isCurrent
+                   isCurrent
                     ? (attempted ? 'bg-primary/80 text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2' : 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2')
                     : attempted
                       ? 'bg-green-500 border-green-600 hover:bg-green-600/90 text-white'
@@ -521,5 +487,3 @@ export default function TestPage() {
     </div>
   );
 }
-
-    

@@ -7,21 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle2, XCircle, ArrowLeft, Info, AlertTriangle } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { type Subject as SubjectType } from '@/lib/syllabus';
 
-// Interface for the structure of a single test report stored in localStorage
+type Curriculum = 'MDCAT' | 'O Level' | 'A Level';
+
 interface StoredTestReport {
   id: string;
   name: string;
   date: string;
-  testType: 'custom' | 'mdcat';
-  mdcatYear?: number;
+  curriculum: Curriculum;
+  testType: 'Custom' | 'Past Paper';
   overallScorePercentage: number;
-  subjectScores: Partial<Record<SubjectType, number>>;
-  chapterScores: Partial<Record<SubjectType, Record<string, number>>>;
+  subjectScores: Partial<Record<string, number>>;
+  chapterScores: Partial<Record<string, Record<string, number>>>;
   rawQuestions: Array<{
     id: string;
-    subject: SubjectType;
+    subject: string;
     chapter: string;
     text: string;
     type: 'single-choice' | 'multiple-choice' | 'fill-in-the-blank' | 'true-false';
@@ -111,7 +111,7 @@ export default function TestReviewPage() {
         <CardHeader className="bg-primary/5">
           <CardTitle className="text-3xl text-primary">{reviewData.name}</CardTitle>
           <CardDescription className="text-lg">
-            Test Date: {reviewData.date} | Your Score: <span className="font-bold text-primary">{reviewData.overallScorePercentage.toFixed(1)}%</span>
+            Test Date: {reviewData.date} | Your Score: <span className="font-bold text-primary">{reviewData.overallScorePercentage.toFixed(1)}%</span> | Curriculum: <span className="font-semibold">{reviewData.curriculum}</span>
           </CardDescription>
         </CardHeader>
       </Card>
@@ -193,4 +193,3 @@ export default function TestReviewPage() {
     </div>
   );
 }
-
