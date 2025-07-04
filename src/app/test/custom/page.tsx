@@ -255,8 +255,8 @@ export default function CustomTestPage() {
 
     router.push(`/test/custom-session?${queryParams.toString()}`);
   };
-  
-  const getSelectedChaptersForPreview = () => {
+
+  const selectedChaptersForPreview = useMemo(() => {
     const preview: { subject: string, chapters: string[] }[] = [];
     subjects.forEach(subject => {
       const chapters = Array.from(selectedChaptersMap[subject] || []);
@@ -265,7 +265,7 @@ export default function CustomTestPage() {
       }
     });
     return preview;
-  };
+  }, [subjects, selectedChaptersMap]);
 
   return (
     <div className="space-y-8">
@@ -479,7 +479,7 @@ export default function CustomTestPage() {
                   <h4 className="font-semibold mb-1">Selected Chapters ({totalSelectedChaptersCount}):</h4>
                   {totalSelectedChaptersCount > 0 ? (
                     <div className="max-h-40 overflow-y-auto space-y-1 text-xs sm:text-sm bg-muted/50 p-3 rounded-md border">
-                    {getSelectedChaptersForPreview().map(item => (
+                    {selectedChaptersForPreview.map(item => (
                       <div key={item.subject}>
                         <strong className="text-primary/90">{item.subject}:</strong> {item.chapters.join(', ')}
                       </div>

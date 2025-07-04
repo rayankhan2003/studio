@@ -39,7 +39,7 @@ const chapterLineColors = [
   "hsl(var(--chart-4))", "hsl(var(--chart-5))", "hsl(var(--primary))", "hsl(var(--accent))",
 ];
 
-const AnalyticsDisplay = ({
+const AnalyticsDisplay = React.memo(({
   currentView,
   overallPerformance,
   subjectScoreProgressionData,
@@ -202,7 +202,9 @@ const AnalyticsDisplay = ({
       </CardContent>
     </Card>
   </div>
-);
+));
+AnalyticsDisplay.displayName = 'AnalyticsDisplay';
+
 
 export default function AnalyticsPage() {
   const [isClient, setIsClient] = useState(false);
@@ -506,5 +508,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-
-    
