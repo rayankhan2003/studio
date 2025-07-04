@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Eye, Download, History as HistoryIcon, GraduationCap } from 'lucide-react';
+import { FileText, Eye, Download, History as HistoryIcon } from 'lucide-react';
 import Link from 'next/link';
 
 interface StoredTestReport {
@@ -30,6 +30,33 @@ export default function TestHistoryPage() {
     }
     setIsLoading(false);
   }, []);
+
+  const tableBodyContent = useMemo(() => {
+    return history.map((test) => (
+      <TableRow key={test.id}>
+        <TableCell className="font-medium">{test.name}</TableCell>
+        <TableCell>
+          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+            test.curriculum === 'MDCAT' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+          }`}>
+            {test.curriculum}
+          </span>
+        </TableCell>
+        <TableCell>{new Date(test.date).toLocaleDateString()}</TableCell>
+        <TableCell className="font-semibold text-primary">{test.overallScorePercentage.toFixed(1)}%</TableCell>
+        <TableCell className="text-right space-x-2">
+          <Link href={`/test/${test.id}/review`} passHref>
+            <Button variant="outline" size="sm" aria-label={`Review ${test.name}`}>
+              <Eye className="mr-1 h-4 w-4" /> Review
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" aria-label={`Download report for ${test.name}`} disabled>
+            <Download className="mr-1 h-4 w-4" /> Report
+          </Button>
+        </TableCell>
+      </TableRow>
+    ));
+  }, [history]);
 
   return (
     <div className="space-y-8">
@@ -58,30 +85,7 @@ export default function TestHistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history.map((test) => (
-                  <TableRow key={test.id}>
-                    <TableCell className="font-medium">{test.name}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        test.curriculum === 'MDCAT' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {test.curriculum}
-                      </span>
-                    </TableCell>
-                    <TableCell>{new Date(test.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-semibold text-primary">{test.overallScorePercentage.toFixed(1)}%</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Link href={`/test/${test.id}/review`} passHref>
-                        <Button variant="outline" size="sm" aria-label={`Review ${test.name}`}>
-                          <Eye className="mr-1 h-4 w-4" /> Review
-                        </Button>
-                      </Link>
-                      <Button variant="outline" size="sm" aria-label={`Download report for ${test.name}`} disabled>
-                        <Download className="mr-1 h-4 w-4" /> Report
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {tableBodyContent}
               </TableBody>
             </Table>
           ) : (

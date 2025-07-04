@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -122,30 +122,15 @@ export default function TestPage() {
   const [isConfirmSubmitDialogOpen, setIsConfirmSubmitDialogOpen] = useState(false);
   const [unansweredQuestionsCount, setUnansweredQuestionsCount] = useState(0);
 
-  const isQuestionAttempted = (questionId: string): boolean => {
+  const isQuestionAttempted = useCallback((questionId: string): boolean => {
     const answerExists = Object.prototype.hasOwnProperty.call(answers, questionId);
     if (!answerExists) return false;
     const answerValue = answers[questionId];
     if (Array.isArray(answerValue)) return answerValue.length > 0;
     if (typeof answerValue === 'string') return answerValue.trim() !== '';
     return false;
-  };
+  }, [answers]);
   
-  useEffect(() => {
-    setTimeLeft(TOTAL_TEST_DURATION);
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          if (!testSubmitted) handleSubmitTest(true); 
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [TOTAL_TEST_DURATION, testSubmitted]); // eslint-disable-line react-hooks/exhaustive-deps
-
   useEffect(() => {
     if (questions.length === 0) {
         setProgress(0);
@@ -153,15 +138,15 @@ export default function TestPage() {
     }
     const attemptedQuestionsCount = questions.filter(q => isQuestionAttempted(q.id)).length;
     setProgress((attemptedQuestionsCount / questions.length) * 100);
-  }, [answers, questions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [answers, questions, isQuestionAttempted]);
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  const handleAnswerChange = (questionId: string, value: string) => {
+  const handleAnswerChange = useCallback((questionId: string, value: string) => {
     setAnswers((prevAnswers) => ({ ...prevAnswers, [questionId]: value }));
-  };
+  }, []);
 
-  const handleMultipleChoiceChange = (questionId: string, optionValue: string, checked: boolean) => {
+  const handleMultipleChoiceChange = useCallback((questionId: string, optionValue: string, checked: boolean) => {
     setAnswers((prevAnswers) => {
       const existingAnswers = (prevAnswers[questionId] as string[] || []);
       if (checked) {
@@ -170,21 +155,21 @@ export default function TestPage() {
         return { ...prevAnswers, [questionId]: existingAnswers.filter(ans => ans !== optionValue).sort() };
       }
     });
-  };
+  }, []);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
-  };
+  }, [currentQuestionIndex, questions.length]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
-  };
+  }, [currentQuestionIndex]);
 
-  const isAnswerCorrect = (question: QuestionForTest, userAnswer: string | string[] | undefined): boolean => {
+  const isAnswerCorrect = useCallback((question: QuestionForTest, userAnswer: string | string[] | undefined): boolean => {
     if (userAnswer === undefined) return false;
 
     if (question.type === 'multiple-choice') {
@@ -195,9 +180,9 @@ export default function TestPage() {
       return sortedUserAnswer.every((val, index) => val === sortedCorrectAnswer[index]);
     }
     return userAnswer === question.correctAnswer;
-  };
+  }, []);
 
-  const proceedToSubmitTest = () => {
+  const proceedToSubmitTest = useCallback(() => {
     if (testSubmitted) return;
     setTestSubmitted(true);
 
@@ -277,9 +262,9 @@ export default function TestPage() {
     localStorage.setItem('prepwiseTestHistory', JSON.stringify(existingHistory));
 
     router.push(`/test/${reportId}/review`);
-  };
+  }, [testSubmitted, questions, answers, isAnswerCorrect, testId, testNameFromParams, curriculum, testType, router]);
 
-  const handleSubmitTest = (isAutoSubmit = false) => {
+  const handleSubmitTest = useCallback((isAutoSubmit = false) => {
     if (testSubmitted) return;
 
     const attemptedQuestionsCount = questions.filter(q => isQuestionAttempted(q.id)).length;
@@ -291,7 +276,23 @@ export default function TestPage() {
       return;
     }
     proceedToSubmitTest();
-  };
+  }, [testSubmitted, questions, isQuestionAttempted, proceedToSubmitTest]);
+  
+  useEffect(() => {
+    setTimeLeft(TOTAL_TEST_DURATION);
+    const timer = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timer);
+          if (!testSubmitted) handleSubmitTest(true); 
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [TOTAL_TEST_DURATION, testSubmitted, handleSubmitTest]);
+
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -302,6 +303,33 @@ export default function TestPage() {
   const toggleTimerDisplay = () => {
     setTimerDisplayMode(prev => prev === 'remaining' ? 'total' : 'remaining');
   };
+
+  const questionNavigationPanel = useMemo(() => {
+    return questions.map((question, index) => {
+      const isCurrent = currentQuestionIndex === index;
+      const attempted = isQuestionAttempted(question.id);
+      return (
+        <Button
+          key={question.id}
+          onClick={() => setCurrentQuestionIndex(index)}
+          variant="outline"
+          size="sm"
+          className={cn(
+            "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out p-1",
+              isCurrent
+              ? (attempted ? 'bg-primary/80 text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2' : 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2')
+              : attempted
+                ? 'bg-green-500 border-green-600 hover:bg-green-600/90 text-white'
+                : 'bg-card hover:bg-muted text-foreground',
+            isCurrent && 'shadow-lg'
+          )}
+          title={`Question ${index + 1}${attempted ? ' (Attempted)' : ' (Unattempted)'}`}
+        >
+          {index + 1}
+        </Button>
+      );
+    });
+  }, [questions, currentQuestionIndex, isQuestionAttempted]);
 
   if (questions.length === 0) {
     return (
@@ -333,30 +361,7 @@ export default function TestPage() {
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-7xl mx-auto py-4 md:py-8 px-2 sm:px-4">
       <ScrollArea className="w-full md:w-48 lg:w-56 h-auto md:max-h-[calc(100vh-12rem)] py-3 rounded-lg bg-card border shadow-sm flex-shrink-0 mb-4 md:mb-0">
         <div className="px-2 grid grid-cols-5 sm:grid-cols-6 md:grid-cols-5 lg:grid-cols-5 gap-2">
-          {questions.map((question, index) => {
-            const isCurrent = currentQuestionIndex === index;
-            const attempted = isQuestionAttempted(question.id);
-            return (
-              <Button
-                key={question.id}
-                onClick={() => setCurrentQuestionIndex(index)}
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "aspect-square w-full h-auto flex items-center justify-center rounded-md border text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out p-1",
-                   isCurrent
-                    ? (attempted ? 'bg-primary/80 text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2' : 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-background ring-offset-2')
-                    : attempted
-                      ? 'bg-green-500 border-green-600 hover:bg-green-600/90 text-white'
-                      : 'bg-card hover:bg-muted text-foreground',
-                  isCurrent && 'shadow-lg'
-                )}
-                title={`Question ${index + 1}${attempted ? ' (Attempted)' : ' (Unattempted)'}`}
-              >
-                {index + 1}
-              </Button>
-            );
-          })}
+          {questionNavigationPanel}
         </div>
       </ScrollArea>
 

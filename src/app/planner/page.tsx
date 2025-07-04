@@ -85,7 +85,7 @@ export default function AiPlannerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const handleStrictGoalChange = (subject: SubjectType, value: string) => {
+  const handleStrictGoalChange = useCallback((subject: SubjectType, value: string) => {
     if (value === '') {
       setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
       return;
@@ -97,7 +97,7 @@ export default function AiPlannerPage() {
       setSubjectGoals(prev => ({ ...prev, [subject]: undefined }));
        toast({ title: "Input Info", description: `Goal for ${subject} must be a number between 0-100. Cleared.`, variant: "default" });
     }
-  };
+  }, [toast]);
 
 
   const handleSetupTest = useCallback((activity: DailyActivity) => {
@@ -125,7 +125,7 @@ export default function AiPlannerPage() {
     router.push(`/test/custom?${queryParams.toString()}`);
   }, [router, toast]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!finalDate) {
       toast({ title: "Input Error", description: "Please select a final preparation date.", variant: "destructive" });
       return;
@@ -193,7 +193,7 @@ export default function AiPlannerPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [finalDate, subjectGoals, studyHoursPerDay, toast]);
 
   return (
     <div className="space-y-8">

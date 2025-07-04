@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, XCircle, ArrowLeft, Info, AlertTriangle } from 'lucide-react';
@@ -32,6 +32,79 @@ interface StoredTestReport {
     explanation?: string;
   }>;
 }
+
+const QuestionReviewCard = React.memo(({ question, index }: { question: StoredTestReport['rawQuestions'][0], index: number }) => {
+  return (
+    <Card className={`shadow-md ${question.isCorrect ? 'border-green-500' : 'border-red-500'} border-l-4`}>
+        <CardHeader className={`${question.isCorrect ? 'bg-green-50/50' : 'bg-red-50/50'}`}>
+          <div className="flex justify-between items-start">
+            <CardTitle className="text-xl">Question {index + 1}: {question.text}</CardTitle>
+            {question.isCorrect ? 
+              <CheckCircle2 className="h-7 w-7 text-green-600 flex-shrink-0 ml-2" /> : 
+              <XCircle className="h-7 w-7 text-red-600 flex-shrink-0 ml-2" />}
+          </div>
+          <CardDescription>Subject: {question.subject} | Chapter: {question.chapter}</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-3">
+          <div>
+            <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Your Answer:</h4>
+            <div className={`p-3 border rounded-md text-sm ${question.isCorrect ? 'border-green-300 bg-green-50/30' : 'border-red-300 bg-red-50/30'}`}>
+              {Array.isArray(question.selectedAnswer) ? question.selectedAnswer.join(', ') || <span className="italic text-muted-foreground">Not answered</span> : question.selectedAnswer || <span className="italic text-muted-foreground">Not answered</span>}
+            </div>
+          </div>
+
+          {!question.isCorrect && (
+            <div>
+              <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Correct Answer:</h4>
+              <div className="p-3 border border-green-400 bg-green-100/50 rounded-md text-sm">
+                {Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}
+              </div>
+            </div>
+          )}
+
+          {(question.type === 'single-choice' || question.type === 'multiple-choice' || question.type === 'true-false') && question.options && question.options.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Options:</h4>
+              <ul className="space-y-1 text-sm">
+                {question.options.map((option, optIndex) => {
+                  const isSelectedByUser = Array.isArray(question.selectedAnswer) ? question.selectedAnswer.includes(option) : question.selectedAnswer === option;
+                  const isActuallyCorrect = Array.isArray(question.correctAnswer) ? question.correctAnswer.includes(option) : question.correctAnswer === option;
+                  
+                  let itemClass = "p-2 border rounded-md flex items-center justify-between";
+                  let indicator = null;
+
+                  if (isActuallyCorrect) itemClass += " border-green-500";
+                  if (isSelectedByUser && !isActuallyCorrect) itemClass += " border-red-500";
+                  if (isSelectedByUser && isActuallyCorrect) itemClass += " bg-green-100/70";
+                  else if (isSelectedByUser) itemClass += " bg-red-100/70";
+                  else if (isActuallyCorrect) itemClass += " bg-green-50/70";
+
+
+                  if (isActuallyCorrect && isSelectedByUser) indicator = <CheckCircle2 className="h-4 w-4 text-green-600" title="Correct and Selected"/>;
+                  else if (isSelectedByUser && !isActuallyCorrect) indicator = <XCircle className="h-4 w-4 text-red-600" title="Incorrectly Selected"/>;
+                  else if (isActuallyCorrect) indicator = <CheckCircle2 className="h-4 w-4 text-green-600 opacity-60" title="Correct Option"/>;
+
+                  return (
+                    <li key={`${question.id}-opt-${optIndex}`} className={itemClass}>
+                      <span>{option}</span>
+                      {indicator}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+           {question.explanation && (
+              <div className="mt-3 pt-3 border-t">
+                  <h4 className="font-semibold text-sm mb-1 text-muted-foreground flex items-center"><Info className="h-4 w-4 mr-1 text-blue-500"/> Explanation:</h4>
+                  <p className="text-sm p-2 bg-blue-50/50 border border-blue-200 rounded-md">{question.explanation}</p>
+              </div>
+          )}
+        </CardContent>
+      </Card>
+  );
+});
+QuestionReviewCard.displayName = 'QuestionReviewCard';
 
 export default function TestReviewPage() {
   const params = useParams();
@@ -117,73 +190,7 @@ export default function TestReviewPage() {
       </Card>
 
       {reviewData.rawQuestions.map((q, index) => (
-        <Card key={q.id} className={`shadow-md ${q.isCorrect ? 'border-green-500' : 'border-red-500'} border-l-4`}>
-          <CardHeader className={`${q.isCorrect ? 'bg-green-50/50' : 'bg-red-50/50'}`}>
-            <div className="flex justify-between items-start">
-              <CardTitle className="text-xl">Question {index + 1}: {q.text}</CardTitle>
-              {q.isCorrect ? 
-                <CheckCircle2 className="h-7 w-7 text-green-600 flex-shrink-0 ml-2" /> : 
-                <XCircle className="h-7 w-7 text-red-600 flex-shrink-0 ml-2" />}
-            </div>
-            <CardDescription>Subject: {q.subject} | Chapter: {q.chapter}</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-3">
-            <div>
-              <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Your Answer:</h4>
-              <div className={`p-3 border rounded-md text-sm ${q.isCorrect ? 'border-green-300 bg-green-50/30' : 'border-red-300 bg-red-50/30'}`}>
-                {Array.isArray(q.selectedAnswer) ? q.selectedAnswer.join(', ') || <span className="italic text-muted-foreground">Not answered</span> : q.selectedAnswer || <span className="italic text-muted-foreground">Not answered</span>}
-              </div>
-            </div>
-
-            {!q.isCorrect && (
-              <div>
-                <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Correct Answer:</h4>
-                <div className="p-3 border border-green-400 bg-green-100/50 rounded-md text-sm">
-                  {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}
-                </div>
-              </div>
-            )}
-
-            {(q.type === 'single-choice' || q.type === 'multiple-choice' || q.type === 'true-false') && q.options && q.options.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Options:</h4>
-                <ul className="space-y-1 text-sm">
-                  {q.options.map((option, optIndex) => {
-                    const isSelectedByUser = Array.isArray(q.selectedAnswer) ? q.selectedAnswer.includes(option) : q.selectedAnswer === option;
-                    const isActuallyCorrect = Array.isArray(q.correctAnswer) ? q.correctAnswer.includes(option) : q.correctAnswer === option;
-                    
-                    let itemClass = "p-2 border rounded-md flex items-center justify-between";
-                    let indicator = null;
-
-                    if (isActuallyCorrect) itemClass += " border-green-500";
-                    if (isSelectedByUser && !isActuallyCorrect) itemClass += " border-red-500";
-                    if (isSelectedByUser && isActuallyCorrect) itemClass += " bg-green-100/70";
-                    else if (isSelectedByUser) itemClass += " bg-red-100/70";
-                    else if (isActuallyCorrect) itemClass += " bg-green-50/70";
-
-
-                    if (isActuallyCorrect && isSelectedByUser) indicator = <CheckCircle2 className="h-4 w-4 text-green-600" title="Correct and Selected"/>;
-                    else if (isSelectedByUser && !isActuallyCorrect) indicator = <XCircle className="h-4 w-4 text-red-600" title="Incorrectly Selected"/>;
-                    else if (isActuallyCorrect) indicator = <CheckCircle2 className="h-4 w-4 text-green-600 opacity-60" title="Correct Option"/>;
-
-                    return (
-                      <li key={`${q.id}-opt-${optIndex}`} className={itemClass}>
-                        <span>{option}</span>
-                        {indicator}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-             {q.explanation && (
-                <div className="mt-3 pt-3 border-t">
-                    <h4 className="font-semibold text-sm mb-1 text-muted-foreground flex items-center"><Info className="h-4 w-4 mr-1 text-blue-500"/> Explanation:</h4>
-                    <p className="text-sm p-2 bg-blue-50/50 border border-blue-200 rounded-md">{q.explanation}</p>
-                </div>
-            )}
-          </CardContent>
-        </Card>
+        <QuestionReviewCard key={q.id} question={q} index={index} />
       ))}
       <div className="flex justify-center mt-8">
         <Link href="/analytics">

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -142,7 +142,7 @@ export default function CustomTestPage() {
   }, [selectedChaptersMap, curriculum, subjects]);
 
 
-  const handleSubjectSelectAll = (subject: string, checked: boolean | 'indeterminate') => {
+  const handleSubjectSelectAll = useCallback((subject: string, checked: boolean | 'indeterminate') => {
     setSelectedChaptersMap(prev => {
       const newSubjectChapters = new Set<string>(); 
       if (checked === true) {
@@ -150,9 +150,9 @@ export default function CustomTestPage() {
       }
       return { ...prev, [subject]: newSubjectChapters };
     });
-  };
+  }, [syllabus]);
 
-  const handleChapterSelect = (subject: string, chapterName: string, checked: boolean) => {
+  const handleChapterSelect = useCallback((subject: string, chapterName: string, checked: boolean) => {
     setSelectedChaptersMap(prev => {
       const newSubjectChapters = new Set(prev[subject]);
       if (checked) {
@@ -162,7 +162,7 @@ export default function CustomTestPage() {
       }
       return { ...prev, [subject]: newSubjectChapters };
     });
-  };
+  }, []);
 
   const getSubjectCheckboxState = (subject: string): boolean | 'indeterminate' => {
     const numChaptersInSubject = syllabus[subject]?.length || 0;
@@ -184,7 +184,7 @@ export default function CustomTestPage() {
     return actualQuestionCount * timePerQuestion;
   }, [actualQuestionCount, timePerQuestion]);
 
-  const handleStartCustomTest = (isPastPaper: boolean = false, year?: number) => {
+  const handleStartCustomTest = useCallback((isPastPaper: boolean = false, year?: number) => {
     let finalQuestionCount = actualQuestionCount;
     let finalTotalDuration = totalTestDuration;
     let finalTestName = testName || `My ${curriculum} Test`;
@@ -254,7 +254,7 @@ export default function CustomTestPage() {
     }
 
     router.push(`/test/custom-session?${queryParams.toString()}`);
-  };
+  }, [actualQuestionCount, totalTestDuration, testName, curriculum, totalSelectedChaptersCount, totalAvailableQuestionsFromSelection, timePerQuestion, router, subjects, selectedChaptersMap, toast]);
 
   const selectedChaptersForPreview = useMemo(() => {
     const preview: { subject: string, chapters: string[] }[] = [];
