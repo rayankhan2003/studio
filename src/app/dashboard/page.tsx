@@ -1,19 +1,47 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, BookText, CalendarDays, CheckCircle2, LineChart, Settings } from "lucide-react";
+import { Progress } from '@/components/ui/progress';
+import { Activity, CalendarDays, CheckCircle2, LineChart, Settings, Loader2 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+
+interface StoredTestReport {
+  id: string;
+  name: string;
+  date: string;
+  overallScorePercentage: number;
+}
 
 export default function DashboardPage() {
+  const [isClient, setIsClient] = useState(false);
+  const [performance, setPerformance] = useState({ averageScore: 0, testsTaken: 0 });
+  const [recentTests, setRecentTests] = useState<StoredTestReport[]>([]);
+
+  useEffect(() => {
+    setIsClient(true);
+    const storedHistoryString = localStorage.getItem('prepwiseTestHistory');
+    if (storedHistoryString) {
+      const storedHistory: StoredTestReport[] = JSON.parse(storedHistoryString);
+      
+      if (storedHistory.length > 0) {
+        const totalScoreSum = storedHistory.reduce((acc, report) => acc + report.overallScorePercentage, 0);
+        setPerformance({
+          averageScore: parseFloat((totalScoreSum / storedHistory.length).toFixed(1)),
+          testsTaken: storedHistory.length,
+        });
+      }
+
+      storedHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setRecentTests(storedHistory.slice(0, 3));
+    }
+  }, []);
+
   const upcomingExams = [
     { id: "exam1", name: "Mathematics - Algebra Midterm", date: "2024-08-15", time: "10:00 AM" },
     { id: "exam2", name: "Physics - Mechanics Final", date: "2024-08-22", time: "02:00 PM" },
-  ];
-
-  const recentTests = [
-    { id: "test1", name: "Chemistry - Atomic Structure Quiz", score: "85%", date: "2024-07-28" },
-    { id: "test2", name: "Biology - Cell Biology Practice", score: "72%", date: "2024-07-25" },
   ];
 
   return (
@@ -21,10 +49,8 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Welcome to your Dashboard</h1>
         <Button asChild>
-          <Link href="/test/custom" legacyBehavior passHref>
-            <a>
-              <Settings className="mr-2 h-4 w-4" /> Create Custom Test
-            </a>
+          <Link href="/test/custom">
+             <Settings className="mr-2 h-4 w-4" /> Create Custom Test
           </Link>
         </Button>
       </div>
@@ -36,7 +62,7 @@ export default function DashboardPage() {
               <CalendarDays className="h-6 w-6 text-primary" />
               Upcoming Exams
             </CardTitle>
-            <CardDescription>Stay prepared for what's next.</CardDescription>
+            <CardDescription>Stay prepared for what's next. (Mock Data)</CardDescription>
           </CardHeader>
           <CardContent>
             {upcomingExams.length > 0 ? (
@@ -65,25 +91,27 @@ export default function DashboardPage() {
             <CardDescription>Review your latest attempts.</CardDescription>
           </CardHeader>
           <CardContent>
-            {recentTests.length > 0 ? (
+            {!isClient ? (
+              <div className="flex justify-center items-center h-24">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : recentTests.length > 0 ? (
               <ul className="space-y-3">
                 {recentTests.map((test) => (
                   <li key={test.id} className="p-3 bg-muted/50 rounded-md flex justify-between items-center">
                     <div>
                       <h3 className="font-semibold">{test.name}</h3>
-                      <p className="text-sm text-muted-foreground">Completed: {test.date}</p>
+                      <p className="text-sm text-muted-foreground">Completed: {new Date(test.date).toLocaleDateString()}</p>
                     </div>
-                    <span className="font-bold text-lg text-primary">{test.score}</span>
+                    <span className="font-bold text-lg text-primary">{test.overallScorePercentage.toFixed(1)}%</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No recent tests found.</p>
+              <p className="text-muted-foreground text-center py-4">No recent tests found.</p>
             )}
             <Button asChild variant="outline" className="w-full mt-4">
-              <Link href="/history" legacyBehavior passHref>
-                <a>View All History</a>
-              </Link>
+              <Link href="/history">View All History</Link>
             </Button>
           </CardContent>
         </Card>
@@ -96,19 +124,27 @@ export default function DashboardPage() {
             </CardTitle>
             <CardDescription>A quick look at your overall progress.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Image 
-              src="https://placehold.co/400x200.png" 
-              alt="Performance summary chart" 
-              data-ai-hint="summary chart"
-              width={400} 
-              height={200} 
-              className="rounded-md"
-            />
-            <Button asChild className="w-full">
-              <Link href="/analytics" legacyBehavior passHref>
-                <a>View Detailed Analytics</a>
-              </Link>
+          <CardContent className="space-y-4 pt-6 text-center">
+            {!isClient ? (
+               <div className="flex justify-center items-center h-24">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : performance.testsTaken > 0 ? (
+              <>
+                <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+                  <h3 className="text-5xl font-bold text-primary">{performance.averageScore}%</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Overall Average Score</p>
+                </div>
+                 <div className="space-y-2">
+                    <Progress value={performance.averageScore} className="w-full h-3" />
+                    <p className="text-sm text-muted-foreground">Across {performance.testsTaken} test(s)</p>
+                </div>
+              </>
+            ) : (
+                <p className="text-muted-foreground py-8">No performance data yet. Take a test to see your summary!</p>
+            )}
+            <Button asChild className="w-full mt-4">
+              <Link href="/analytics">View Detailed Analytics</Link>
             </Button>
           </CardContent>
         </Card>
@@ -123,14 +159,10 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
           <Button asChild variant="secondary" className="w-full h-16 text-base">
-            <Link href="/planner" legacyBehavior passHref>
-              <a>AI Study Planner</a>
-            </Link>
+            <Link href="/planner">AI Study Planner</Link>
           </Button>
           <Button asChild variant="secondary" className="w-full h-16 text-base">
-            <Link href="/faq" legacyBehavior passHref>
-              <a>View FAQs</a>
-            </Link>
+            <Link href="/faq">View FAQs</Link>
           </Button>
         </CardContent>
       </Card>
