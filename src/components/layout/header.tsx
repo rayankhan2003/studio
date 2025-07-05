@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -8,7 +7,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -45,9 +43,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center" aria-label="SmarterCat Home">
-          <Image src="/logo.png" width="30" height="40" alt="SmarterCat logo" />
-          <span className="text-2xl font-semibold text-primary ml-2">SmarterCat</span>
+        <Link href="/" className="flex items-center gap-2" aria-label="SmarterCat Home">
+          <Brain className="h-8 w-8 text-primary" />
+          <span className="text-2xl font-semibold text-primary">SmarterCat</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
@@ -76,9 +74,9 @@ export function Header() {
               <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0">
                 <SheetHeader className="p-4 border-b">
                    <SheetTitle className="sr-only">Main Menu</SheetTitle>
-                   <Link href="/" className="flex items-center" aria-label="SmarterCat Home" onClick={() => setIsSheetOpen(false)}>
-                    <Image src="/logo.png" width="30" height="40" alt="SmarterCat logo" />
-                    <span className="text-xl font-semibold text-primary ml-2">SmarterCat</span>
+                   <Link href="/" className="flex items-center gap-2" aria-label="SmarterCat Home" onClick={() => setIsSheetOpen(false)}>
+                    <Brain className="h-7 w-7 text-primary" />
+                    <span className="text-xl font-semibold text-primary">SmarterCat</span>
                   </Link>
                 </SheetHeader>
                 <div className="p-4">
