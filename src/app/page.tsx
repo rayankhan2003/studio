@@ -64,12 +64,11 @@ export default function HomePage() {
       <section className="w-full text-center container px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
            <Image
-            src="https://placehold.co/120x120.png"
-            width="100"
-            height="100"
-            alt="SmarterCat Logo Large"
-            data-ai-hint="cat studying"
-            className="mx-auto mb-6 rounded-full shadow-lg sm:w-120 sm:h-120"
+            src="/logo.png"
+            width="120"
+            height="161"
+            alt="SmarterCat Logo"
+            className="mx-auto mb-6 shadow-lg"
           />
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary/80">
             🩺 Crack MDCAT 2025 with Confidence

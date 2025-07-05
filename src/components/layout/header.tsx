@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -45,7 +46,8 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center" aria-label="SmarterCat Home">
-          <span className="text-2xl font-semibold text-primary">SmarterCat</span>
+          <Image src="/logo.png" width="30" height="40" alt="SmarterCat logo" />
+          <span className="text-2xl font-semibold text-primary ml-2">SmarterCat</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
@@ -75,7 +77,8 @@ export function Header() {
                 <SheetHeader className="p-4 border-b">
                    <SheetTitle className="sr-only">Main Menu</SheetTitle>
                    <Link href="/" className="flex items-center" aria-label="SmarterCat Home" onClick={() => setIsSheetOpen(false)}>
-                    <span className="text-xl font-semibold text-primary">SmarterCat</span>
+                    <Image src="/logo.png" width="30" height="40" alt="SmarterCat logo" />
+                    <span className="text-xl font-semibold text-primary ml-2">SmarterCat</span>
                   </Link>
                 </SheetHeader>
                 <div className="p-4">
