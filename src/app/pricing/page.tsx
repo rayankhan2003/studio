@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, CreditCard, Smartphone, UserPlus } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, UserPlus, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -57,10 +57,17 @@ const initialDemoInfoData: DemoInfoData = {
   email: '',
 };
 
+interface PlanDetails {
+    name: string;
+    price: string;
+    billing_desc: string;
+}
+
 export default function PricingPage() {
   const { toast } = useToast();
   const [isPremiumDialogOpen, setIsPremiumDialogOpen] = useState<boolean>(false);
   const [premiumFormData, setPremiumFormData] = useState<PremiumFormData>(initialPremiumFormData);
+  const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
 
   const [isDemoInfoDialogOpen, setIsDemoInfoDialogOpen] = useState<boolean>(false);
   const [demoInfoData, setDemoInfoData] = useState<DemoInfoData>(initialDemoInfoData);
@@ -73,6 +80,11 @@ export default function PricingPage() {
   const handleDemoInfoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setDemoInfoData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleOpenSubscriptionDialog = (plan: PlanDetails) => {
+    setSelectedPlan(plan);
+    setIsPremiumDialogOpen(true);
   };
 
   const handleActivateDemoSubmit = () => {
@@ -110,8 +122,19 @@ export default function PricingPage() {
     setPremiumFormData(initialPremiumFormData);
   };
 
+  const premiumFeatures = [
+    "Unlimited Custom Tests",
+    "Full Access to AI Insights",
+    "Detailed Performance Analytics",
+    "Complete Test History & Review",
+    "Past MDCAT Papers Practice",
+    "Goal Setting Features",
+    "Priority Support",
+    "Ad-Free Experience",
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto space-y-12 py-8">
+    <div className="max-w-6xl mx-auto space-y-16 py-8">
       <section className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
           Choose Your Plan
@@ -121,9 +144,9 @@ export default function PricingPage() {
         </p>
       </section>
 
-      <div className="grid md:grid-cols-2 gap-8 items-stretch">
-        {/* Demo Plan Card */}
-        <Card className="shadow-lg flex flex-col">
+      {/* Demo Plan Card - Centered */}
+      <div className="flex justify-center">
+        <Card className="shadow-lg flex flex-col max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl mb-2">Demo Plan</CardTitle>
             <CardDescription className="text-xl font-semibold text-accent">
@@ -154,52 +177,116 @@ export default function PricingPage() {
             </Button>
           </CardFooter>
         </Card>
-
-        {/* Premium Plan Card */}
-        <Card className="shadow-xl border-primary border-2 relative overflow-hidden flex flex-col">
-          <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-xs font-semibold transform translate-x-8 translate-y-8 rotate-45">
-            POPULAR
-          </div>
-          <CardHeader className="text-center pt-10">
-            <CardTitle className="text-3xl mb-2">SmarterCat Premium</CardTitle>
-            <CardDescription className="text-xl font-semibold text-primary">
-              1000 PKR / month
-            </CardDescription>
-            <p className="text-sm text-muted-foreground mt-1">
-              Billed monthly. Cancel anytime.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6 flex-grow">
-            <ul className="space-y-3 text-muted-foreground">
-              {[
-                "Unlimited Custom Tests",
-                "Full Access to AI Insights",
-                "Detailed Performance Analytics",
-                "Complete Test History & Review",
-                "Past MDCAT Papers Practice",
-                "Goal Setting Features",
-                "Priority Support",
-                "Ad-Free Experience",
-              ].map((feature) => (
-                <li key={feature} className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter className="flex-col gap-2 mt-auto">
-            <Button onClick={() => setIsPremiumDialogOpen(true)} className="w-full text-lg py-6">
-              Subscribe Now
-            </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              By subscribing, you agree to our{" "}
-              <Link href="/terms" className="underline hover:text-primary">Terms of Use</Link> and acknowledge
-              our automatic renewal policy.
-            </p>
-          </CardFooter>
-        </Card>
       </div>
+
+      {/* Premium Plans Section */}
+      <section>
+        <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
+               <Zap className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">SmarterCat Premium Plans</h2>
+            <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Get unlimited access to all features and accelerate your preparation.
+            </p>
+        </div>
+        <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            {/* Monthly Plan */}
+            <Card className="shadow-lg border-2 border-transparent hover:border-primary/50 transition-all flex flex-col">
+                 <CardHeader className="text-center pt-8">
+                    <CardTitle className="text-2xl mb-2">Monthly</CardTitle>
+                    <CardDescription className="text-xl font-semibold text-primary">
+                      1000 PKR / month
+                    </CardDescription>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Flexible monthly payments.
+                    </p>
+                 </CardHeader>
+                <CardContent className="space-y-4 flex-grow">
+                    <ul className="space-y-3 text-muted-foreground text-sm">
+                       {premiumFeatures.map((feature) => (
+                        <li key={feature} className="flex items-start">
+                            <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                        </li>
+                        ))}
+                    </ul>
+                </CardContent>
+                <CardFooter className="flex-col gap-2 mt-auto">
+                    <Button onClick={() => handleOpenSubscriptionDialog({ name: 'Monthly Plan', price: '1000 PKR', billing_desc: 'Billed monthly.' })} className="w-full text-lg py-6" variant="outline">
+                        Subscribe
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            {/* 6-Month Plan */}
+            <Card className="shadow-xl border-primary border-2 relative overflow-hidden flex flex-col">
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-xs font-semibold transform translate-x-8 translate-y-8 rotate-45">
+                    POPULAR
+                </div>
+                <CardHeader className="text-center pt-10">
+                    <CardTitle className="text-2xl mb-2">6 Months</CardTitle>
+                    <CardDescription className="text-xl font-semibold text-primary">
+                    5000 PKR / 6 months
+                    </CardDescription>
+                    <p className="text-sm text-muted-foreground mt-1">
+                    Save ~16% compared to monthly!
+                    </p>
+                </CardHeader>
+                <CardContent className="space-y-4 flex-grow">
+                    <ul className="space-y-3 text-muted-foreground text-sm">
+                       {premiumFeatures.map((feature) => (
+                        <li key={feature} className="flex items-start">
+                            <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                        </li>
+                        ))}
+                    </ul>
+                </CardContent>
+                <CardFooter className="flex-col gap-2 mt-auto">
+                    <Button onClick={() => handleOpenSubscriptionDialog({ name: '6-Month Plan', price: '5000 PKR', billing_desc: 'Billed every 6 months.' })} className="w-full text-lg py-6">
+                    Subscribe
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            {/* 12-Month Plan */}
+            <Card className="shadow-lg border-2 border-transparent hover:border-primary/50 transition-all flex flex-col">
+                <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-4 py-1 text-xs font-semibold transform translate-x-10 translate-y-7 -rotate-45 origin-bottom-left">
+                    BEST VALUE
+                </div>
+                <CardHeader className="text-center pt-8">
+                    <CardTitle className="text-2xl mb-2">Yearly</CardTitle>
+                    <CardDescription className="text-xl font-semibold text-primary">
+                    10000 PKR / year
+                    </CardDescription>
+                     <p className="text-sm text-muted-foreground mt-1">
+                        2 months free!
+                    </p>
+                </CardHeader>
+                <CardContent className="space-y-4 flex-grow">
+                    <ul className="space-y-3 text-muted-foreground text-sm">
+                        {premiumFeatures.map((feature) => (
+                        <li key={feature} className="flex items-start">
+                            <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                        </li>
+                        ))}
+                    </ul>
+                </CardContent>
+                <CardFooter className="flex-col gap-2 mt-auto">
+                    <Button onClick={() => handleOpenSubscriptionDialog({ name: 'Yearly Plan', price: '10000 PKR', billing_desc: 'Billed annually.' })} className="w-full text-lg py-6" variant="outline">
+                        Subscribe
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+        <p className="text-xs text-muted-foreground text-center mt-6">
+            By subscribing, you agree to our{" "}
+            <Link href="/terms" className="underline hover:text-primary">Terms of Use</Link> and acknowledge
+            our automatic renewal policy where applicable.
+        </p>
+      </section>
 
       {/* Demo Information Dialog */}
       <Dialog open={isDemoInfoDialogOpen} onOpenChange={(open) => {
@@ -256,10 +343,10 @@ export default function PricingPage() {
         <DialogContent className="sm:max-w-md lg:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-6 w-6 text-primary" /> Subscribe to SmarterCat Premium
+              <CreditCard className="h-6 w-6 text-primary" /> Subscribe to {selectedPlan?.name || 'SmarterCat Premium'}
             </DialogTitle>
             <DialogDescription>
-              Enter your details to unlock all premium features.
+              Enter your details to unlock all premium features. {selectedPlan?.billing_desc}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -316,7 +403,7 @@ export default function PricingPage() {
               Cancel
             </Button>
             <Button type="button" onClick={handlePremiumSubscribeSubmit}>
-              Pay 1000 PKR & Subscribe
+              Pay {selectedPlan?.price || ''} & Subscribe
             </Button>
           </DialogFooter>
         </DialogContent>
