@@ -190,7 +190,7 @@ const AnalyticsDisplay = React.memo(({
                   stroke={chapterLineColors[index % chapterLineColors.length]}
                   strokeWidth={2}
                   activeDot={{ r: 6 }}
-                  dot={{r:3}}
+                  dot={false}
                   connectNulls
                 />
               ))}
@@ -329,33 +329,43 @@ export default function AnalyticsPage() {
   }, [subjectScoreProgressionData, availableSubjects]);
 
   const chapterProficiencyChartData = useMemo(() => {
-    if (!selectedSubjectForChapterChart || !availableSyllabus[selectedSubjectForChapterChart]) return [];
+    if (!selectedSubjectForChapterChart || !chapterPerformanceHistoryData[selectedSubjectForChapterChart] || !availableSyllabus[selectedSubjectForChapterChart]) {
+      return [];
+    }
     
-    const subjectChapters = availableSyllabus[selectedSubjectForChapterChart];
     const historyForSelectedSubject = chapterPerformanceHistoryData[selectedSubjectForChapterChart];
-    if (!subjectChapters || !historyForSelectedSubject) return [];
+    const subjectChapters = availableSyllabus[selectedSubjectForChapterChart];
+    const dataByTestName: Record<string, { name: string; date: string; [key: string]: any }> = {};
 
-    const testNamesSet = new Set<string>();
-    subjectChapters.forEach(chapter => {
-      (historyForSelectedSubject[chapter.name] || []).forEach(entry => {
-        testNamesSet.add(entry.testName);
-      });
-    });
-    const sortedTestNames = Array.from(testNamesSet).sort((a, b) => {
-        const dateA = subjectScoreProgressionData.find(d => d.name === a)?.date;
-        const dateB = subjectScoreProgressionData.find(d => d.name === b)?.date;
-        if (dateA && dateB) return new Date(dateA).getTime() - new Date(dateB).getTime();
-        return a.localeCompare(b);
-    });
+    // 1. Iterate through chapter history to build a map of tests and their scores
+    for (const chapterName in historyForSelectedSubject) {
+      if (Object.prototype.hasOwnProperty.call(historyForSelectedSubject, chapterName)) {
+        const chapterHistory = historyForSelectedSubject[chapterName];
+        chapterHistory.forEach(entry => {
+          if (!dataByTestName[entry.testName]) {
+            const testInfo = subjectScoreProgressionData.find(d => d.name === entry.testName);
+            dataByTestName[entry.testName] = { name: entry.testName, date: testInfo?.date || '1970-01-01' };
+          }
+          dataByTestName[entry.testName][chapterName] = entry.score;
+        });
+      }
+    }
 
-    return sortedTestNames.map(testName => {
-      const dataPoint: { name: string; [chapterName: string]: number | string } = { name: testName };
+    // 2. Convert map to an array
+    const chartData = Object.values(dataByTestName);
+    
+    // 3. Sort the array by date
+    chartData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    // 4. Ensure all chapters are present in each data point, filling with null for 'connectNulls'
+    return chartData.map(dataPoint => {
+      const finalDataPoint = { ...dataPoint };
       subjectChapters.forEach(chapter => {
-        const history = historyForSelectedSubject[chapter.name];
-        const testEntry = history?.find(entry => entry.testName === testName);
-        dataPoint[chapter.name] = testEntry ? testEntry.score : 0;
+        if (!(chapter.name in finalDataPoint)) {
+          finalDataPoint[chapter.name] = null;
+        }
       });
-      return dataPoint;
+      return finalDataPoint;
     });
   }, [selectedSubjectForChapterChart, chapterPerformanceHistoryData, subjectScoreProgressionData, availableSyllabus]);
   

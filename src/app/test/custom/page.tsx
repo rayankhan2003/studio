@@ -313,10 +313,7 @@ export default function CustomTestPage() {
                     <AccordionItem value={subject} key={subject} className="border bg-muted/30 rounded-md shadow-sm">
                       <AccordionTrigger asChild>
                          <div
-                          className={cn(
-                            "flex flex-1 items-center justify-between py-3 px-3 font-medium transition-all hover:no-underline rounded-t-md cursor-pointer group hover:bg-accent/10",
-                            activeAccordionItems.includes(subject) ? "bg-accent/5" : ""
-                          )}
+                          className="flex flex-1 items-center justify-between py-3 px-3 font-medium transition-all hover:no-underline rounded-t-md cursor-pointer group hover:bg-accent/10 data-[state=open]:bg-accent/5"
                         >
                           <div className="flex items-center space-x-3 flex-1" onClick={(e) => e.stopPropagation()} >
                             <Checkbox
