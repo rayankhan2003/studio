@@ -67,7 +67,14 @@ const getQuestionsForTest = (
   selectedSubjectsParam: string | null,
   selectedChaptersParam: string | null
 ): QuestionForTest[] => {
-  let filteredQuestions: MockQuestionDefinition[] = mockQuestionsDb.filter(q => q.curriculum === curriculum);
+  const customQuestionsRaw = typeof window !== 'undefined' ? localStorage.getItem('customQuestionBank') : null;
+  const customQuestions: MockQuestionDefinition[] = customQuestionsRaw ? JSON.parse(customQuestionsRaw) : [];
+  
+  const questionMap = new Map<string, MockQuestionDefinition>();
+  [...mockQuestionsDb, ...customQuestions].forEach(q => questionMap.set(q.id, q));
+  const allQuestions = Array.from(questionMap.values());
+  
+  let filteredQuestions: MockQuestionDefinition[] = allQuestions.filter(q => q.curriculum === curriculum);
 
   if (selectedSubjectsParam && selectedChaptersParam) {
     const chapterSelections = selectedChaptersParam.split(','); 
