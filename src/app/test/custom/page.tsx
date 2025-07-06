@@ -45,13 +45,13 @@ export default function CustomTestPage() {
   
   const [curriculum, setCurriculum] = useState<Curriculum>('MDCAT');
 
-  const initialSelectedChapters = (): SelectedChaptersMap => {
+  const initialSelectedChapters = useCallback((): SelectedChaptersMap => {
     const state: Partial<SelectedChaptersMap> = {};
     [...allMdcatSubjects, ...allCambridgeSubjects].forEach(subject => {
       state[subject] = new Set<string>();
     });
     return state as SelectedChaptersMap;
-  };
+  }, []);
 
   const [selectedChaptersMap, setSelectedChaptersMap] = useState<SelectedChaptersMap>(initialSelectedChapters());
   const [questionCountMode, setQuestionCountMode] = useState<'preset' | 'custom'>('preset');
@@ -68,21 +68,21 @@ export default function CustomTestPage() {
     setIsClient(true);
   }, []);
 
-  const { subjects, syllabus, chaptersType } = useMemo(() => {
+  const { subjects, syllabus } = useMemo(() => {
     if (curriculum === 'O Level') {
-        return { subjects: allCambridgeSubjects, syllabus: cambridgeSyllabus[CambridgeLevels.O_LEVEL], chaptersType: 'cambridge' as const };
+        return { subjects: allCambridgeSubjects, syllabus: cambridgeSyllabus[CambridgeLevels.O_LEVEL] };
     }
     if (curriculum === 'A Level') {
-        return { subjects: allCambridgeSubjects, syllabus: cambridgeSyllabus[CambridgeLevels.A_LEVEL], chaptersType: 'cambridge' as const };
+        return { subjects: allCambridgeSubjects, syllabus: cambridgeSyllabus[CambridgeLevels.A_LEVEL] };
     }
-    return { subjects: allMdcatSubjects, syllabus: mdcatSyllabus, chaptersType: 'mdcat' as const };
+    return { subjects: allMdcatSubjects, syllabus: mdcatSyllabus };
   }, [curriculum]);
 
   useEffect(() => {
     // Reset selections when curriculum changes
     setSelectedChaptersMap(initialSelectedChapters());
     setActiveAccordionItems([]);
-  }, [curriculum]);
+  }, [curriculum, initialSelectedChapters]);
 
 
   useEffect(() => {
@@ -100,14 +100,14 @@ export default function CustomTestPage() {
       const newSelectedChaptersMap: SelectedChaptersMap = initialSelectedChapters();
       const subjectsToOpenInAccordion: Set<string> = new Set();
       
-      const currentSyllabus = curriculum === 'MDCAT' ? mdcatSyllabus : cambridgeSyllabus[curriculum];
+      const currentSyllabus = curriculum === 'MDCAT' ? mdcatSyllabus : cambridgeSyllabus[curriculum as 'O Level' | 'A Level'];
       const currentSubjects = curriculum === 'MDCAT' ? allMdcatSubjects : allCambridgeSubjects;
 
       if (chaptersQuery) {
         const chapterSelections = chaptersQuery.split(',');
         chapterSelections.forEach(cs => {
           const [subj, chap] = cs.split(':');
-          if (subj && chap && currentSubjects.includes(subj) && currentSyllabus[subj].find(c => c.name === chap)) {
+          if (subj && chap && currentSubjects.includes(subj) && currentSyllabus[subj as keyof typeof currentSyllabus]?.find(c => c.name === chap)) {
             newSelectedChaptersMap[subj].add(chap);
             subjectsToOpenInAccordion.add(subj);
           }
@@ -117,7 +117,7 @@ export default function CustomTestPage() {
         subjectsArray.forEach(subjStr => {
           if (currentSubjects.includes(subjStr)) {
             subjectsToOpenInAccordion.add(subjStr);
-            currentSyllabus[subjStr].forEach(chap => newSelectedChaptersMap[subjStr].add(chap.name));
+            (currentSyllabus[subjStr as keyof typeof currentSyllabus] || []).forEach(chap => newSelectedChaptersMap[subjStr].add(chap.name));
           }
         });
       }
@@ -148,7 +148,7 @@ export default function CustomTestPage() {
     let count = 0;
     subjects.forEach(subject => {
       const chapters = selectedChaptersMap[subject];
-      if (chapters.size > 0) {
+      if (chapters && chapters.size > 0) {
         allQuestions.forEach(q => {
           if (q.curriculum === curriculum && q.subject === subject && chapters.has(q.chapter)) {
             count++;
@@ -164,7 +164,7 @@ export default function CustomTestPage() {
     setSelectedChaptersMap(prev => {
       const newSubjectChapters = new Set<string>(); 
       if (checked === true) {
-        syllabus[subject].forEach(ch => newSubjectChapters.add(ch.name));
+        (syllabus[subject as keyof typeof syllabus] || []).forEach(ch => newSubjectChapters.add(ch.name));
       }
       return { ...prev, [subject]: newSubjectChapters };
     });
@@ -198,7 +198,7 @@ export default function CustomTestPage() {
     }
   };
 
-  const processAndStoreQuestions = () => {
+  const processAndStoreQuestions = useCallback(() => {
       if (!uploadedFile) {
           toast({ title: "No file selected", description: "Please choose an Excel file to upload.", variant: "destructive" });
           return;
@@ -220,6 +220,7 @@ export default function CustomTestPage() {
 
                   let correctAnswer: string | string[];
                   if (String(row.Type).trim() === 'multiple-choice') {
+                      if (!row.CorrectAnswer) throw new Error(`Row ${index + 2} is multiple-choice but has no CorrectAnswer.`);
                       correctAnswer = String(row.CorrectAnswer).split(',').map(s => s.trim());
                   } else {
                       correctAnswer = String(row.CorrectAnswer).trim();
@@ -268,12 +269,13 @@ export default function CustomTestPage() {
           }
       };
       reader.readAsArrayBuffer(uploadedFile);
-  };
+  }, [uploadedFile]);
 
   const getSubjectCheckboxState = (subject: string): boolean | 'indeterminate' => {
-    const numChaptersInSubject = syllabus[subject]?.length || 0;
+    const numChaptersInSubject = syllabus[subject as keyof typeof syllabus]?.length || 0;
     const numSelectedInSubject = selectedChaptersMap[subject]?.size || 0;
-
+    
+    if (numChaptersInSubject === 0) return false;
     if (numSelectedInSubject === 0) return false;
     if (numSelectedInSubject === numChaptersInSubject) return true;
     return 'indeterminate';
@@ -339,7 +341,7 @@ export default function CustomTestPage() {
     const selectedChaptersForQuery: string[] = [];
 
     subjects.forEach(subject => {
-      const chapters = Array.from(selectedChaptersMap[subject]);
+      const chapters = Array.from(selectedChaptersMap[subject] || []);
       if (chapters.length > 0) {
         selectedSubjectsForQuery.push(subject);
         chapters.forEach(ch => selectedChaptersForQuery.push(`${subject}:${ch}`));
@@ -425,7 +427,7 @@ export default function CustomTestPage() {
                             <Checkbox
                               id={`select-all-${subject}`}
                               checked={getSubjectCheckboxState(subject)}
-                              onCheckedChange={(checked) => handleSubjectSelectAll(subject, checked)}
+                              onCheckedChange={(checked) => handleSubjectSelectAll(subject, checked as boolean)}
                               aria-label={`Select all chapters in ${subject}`}
                               className="h-5 w-5"
                             />
@@ -434,7 +436,7 @@ export default function CustomTestPage() {
                               className="text-lg font-semibold text-foreground cursor-pointer"
                              
                             >
-                              {subject} ({selectedChaptersMap[subject]?.size || 0} / {syllabus[subject].length} chapters)
+                              {subject} ({selectedChaptersMap[subject]?.size || 0} / {(syllabus[subject as keyof typeof syllabus] || []).length} chapters)
                             </Label>
                           </div>
                           <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180 text-primary" />
@@ -442,7 +444,7 @@ export default function CustomTestPage() {
                       </AccordionTrigger>
                       <AccordionContent className="pt-3 pb-4 px-4 border-t mt-0 bg-background">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
-                          {syllabus[subject].map((chapter: MdcatChapter | CambridgeChapter) => (
+                          {(syllabus[subject as keyof typeof syllabus] || []).map((chapter: MdcatChapter | CambridgeChapter) => (
                             <div key={chapter.name} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`${subject}-${chapter.name.replace(/\s+/g, '-')}`}
@@ -551,13 +553,13 @@ export default function CustomTestPage() {
                       className="text-sm sm:text-base"
                     />
                   )}
-                   {actualQuestionCount > totalAvailableQuestionsFromSelection && totalSelectedChaptersCount > 0 && totalAvailableQuestionsFromSelection > 0 && (
+                   {isClient && actualQuestionCount > totalAvailableQuestionsFromSelection && totalSelectedChaptersCount > 0 && totalAvailableQuestionsFromSelection > 0 && (
                       <p className="text-xs text-orange-600 flex items-start gap-1 pt-1">
                         <AlertCircle size={16} className="flex-shrink-0 mt-0.5"/>
                         <span>Selected topics have approx. {totalAvailableQuestionsFromSelection} questions. Test will use this count.</span>
                       </p>
                   )}
-                  {totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0 && (
+                  {isClient && totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0 && (
                      <p className="text-xs text-red-600 flex items-start gap-1 pt-1">
                         <AlertCircle size={16} className="flex-shrink-0 mt-0.5"/>
                         <span>No questions found for the current selection. Please select more chapters/subjects.</span>
@@ -595,7 +597,7 @@ export default function CustomTestPage() {
                   size="lg"
                   className="w-full text-lg py-6"
                   onClick={() => handleStartCustomTest(false)}
-                  disabled={totalSelectedChaptersCount === 0 || actualQuestionCount <= 0 || (totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0) }
+                  disabled={totalSelectedChaptersCount === 0 || actualQuestionCount <= 0 || (isClient && totalAvailableQuestionsFromSelection === 0 && totalSelectedChaptersCount > 0) }
                 >
                   <PlayCircle className="mr-2 h-6 w-6" /> Start Custom Test
               </Button>
@@ -632,8 +634,8 @@ export default function CustomTestPage() {
                     <p className="text-muted-foreground">No chapters selected yet.</p>
                   )}
                 </div>
-                <p><strong>Questions from Selection:</strong> <span className="text-primary font-semibold">{totalAvailableQuestionsFromSelection}</span></p>
-                <p><strong>Questions for Test:</strong> <span className="text-primary font-semibold">{actualQuestionCount > 0 ? Math.min(actualQuestionCount, totalAvailableQuestionsFromSelection > 0 ? totalAvailableQuestionsFromSelection : actualQuestionCount) : 'N/A'}</span></p>
+                <p><strong>Questions from Selection:</strong> <span className="text-primary font-semibold">{isClient ? totalAvailableQuestionsFromSelection : '...'}</span></p>
+                <p><strong>Questions for Test:</strong> <span className="text-primary font-semibold">{actualQuestionCount > 0 ? (isClient ? Math.min(actualQuestionCount, totalAvailableQuestionsFromSelection > 0 ? totalAvailableQuestionsFromSelection : actualQuestionCount) : actualQuestionCount) : 'N/A'}</span></p>
                 <p><strong>Time per Question:</strong> <span className="text-primary font-semibold">{timePerQuestionOptions.find(opt => opt.value === timePerQuestion)?.label || 'N/A'}</span></p>
                 <p><strong>Total Test Duration:</strong> <span className="text-primary font-semibold">{formatDuration(totalTestDuration)}</span></p>
               </CardContent>
