@@ -1,23 +1,24 @@
-
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/hooks/use-auth';
 import { Chrome, Facebook, Mail, LogIn, UserPlus } from "lucide-react";
 
 export default function AccountAuthPage() {
   const { toast } = useToast();
+  const { login } = useAuth();
+  const router = useRouter();
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
-  // State for login form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // State for signup form
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
@@ -26,10 +27,16 @@ export default function AccountAuthPage() {
   const handleSocialAuth = (provider: 'Google' | 'Facebook') => {
     toast({
       title: `Mock ${provider} Authentication`,
-      description: `Initiating ${authMode} with ${provider}... (This is a mock action)`,
+      description: `Initiating ${authMode} with ${provider}...`,
     });
-    // In a real app, you'd redirect to the provider or open a popup.
-    // After successful auth, you might set a loggedIn state or redirect.
+    // Mock login with a generic name for social auth
+    const mockName = provider === 'Google' ? 'Alex Doe' : 'Sam Smith';
+    login(mockName);
+    toast({
+      title: 'Login Successful!',
+      description: `Welcome back, ${mockName}!`,
+    });
+    router.push('/dashboard');
   };
 
   const handleEmailLogin = (e: React.FormEvent) => {
@@ -38,13 +45,14 @@ export default function AccountAuthPage() {
       toast({ title: "Login Error", description: "Please enter both email and password.", variant: "destructive" });
       return;
     }
+    // Simple mock: derive a name from the email
+    const name = loginEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    login(name);
     toast({
-      title: "Mock Email Login",
-      description: `Attempting to log in with email: ${loginEmail}. (This is a mock action)`,
+      title: 'Login Successful!',
+      description: `Welcome back, ${name}!`,
     });
-    // Mock success:
-    // setLoggedIn(true); // If managing a logged-in state on this page
-    // router.push('/dashboard'); // Or redirect
+    router.push('/dashboard');
   };
 
   const handleEmailSignup = (e: React.FormEvent) => {
@@ -57,13 +65,12 @@ export default function AccountAuthPage() {
       toast({ title: "Signup Error", description: "Passwords do not match.", variant: "destructive" });
       return;
     }
+    login(signupName);
     toast({
-      title: "Mock Email Signup",
-      description: `Attempting to sign up user: ${signupName} with email: ${signupEmail}. (This is a mock action)`,
+      title: 'Signup Successful!',
+      description: `Welcome, ${signupName}!`,
     });
-    // Mock success:
-    // setLoggedIn(true);
-    // router.push('/dashboard');
+    router.push('/dashboard');
   };
 
   return (
@@ -81,7 +88,6 @@ export default function AccountAuthPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Social Auth Buttons */}
           <div className="space-y-3">
             <Button variant="outline" className="w-full text-base py-6" onClick={() => handleSocialAuth('Google')}>
               <Chrome className="mr-2 h-5 w-5" /> {authMode === 'login' ? 'Log In' : 'Sign Up'} with Google
@@ -102,7 +108,6 @@ export default function AccountAuthPage() {
             </div>
           </div>
 
-          {/* Email/Password Form */}
           {authMode === 'login' ? (
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-1">

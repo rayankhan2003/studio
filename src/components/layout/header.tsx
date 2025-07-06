@@ -4,9 +4,13 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -16,12 +20,28 @@ const navItems = [
   { href: '/planner', label: 'AI Planner', icon: Brain },
   { href: '/history', label: 'History', icon: HistoryIcon },
   { href: '/pricing', label: 'Pricing', icon: ShoppingCart },
+];
+
+const loggedOutNavItems = [
+  ...navItems,
+  { href: '/account', label: 'Login', icon: User },
+];
+
+const loggedInNavItems = [
+  ...navItems,
   { href: '/account', label: 'My Account', icon: User },
 ];
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout, isLoading } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
 
   const NavLink = ({ href, label, icon: Icon, closeSheet }: { href: string; label: string; icon: React.ElementType, closeSheet?: () => void }) => (
     <Link href={href} passHref legacyBehavior>
@@ -40,6 +60,48 @@ export function Header() {
     </Link>
   );
 
+  const currentNavItems = user ? loggedInNavItems : loggedOutNavItems;
+
+  const UserMenu = () => {
+    if (isLoading) {
+      return <Skeleton className="h-10 w-24 rounded-md" />;
+    }
+
+    if (user) {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 gap-2 px-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:inline">{user.name}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuItem onClick={() => router.push('/account')}>
+              <UserCircle className="mr-2 h-4 w-4" />
+              <span>My Account</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
+    return (
+       <Link href="/account" passHref legacyBehavior>
+        <Button variant="outline">
+          <User className="mr-2 h-4 w-4" /> Login
+        </Button>
+      </Link>
+    );
+  };
+  
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -64,6 +126,9 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <div className="hidden md:flex">
+             <UserMenu />
+          </div>
           <div className="md:hidden">
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
@@ -81,9 +146,19 @@ export function Header() {
                 </SheetHeader>
                 <div className="p-4">
                   <nav className="flex flex-col space-y-2">
-                    {navItems.map((item) => (
+                    {currentNavItems.map((item) => (
                       <NavLink key={item.label} {...item} closeSheet={() => setIsSheetOpen(false)} />
                     ))}
+                    {user && (
+                      <>
+                        <div className="pt-2 mt-2 border-t">
+                           <Button variant="ghost" className="w-full justify-start text-base" onClick={() => { handleLogout(); setIsSheetOpen(false); }}>
+                              <LogOut className="mr-2 h-5 w-5" />
+                              Logout
+                            </Button>
+                        </div>
+                      </>
+                    )}
                   </nav>
                 </div>
               </SheetContent>
