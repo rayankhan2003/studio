@@ -1,13 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { FileUp, Info, Trash2, BookOpen, Upload, Eye, Edit, ChevronDown, GraduationCap } from 'lucide-react';
+import { Info, Trash2, BookOpen, Upload, Eye } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import * as xlsx from 'xlsx';
@@ -24,7 +22,26 @@ type ChapterCounts = Record<string, number>; // chapterName: count
 type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
 type CurriculumCounts = Record<string, SubjectCounts>; // curriculumName: { subjects }
 
-const CurriculumView = ({ curriculum, syllabus, subjects, counts, onViewClick }: { curriculum: string, syllabus: any, subjects: string[], counts: SubjectCounts, onViewClick: (subject: string, chapter: string) => void }) => {
+const ChapterRow = ({ curriculum, subject, chapterName, count, onViewClick, onUploadClick }: { curriculum: string, subject: string, chapterName: string, count: number, onViewClick: (subject: string, chapter: string) => void, onUploadClick: (curriculum: string, subject: string, chapter: string) => void }) => {
+    return (
+        <div className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
+            <div>
+                <p className="font-medium">{chapterName}</p>
+                <p className="text-sm text-muted-foreground">{count} questions</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => onUploadClick(curriculum, subject, chapterName)}>
+                    <Upload className="h-4 w-4 mr-1"/> Upload
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onViewClick(subject, chapterName)}>
+                    <Eye className="h-4 w-4 mr-1"/> View
+                </Button>
+            </div>
+        </div>
+    );
+};
+
+const CurriculumView = ({ curriculum, syllabus, subjects, counts, onViewClick, onUploadClick }: { curriculum: string, syllabus: any, subjects: string[], counts: SubjectCounts, onViewClick: (subject: string, chapter: string) => void, onUploadClick: (curriculum: string, subject: string, chapter: string) => void }) => {
     return (
         <Accordion type="multiple" className="w-full space-y-2">
             {subjects.map(subject => {
@@ -42,20 +59,15 @@ const CurriculumView = ({ curriculum, syllabus, subjects, counts, onViewClick }:
                          <AccordionContent className="pt-0 pb-3 px-4 bg-background border-t">
                             <div className="space-y-2 pt-3">
                             {subjectChapters.length > 0 ? subjectChapters.map((chapter: any) => (
-                                <div key={chapter.name} className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
-                                    <div>
-                                        <p className="font-medium">{chapter.name}</p>
-                                        <p className="text-sm text-muted-foreground">{counts?.[subject]?.[chapter.name] || 0} questions</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button variant="outline" size="sm" onClick={() => onViewClick(subject, chapter.name)}>
-                                            <Eye className="h-4 w-4 mr-1"/> View/Manage
-                                        </Button>
-                                        <Button variant="outline" size="sm" disabled>
-                                            <Edit className="h-4 w-4 mr-1"/> Edit
-                                        </Button>
-                                    </div>
-                                </div>
+                                <ChapterRow
+                                    key={chapter.name}
+                                    curriculum={curriculum}
+                                    subject={subject}
+                                    chapterName={chapter.name}
+                                    count={counts?.[subject]?.[chapter.name] || 0}
+                                    onViewClick={onViewClick}
+                                    onUploadClick={onUploadClick}
+                                />
                             )) : <p className="text-muted-foreground text-sm">No chapters defined for this subject.</p>}
                             </div>
                          </AccordionContent>
@@ -69,9 +81,12 @@ const CurriculumView = ({ curriculum, syllabus, subjects, counts, onViewClick }:
 
 export default function QuestionBankPage() {
     const { toast } = useToast();
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadContext, setUploadContext] = useState<{ curriculum: string; subject: string; chapter: string } | null>(null);
+    
     const [allQuestions, setAllQuestions] = useState<MockQuestionDefinition[]>([]);
     const [questionCounts, setQuestionCounts] = useState<CurriculumCounts>({});
+    const [customQuestionIds, setCustomQuestionIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
 
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -82,6 +97,8 @@ export default function QuestionBankPage() {
         const customQuestionsRaw = localStorage.getItem('customQuestionBank');
         const customQuestions: MockQuestionDefinition[] = customQuestionsRaw ? JSON.parse(customQuestionsRaw) : [];
         
+        setCustomQuestionIds(new Set(customQuestions.map(q => q.id)));
+
         const questionMap = new Map<string, MockQuestionDefinition>();
         [...mockQuestionsDb, ...customQuestions].forEach(q => questionMap.set(q.id, q));
         const combinedQuestions = Array.from(questionMap.values());
@@ -102,25 +119,30 @@ export default function QuestionBankPage() {
         loadAndProcessQuestions();
     }, [loadAndProcessQuestions]);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleUploadClick = (curriculum: string, subject: string, chapter: string) => {
+        setUploadContext({ curriculum, subject, chapter });
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === 'application/vnd.ms-excel' || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                setUploadedFile(file);
+             if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === 'application/vnd.ms-excel' || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                processAndStoreQuestions(file);
             } else {
                 toast({
                     title: "Invalid File Type",
                     description: "Please upload a valid Excel file (.xlsx or .xls).",
                     variant: "destructive",
                 });
-                e.target.value = '';
             }
+            if(e.target) e.target.value = '';
         }
     };
 
-    const processAndStoreQuestions = useCallback(() => {
-        if (!uploadedFile) {
-            toast({ title: "No file selected", description: "Please choose an Excel file to upload.", variant: "destructive" });
+    const processAndStoreQuestions = useCallback((uploadedFile: File) => {
+        if (!uploadContext) {
+            toast({ title: "Upload Error", description: "No chapter context was set. Please try clicking 'Upload' again.", variant: "destructive" });
             return;
         }
 
@@ -134,19 +156,19 @@ export default function QuestionBankPage() {
                 const json: any[] = xlsx.utils.sheet_to_json(worksheet);
 
                 const newQuestions: MockQuestionDefinition[] = json.map((row, index) => {
-                    if (!row.ID || !row.Subject || !row.Chapter || !row.Text || !row.Type || !row.CorrectAnswer || !row.Curriculum) {
-                        throw new Error(`Row ${index + 2} is missing required fields (ID, Subject, Chapter, Text, Type, CorrectAnswer, Curriculum).`);
+                    if (!row.ID || !row.Text || !row.Type || !row.CorrectAnswer) {
+                        throw new Error(`Row ${index + 2} is missing required fields (ID, Text, Type, CorrectAnswer).`);
                     }
                     return {
                         id: String(row.ID).trim(),
-                        subject: String(row.Subject).trim(),
-                        chapter: String(row.Chapter).trim(),
+                        subject: uploadContext.subject,
+                        chapter: uploadContext.chapter,
+                        curriculum: uploadContext.curriculum,
                         text: String(row.Text).trim(),
                         type: String(row.Type).trim() as MockQuestionDefinition['type'],
                         options: row.Options ? String(row.Options).split(',').map(s => s.trim()) : undefined,
                         correctAnswer: String(row.CorrectAnswer).split(',').map(s => s.trim()),
                         explanation: row.Explanation ? String(row.Explanation).trim() : undefined,
-                        curriculum: String(row.Curriculum).trim() as MockQuestionDefinition['curriculum'],
                     };
                 });
 
@@ -161,11 +183,8 @@ export default function QuestionBankPage() {
                 
                 toast({
                     title: "Success!",
-                    description: `${newQuestions.length} questions have been processed and added/updated in your local question bank.`,
+                    description: `${newQuestions.length} questions for ${uploadContext.subject} - ${uploadContext.chapter} have been added/updated.`,
                 });
-                setUploadedFile(null);
-                const fileInput = document.getElementById('question-file') as HTMLInputElement;
-                if (fileInput) fileInput.value = '';
                 loadAndProcessQuestions(); // Refresh data
             } catch (error: any) {
                 toast({
@@ -174,10 +193,12 @@ export default function QuestionBankPage() {
                     variant: "destructive",
                     duration: 7000,
                 });
+            } finally {
+                setUploadContext(null); // Reset context
             }
         };
         reader.readAsArrayBuffer(uploadedFile);
-    }, [uploadedFile, toast, loadAndProcessQuestions]);
+    }, [uploadContext, toast, loadAndProcessQuestions]);
 
     const handleDeleteQuestion = (questionId: string) => {
         const customQuestionsRaw = localStorage.getItem('customQuestionBank');
@@ -210,58 +231,43 @@ export default function QuestionBankPage() {
 
     return (
         <div className="space-y-8">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelected}
+                accept=".xlsx, .xls"
+                style={{ display: 'none' }}
+                aria-hidden="true"
+            />
             <h1 className="text-3xl font-bold tracking-tight">Manage Question Bank</h1>
-
+            
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
-                        <FileUp className="h-6 w-6 text-primary" /> Upload Questions
+                        <BookOpen className="h-6 w-6 text-primary" /> Browse & Upload
                     </CardTitle>
                     <CardDescription>
-                        Upload an MS Excel (.xlsx) file to add or update questions in the question bank.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="question-file">Excel File</Label>
-                        <Input id="question-file" type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
-                    </div>
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>Excel Format Instructions</AlertTitle>
-                        <AlertDescription>
-                            <p className="text-xs">Your Excel file must have a header row with these columns:</p>
-                            <ul className="list-disc list-inside mt-2 text-xs space-y-1">
-                                <li><strong>ID</strong> (Unique identifier, e.g., "bio_q1")</li>
-                                <li><strong>Subject</strong> (e.g., Biology)</li>
-                                <li><strong>Chapter</strong> (e.g., Cell Structure & Function)</li>
-                                <li><strong>Text</strong> (The question)</li>
-                                <li><strong>Type</strong> (single-choice, multiple-choice, etc.)</li>
-                                <li><strong>Options</strong> (Comma-separated)</li>
-                                <li><strong>CorrectAnswer</strong> (Comma-separated for multiple-choice)</li>
-                                <li><strong>Explanation</strong> (Optional)</li>
-                                <li><strong>Curriculum</strong> (MDCAT, O Level, A Level)</li>
-                            </ul>
-                        </AlertDescription>
-                    </Alert>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={processAndStoreQuestions} disabled={!uploadedFile} className="w-full">
-                        <Upload className="mr-2 h-4 w-4" /> Upload and Process
-                    </Button>
-                </CardFooter>
-            </Card>
-
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                        <BookOpen className="h-6 w-6 text-primary" /> Browse Question Bank
-                    </CardTitle>
-                    <CardDescription>
-                       View and manage questions organized by curriculum, subject, and chapter.
+                       View questions or upload new ones for a specific chapter.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
+                    <Alert className="mb-6">
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>Upload Instructions</AlertTitle>
+                        <AlertDescription>
+                            <p className="text-xs">To add questions, click the "Upload" button for the specific chapter. Your Excel file must have a header row with these columns:</p>
+                            <ul className="list-disc list-inside mt-2 text-xs space-y-1">
+                                <li><strong>ID</strong> (Unique identifier, e.g., "bio_q1")</li>
+                                <li><strong>Text</strong> (The question)</li>
+                                <li><strong>Type</strong> (single-choice, multiple-choice, fill-in-the-blank, or true-false)</li>
+                                <li><strong>Options</strong> (Comma-separated for choice types)</li>
+                                <li><strong>CorrectAnswer</strong> (Comma-separated for multiple-choice)</li>
+                                <li><strong>Explanation</strong> (Optional)</li>
+                            </ul>
+                             <p className="text-xs mt-2">The Curriculum, Subject, and Chapter are set automatically based on where you click "Upload".</p>
+                        </AlertDescription>
+                    </Alert>
+
                     {isLoading ? <p>Loading question bank...</p> : (
                         <Tabs defaultValue="MDCAT">
                             <TabsList className="grid w-full grid-cols-3">
@@ -276,6 +282,7 @@ export default function QuestionBankPage() {
                                     subjects={allMdcatSubjects}
                                     counts={questionCounts['MDCAT'] || {}}
                                     onViewClick={handleViewClick}
+                                    onUploadClick={handleUploadClick}
                                 />
                             </TabsContent>
                              <TabsContent value="O Level" className="mt-4">
@@ -285,6 +292,7 @@ export default function QuestionBankPage() {
                                     subjects={allCambridgeSubjects}
                                     counts={questionCounts['O Level'] || {}}
                                     onViewClick={handleViewClick}
+                                    onUploadClick={handleUploadClick}
                                 />
                             </TabsContent>
                              <TabsContent value="A Level" className="mt-4">
@@ -294,6 +302,7 @@ export default function QuestionBankPage() {
                                     subjects={allCambridgeSubjects}
                                     counts={questionCounts['A Level'] || {}}
                                     onViewClick={handleViewClick}
+                                    onUploadClick={handleUploadClick}
                                 />
                             </TabsContent>
                         </Tabs>
@@ -306,7 +315,7 @@ export default function QuestionBankPage() {
                     <DialogHeader>
                         <DialogTitle>Questions for: {viewDialogData?.subject} - {viewDialogData?.chapter}</DialogTitle>
                         <DialogDescription>
-                            Curriculum: {viewDialogData?.curriculum}. Here you can view and delete individual questions.
+                            Curriculum: {viewDialogData?.curriculum}. Here you can view and delete individual custom questions.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[60vh] overflow-y-auto mt-4 pr-2">
@@ -327,13 +336,13 @@ export default function QuestionBankPage() {
                                             <TableCell className="text-right">
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="destructive" size="sm" disabled={!q.id.startsWith('mq_') && !localStorage.getItem('customQuestionBank')?.includes(q.id)}><Trash2 className="h-4 w-4" /></Button>
+                                                        <Button variant="destructive" size="sm" disabled={!customQuestionIds.has(q.id)}><Trash2 className="h-4 w-4" /></Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                This action cannot be undone. This will permanently delete the question "{q.text}" from your custom question bank.
+                                                                This action cannot be undone. This will permanently delete the question "{q.text}" from your custom question bank. Built-in questions cannot be deleted.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
