@@ -81,7 +81,7 @@ export const mockQuestionsDb: MockQuestionDefinition[] = [];
 // Generate MDCAT questions
 Object.values(Subjects).forEach(subject => {
   syllabus[subject].forEach(chapter => {
-    const numQuestionsPerChapter = Math.floor(Math.random() * 11) + 5;
+    const numQuestionsPerChapter = Math.floor(Math.random() * 3) + 2; // Generates 2-4 questions
     mockQuestionsDb.push(...generateMdcatQuestionsForChapter(subject, chapter, numQuestionsPerChapter));
   });
 });
@@ -89,19 +89,19 @@ Object.values(Subjects).forEach(subject => {
 // Generate Cambridge O Level questions
 Object.values(CambridgeSubjects).forEach(subject => {
     cambridgeSyllabus[CambridgeLevels.O_LEVEL][subject].forEach(chapter => {
-        mockQuestionsDb.push(...generateCambridgeQuestions('O Level', subject, chapter.name, 5));
+        mockQuestionsDb.push(...generateCambridgeQuestions('O Level', subject, chapter.name, 2)); // Reduced to 2
     });
 });
 
 // Generate Cambridge A Level questions
 Object.values(CambridgeSubjects).forEach(subject => {
     cambridgeSyllabus[CambridgeLevels.A_LEVEL][subject].forEach(chapter => {
-        mockQuestionsDb.push(...generateCambridgeQuestions('A Level', subject, chapter.name, 5));
+        mockQuestionsDb.push(...generateCambridgeQuestions('A Level', subject, chapter.name, 2)); // Reduced to 2
     });
 });
 
 
-// Add a few more specific questions
+// Add a few more specific questions to ensure some content is always there
 mockQuestionsDb.push(
   {
     id: 'bio_cell_custom1',
