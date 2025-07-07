@@ -45,7 +45,20 @@ export default function AccountAuthPage() {
       toast({ title: "Login Error", description: "Please enter both email and password.", variant: "destructive" });
       return;
     }
-    // Simple mock: derive a name from the email
+
+    // Special check for admin credentials
+    if (loginEmail === 'admin142@gmail.com' && loginPassword === '142024') {
+      const adminName = 'Admin';
+      login(adminName);
+      toast({
+        title: 'Admin Login Successful!',
+        description: `Welcome back, ${adminName}!`,
+      });
+      router.push('/admin/dashboard'); // Redirect admin to admin dashboard
+      return;
+    }
+
+    // Default user login
     const name = loginEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     login(name);
     toast({
