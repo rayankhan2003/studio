@@ -14,12 +14,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { toast } from '@/hooks/use-toast';
 import { allSubjects as allMdcatSubjects, syllabus as mdcatSyllabus, type Chapter as MdcatChapter } from '@/lib/syllabus';
 import { allCambridgeSubjects, cambridgeSyllabus, CambridgeLevels, type CambridgeChapter } from '@/lib/cambridge-syllabus';
-import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive, ChevronDown, GraduationCap, FileUp } from 'lucide-react';
+import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive, ChevronDown, GraduationCap } from 'lucide-react';
 import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import * as xlsx from 'xlsx';
 
 const questionCountPresets = [5, 10, 15, 20, 30, 50, 100];
 const timePerQuestionOptions = [
@@ -61,8 +59,6 @@ export default function CustomTestPage() {
   const [activeAccordionItems, setActiveAccordionItems] = useState<string[]>([]);
   const [testName, setTestName] = useState<string>('');
   const [isClient, setIsClient] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [customQuestionCountTrigger, setCustomQuestionCountTrigger] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
@@ -142,7 +138,10 @@ export default function CustomTestPage() {
     const customQuestions: MockQuestionDefinition[] = customQuestionsRaw ? JSON.parse(customQuestionsRaw) : [];
     
     const questionMap = new Map<string, MockQuestionDefinition>();
-    [...mockQuestionsDb, ...customQuestions].forEach(q => questionMap.set(q.id, q));
+    [...mockQuestionsDb, ...customQuestions].forEach(q => {
+        const normalizedText = q.text.replace(/^(Q|Question)?\s*\d+[\.:]?\s*/, '').trim().toLowerCase();
+        questionMap.set(normalizedText, q);
+    });
     const allQuestions = Array.from(questionMap.values());
 
     let count = 0;
@@ -157,7 +156,7 @@ export default function CustomTestPage() {
       }
     });
     return count;
-  }, [selectedChaptersMap, curriculum, subjects, isClient, customQuestionCountTrigger]);
+  }, [selectedChaptersMap, curriculum, subjects, isClient]);
 
 
   const handleSubjectSelectAll = useCallback((subject: string, checked: boolean | 'indeterminate') => {
@@ -181,95 +180,6 @@ export default function CustomTestPage() {
       return { ...prev, [subject]: newSubjectChapters };
     });
   }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-        const file = e.target.files[0];
-        if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === 'application/vnd.ms-excel' || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-            setUploadedFile(file);
-        } else {
-            toast({
-                title: "Invalid File Type",
-                description: "Please upload a valid Excel file (.xlsx or .xls).",
-                variant: "destructive",
-            });
-            e.target.value = ''; // Reset file input
-        }
-    }
-  };
-
-  const processAndStoreQuestions = useCallback(() => {
-      if (!uploadedFile) {
-          toast({ title: "No file selected", description: "Please choose an Excel file to upload.", variant: "destructive" });
-          return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-          try {
-              const data = e.target?.result;
-              const workbook = xlsx.read(data, { type: 'array' });
-              const sheetName = workbook.SheetNames[0];
-              const worksheet = workbook.Sheets[sheetName];
-              const json: any[] = xlsx.utils.sheet_to_json(worksheet);
-
-              const newQuestions: MockQuestionDefinition[] = json.map((row, index) => {
-                  if (!row.ID || !row.Subject || !row.Chapter || !row.Text || !row.Type || !row.CorrectAnswer || !row.Curriculum) {
-                      throw new Error(`Row ${index + 2} is missing required fields (ID, Subject, Chapter, Text, Type, CorrectAnswer, Curriculum).`);
-                  }
-
-                  let correctAnswer: string | string[];
-                  if (String(row.Type).trim() === 'multiple-choice') {
-                      if (!row.CorrectAnswer) throw new Error(`Row ${index + 2} is multiple-choice but has no CorrectAnswer.`);
-                      correctAnswer = String(row.CorrectAnswer).split(',').map(s => s.trim());
-                  } else {
-                      correctAnswer = String(row.CorrectAnswer).trim();
-                  }
-
-                  return {
-                      id: String(row.ID).trim(),
-                      subject: String(row.Subject).trim(),
-                      chapter: String(row.Chapter).trim(),
-                      text: String(row.Text).trim(),
-                      type: String(row.Type).trim() as MockQuestionDefinition['type'],
-                      options: row.Options ? String(row.Options).split(',').map(s => s.trim()) : undefined,
-                      correctAnswer: correctAnswer,
-                      explanation: row.Explanation ? String(row.Explanation).trim() : undefined,
-                      curriculum: String(row.Curriculum).trim() as MockQuestionDefinition['curriculum'],
-                  };
-              });
-
-              const existingCustomQuestionsRaw = localStorage.getItem('customQuestionBank');
-              const existingCustomQuestions: MockQuestionDefinition[] = existingCustomQuestionsRaw ? JSON.parse(existingCustomQuestionsRaw) : [];
-              
-              const questionMap = new Map<string, MockQuestionDefinition>();
-              existingCustomQuestions.forEach(q => questionMap.set(q.id, q));
-              newQuestions.forEach(q => questionMap.set(q.id, q)); // new questions overwrite existing ones with same ID
-
-              const combined = Array.from(questionMap.values());
-
-              localStorage.setItem('customQuestionBank', JSON.stringify(combined));
-
-              toast({
-                  title: "Success!",
-                  description: `${newQuestions.length} questions have been processed and added/updated in your local question bank.`,
-              });
-              setUploadedFile(null);
-              const fileInput = document.getElementById('question-file') as HTMLInputElement;
-              if (fileInput) fileInput.value = '';
-
-              setCustomQuestionCountTrigger(c => c + 1);
-          } catch (error: any) {
-              toast({
-                  title: "Error Processing File",
-                  description: error.message || "An unexpected error occurred. Check file format and column headers.",
-                  variant: "destructive",
-                  duration: 7000,
-              });
-          }
-      };
-      reader.readAsArrayBuffer(uploadedFile);
-  }, [uploadedFile]);
 
   const getSubjectCheckboxState = (subject: string): boolean | 'indeterminate' => {
     const numChaptersInSubject = syllabus[subject as keyof typeof syllabus]?.length || 0;
@@ -463,46 +373,6 @@ export default function CustomTestPage() {
                   ))}
                 </Accordion>
               </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                        <FileUp className="h-6 w-6 text-primary" /> Upload Question Bank
-                    </CardTitle>
-                    <CardDescription>
-                        Upload an MS Excel (.xlsx) file to add your own questions to the question bank.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="question-file">Excel File</Label>
-                        <Input id="question-file" type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
-                    </div>
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>Excel Format Instructions</AlertTitle>
-                        <AlertDescription>
-                            <p>Your Excel file must have a header row with the following columns:</p>
-                            <ul className="list-disc list-inside mt-2 text-xs space-y-1">
-                                <li><strong>ID</strong> (Unique identifier for each question, e.g., "my_bio_q1")</li>
-                                <li><strong>Subject</strong> (e.g., Biology, Physics - Must match curriculum subjects)</li>
-                                <li><strong>Chapter</strong> (Must match a chapter name in the syllabus exactly)</li>
-                                <li><strong>Text</strong> (The question itself)</li>
-                                <li><strong>Type</strong> (must be one of: single-choice, multiple-choice, fill-in-the-blank, true-false)</li>
-                                <li><strong>Options</strong> (Comma-separated values, e.g., "Option A,Option B,Option C". Leave empty for fill-in-the-blank)</li>
-                                <li><strong>CorrectAnswer</strong> (The exact correct option. For multiple-choice, use comma-separated values, e.g., "Option A,Option C")</li>
-                                <li><strong>Explanation</strong> (Optional explanation for the answer)</li>
-                                <li><strong>Curriculum</strong> (Must be one of: MDCAT, O Level, A Level)</li>
-                            </ul>
-                        </AlertDescription>
-                    </Alert>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={processAndStoreQuestions} disabled={!uploadedFile} className="w-full">
-                        Upload and Process Questions
-                    </Button>
-                </CardFooter>
             </Card>
 
             <div className="grid md:grid-cols-2 gap-6">

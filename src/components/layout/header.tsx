@@ -1,10 +1,11 @@
+
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle } from 'lucide-react';
+import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -61,6 +62,51 @@ export function Header() {
   );
 
   const currentNavItems = user ? loggedInNavItems : loggedOutNavItems;
+  
+  // Hide header on admin routes for md screens and up, as admin has its own layout
+  if (pathname.startsWith('/admin')) {
+      const UserMenuForAdmin = () => {
+          if (isLoading) return <Skeleton className="h-10 w-24 rounded-md" />;
+          if (user?.isAdmin) {
+             return (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-10 gap-2 px-3">
+                        <Avatar className="h-8 w-8">
+                            <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span className="hidden sm:inline">{user.name}</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuItem onClick={() => router.push('/')}>
+                           <Home className="mr-2 h-4 w-4" />
+                           <span>View Main Site</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+             );
+          }
+          return null;
+      }
+      return (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+             <div className="container mx-auto flex h-16 items-center justify-between px-4">
+                <Link href="/admin/dashboard" className="flex items-center gap-2" aria-label="SmarterCat Admin Home">
+                    <ShieldCheck className="h-8 w-8 text-primary" />
+                    <span className="text-2xl font-semibold text-primary">Admin</span>
+                </Link>
+                <UserMenuForAdmin />
+             </div>
+        </header>
+      )
+  }
+
 
   const UserMenu = () => {
     if (isLoading) {
@@ -83,6 +129,12 @@ export function Header() {
               <UserCircle className="mr-2 h-4 w-4" />
               <span>My Account</span>
             </DropdownMenuItem>
+            {user.isAdmin && (
+                 <DropdownMenuItem onClick={() => router.push('/admin/dashboard')}>
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    <span>Admin Dashboard</span>
+                </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />

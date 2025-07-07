@@ -1,9 +1,15 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
+interface User {
+  name: string;
+  isAdmin: boolean;
+}
+
 interface AuthContextType {
-  user: { name: string } | null;
+  user: User | null;
   login: (name: string) => void;
   logout: () => void;
   isLoading: boolean;
@@ -11,8 +17,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Simple check for admin. In a real app, this would be a server-side check.
+const ADMIN_USER_NAME = 'Admin';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback((name: string) => {
-    const newUser = { name };
+    const newUser: User = { 
+      name,
+      isAdmin: name === ADMIN_USER_NAME 
+    };
     localStorage.setItem('smartercat-user', JSON.stringify(newUser));
     setUser(newUser);
   }, []);
