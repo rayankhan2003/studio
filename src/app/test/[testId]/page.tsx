@@ -70,11 +70,18 @@ const getQuestionsForTest = (
   const customQuestionsRaw = typeof window !== 'undefined' ? localStorage.getItem('customQuestionBank') : null;
   const customQuestions: MockQuestionDefinition[] = customQuestionsRaw ? JSON.parse(customQuestionsRaw) : [];
   
+  // Use a Map to de-duplicate questions based on their text content.
+  // The last question with a given text will be the one that's kept.
+  // This prioritizes custom questions over mock DB questions if they have the same text.
   const questionMap = new Map<string, MockQuestionDefinition>();
-  [...mockQuestionsDb, ...customQuestions].forEach(q => questionMap.set(q.id, q));
-  const allQuestions = Array.from(questionMap.values());
+  [...mockQuestionsDb, ...customQuestions].forEach(q => {
+    // Normalize text to handle minor whitespace differences
+    const normalizedText = q.text.trim().toLowerCase();
+    questionMap.set(normalizedText, q);
+  });
+  const allUniqueQuestions = Array.from(questionMap.values());
   
-  let filteredQuestions: MockQuestionDefinition[] = allQuestions.filter(q => q.curriculum === curriculum);
+  let filteredQuestions: MockQuestionDefinition[] = allUniqueQuestions.filter(q => q.curriculum === curriculum);
 
   if (selectedSubjectsParam && selectedChaptersParam) {
     const chapterSelections = selectedChaptersParam.split(','); 
@@ -130,6 +137,7 @@ export default function TestPage() {
   const [unansweredQuestionsCount, setUnansweredQuestionsCount] = useState(0);
 
   const isQuestionAttempted = useCallback((questionId: string): boolean => {
+    if (!questionId) return false;
     const answerExists = Object.prototype.hasOwnProperty.call(answers, questionId);
     if (!answerExists) return false;
     const answerValue = answers[questionId];
