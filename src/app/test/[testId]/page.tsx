@@ -75,8 +75,8 @@ const getQuestionsForTest = (
   // This prioritizes custom questions over mock DB questions if they have the same text.
   const questionMap = new Map<string, MockQuestionDefinition>();
   [...mockQuestionsDb, ...customQuestions].forEach(q => {
-    // Normalize text to handle minor whitespace differences
-    const normalizedText = q.text.trim().toLowerCase();
+    // Normalize text to handle minor whitespace differences and remove question numbers
+    const normalizedText = q.text.replace(/^(Q|Question)?\s*\d+[\.:]?\s*/, '').trim().toLowerCase();
     questionMap.set(normalizedText, q);
   });
   const allUniqueQuestions = Array.from(questionMap.values());
@@ -97,7 +97,11 @@ const getQuestionsForTest = (
       }
     });
 
-    filteredQuestions = filteredQuestions.filter(q => chapterMap[q.subject]?.has(q.chapter));
+    filteredQuestions = filteredQuestions.filter(q => {
+        if (!q.subject || !q.chapter) return false;
+        const subjectChapters = chapterMap[q.subject];
+        return subjectChapters ? subjectChapters.has(q.chapter) : false;
+    });
   }
   
   if (filteredQuestions.length === 0) return []; 
@@ -405,7 +409,7 @@ export default function TestPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="min-h-[250px] md:min-h-[300px] py-6">
-            <h2 className="text-lg sm:text-xl font-semibold mb-6">{currentQuestion?.text}</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-6">{currentQuestion?.text?.replace(/^(Q|Question)?\s*\d+[\.:]?\s*/, '').trim()}</h2>
 
             {currentQuestion?.type === 'single-choice' && (
               <RadioGroup

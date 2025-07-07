@@ -38,7 +38,7 @@ const QuestionReviewCard = React.memo(({ question, index }: { question: StoredTe
     <Card className={`shadow-md ${question.isCorrect ? 'border-green-500' : 'border-red-500'} border-l-4`}>
         <CardHeader className={`${question.isCorrect ? 'bg-green-50/50' : 'bg-red-50/50'}`}>
           <div className="flex justify-between items-start">
-            <CardTitle className="text-xl">Question {index + 1}: {question.text}</CardTitle>
+            <CardTitle className="text-xl">Question {index + 1}: {question.text.replace(/^(Q|Question)?\s*\d+[\.:]?\s*/, '').trim()}</CardTitle>
             {question.isCorrect ? 
               <CheckCircle2 className="h-7 w-7 text-green-600 flex-shrink-0 ml-2" /> : 
               <XCircle className="h-7 w-7 text-red-600 flex-shrink-0 ml-2" />}
