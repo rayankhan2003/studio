@@ -70,12 +70,8 @@ const getQuestionsForTest = (
   const customQuestionsRaw = typeof window !== 'undefined' ? localStorage.getItem('customQuestionBank') : null;
   const customQuestions: MockQuestionDefinition[] = customQuestionsRaw ? JSON.parse(customQuestionsRaw) : [];
   
-  // Use a Map to de-duplicate questions based on their text content.
-  // The last question with a given text will be the one that's kept.
-  // This prioritizes custom questions over mock DB questions if they have the same text.
   const questionMap = new Map<string, MockQuestionDefinition>();
   [...mockQuestionsDb, ...customQuestions].forEach(q => {
-    // Normalize text to handle minor whitespace differences and remove question numbers
     const normalizedText = q.text.replace(/^(Q|Question)?\s*\d+[\.:]?\s*/, '').trim().toLowerCase();
     questionMap.set(normalizedText, q);
   });
