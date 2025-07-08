@@ -14,11 +14,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading && (!user || !user.isAdmin)) {
-      router.push('/account'); // Redirect non-admins to the login page
+    if (isLoading) {
+      return; // Don't do anything until auth state is loaded
     }
-  }, [user, isLoading, router]);
 
+    // If user is not an admin, redirect to login
+    if (!user || !user.isAdmin) {
+      router.push('/account');
+      return;
+    }
+
+    // If user is a sub-admin trying to access the manager page, redirect to dashboard
+    if (!user.isSuperAdmin && pathname === '/admin/manager') {
+      router.push('/admin/dashboard');
+    }
+  }, [user, isLoading, router, pathname]);
+
+  // Show a loading spinner while we verify auth
   if (isLoading || !user || !user.isAdmin) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -28,21 +40,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // A super admin is identified by having permissions property set to null or undefined.
-  // A sub-admin will have a permissions object.
-  const isSuperAdmin = user.isSuperAdmin;
-
-  // A simple example of route protection based on permissions
-  // This would be expanded as more modules are built.
-  // For now, we only protect the admin manager page.
-  if (pathname === '/admin/manager' && !isSuperAdmin) {
-     router.push('/admin/dashboard');
+  // Show a redirecting message if a sub-admin is on the wrong page
+  if (!user.isSuperAdmin && pathname === '/admin/manager') {
      return (
        <div className="flex justify-center items-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="ml-4">Access Denied. Redirecting...</p>
       </div>
-     )
+     );
   }
 
   return (
