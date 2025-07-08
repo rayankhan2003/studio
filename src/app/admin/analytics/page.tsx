@@ -80,12 +80,13 @@ export default function AdminAnalyticsPage() {
   }
 
   const growthData = useMemo(() => {
-    const allDates = subscribers.map(s => new Date(s.subscriptionDate));
-    const earliestDate = allDates.length > 0 ? new Date(Math.min(...allDates.map(d => d.getTime()))) : new Date();
-    if (allDates.length === 0) {
-        earliestDate.setMonth(earliestDate.getMonth() - 6);
+    if (subscribers.length === 0) {
+      return [];
     }
-    const maxDate = new Date(); 
+    
+    const allDates = subscribers.map(s => new Date(s.subscriptionDate));
+    const earliestDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date();
 
     const dataMap = new Map<string, { date: string; newSubscribers: number; totalRevenue: number }>();
     
@@ -160,7 +161,7 @@ export default function AdminAnalyticsPage() {
           </div>
         </CardHeader>
         <CardContent className="h-[400px]">
-          {subscribers.length > 0 ? (
+          {growthData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={growthData}>
                 <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
@@ -263,5 +264,3 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
-
-    
