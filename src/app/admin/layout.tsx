@@ -1,12 +1,19 @@
 
 'use client';
 
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, type SubAdminPermissions } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
+
+const routePermissions: Partial<Record<string, keyof SubAdminPermissions>> = {
+  '/admin/questions': 'canManageQuestions',
+  '/admin/analytics': 'canViewAnalytics',
+  '/admin/settings': 'canEditPaymentSettings',
+  // '/admin/manager' is handled by the isSuperAdmin check
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -18,16 +25,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return; // Don't do anything until auth state is loaded
     }
 
-    // If user is not an admin, redirect to login
     if (!user || !user.isAdmin) {
       router.push('/account');
       return;
     }
+    
+    // Super admin can access everything
+    if (user.isSuperAdmin) {
+      return;
+    }
 
-    // If user is a sub-admin trying to access the manager page, redirect to dashboard
-    if (!user.isSuperAdmin && pathname === '/admin/manager') {
+    // Sub-admin specific route protection
+    if (pathname === '/admin/manager') {
+      router.push('/admin/dashboard');
+      return;
+    }
+    
+    const requiredPermission = Object.entries(routePermissions).find(([route]) => pathname.startsWith(route))?.[1];
+    
+    if (requiredPermission && user.permissions && !user.permissions[requiredPermission]) {
       router.push('/admin/dashboard');
     }
+
   }, [user, isLoading, router, pathname]);
 
   // Show a loading spinner while we verify auth
@@ -39,9 +58,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     );
   }
-
-  // Show a redirecting message if a sub-admin is on the wrong page
-  if (!user.isSuperAdmin && pathname === '/admin/manager') {
+  
+  // This handles the redirect flash for sub-admins trying to access pages they shouldn't
+  const isAccessDenied = !user.isSuperAdmin && (
+    pathname === '/admin/manager' ||
+    (Object.entries(routePermissions).find(([route]) => pathname.startsWith(route))?.[1] &&
+     !user.permissions?.[Object.entries(routePermissions).find(([route]) => pathname.startsWith(route))?.[1] as keyof SubAdminPermissions])
+  );
+  
+  if (isAccessDenied) {
      return (
        <div className="flex justify-center items-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -49,6 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
      );
   }
+
 
   return (
     <>

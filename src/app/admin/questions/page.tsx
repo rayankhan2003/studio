@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { allSubjects as allMdcatSubjects, syllabus as mdcatSyllabus } from '@/lib/syllabus';
 import { allCambridgeSubjects, cambridgeSyllabus, CambridgeLevels } from '@/lib/cambridge-syllabus';
+import { logActivity } from '@/lib/activity-log';
 
 type ChapterCounts = Record<string, number>; // chapterName: count
 type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
@@ -181,6 +182,8 @@ export default function QuestionBankPage() {
                 
                 localStorage.setItem('customQuestionBank', JSON.stringify(combined));
                 
+                logActivity(`Uploaded/updated ${newQuestions.length} questions for ${uploadContext.subject} - ${uploadContext.chapter}`);
+
                 toast({
                     title: "Success!",
                     description: `${newQuestions.length} questions for ${uploadContext.subject} - ${uploadContext.chapter} have been added/updated.`,
@@ -207,6 +210,8 @@ export default function QuestionBankPage() {
         const updatedQuestions = customQuestions.filter(q => q.id !== questionId);
         localStorage.setItem('customQuestionBank', JSON.stringify(updatedQuestions));
         
+        logActivity(`Deleted question ID: ${questionId}`);
+
         toast({
             title: "Question Deleted",
             description: `Question with ID ${questionId} has been removed from the custom bank.`,

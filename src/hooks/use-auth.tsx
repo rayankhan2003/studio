@@ -9,9 +9,8 @@ export interface SubAdminPermissions {
   canViewUsers: boolean;
   canManageEvents: boolean;
   canManageBlogs: boolean;
-  canViewRevenue: boolean;
-  canEditPaymentSettings: boolean;
   canViewAnalytics: boolean;
+  canEditPaymentSettings: boolean;
   canManageSubAdmins: boolean;
   canDeleteContent: boolean;
 }
@@ -62,14 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: true, // All admins are admins, but only one is super
       isSuperAdmin: isSuper,
     };
-    // In a real app, if it's a sub-admin, you would fetch their permissions here
-    // and attach them to the newUser object. For now, only super-admin is fully handled.
+
     if (!isSuper) {
-        const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
-        const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
-        const subAdminData = subAdmins.find((sa: any) => sa.email === email);
-        if (subAdminData) {
-            newUser.permissions = subAdminData.permissions;
+        try {
+            const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
+            const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
+            const subAdminData = subAdmins.find((sa: any) => sa.email === email);
+            if (subAdminData) {
+                newUser.permissions = subAdminData.permissions;
+            }
+        } catch (error) {
+            console.error("Failed to parse sub-admin data for permissions", error);
         }
     }
 

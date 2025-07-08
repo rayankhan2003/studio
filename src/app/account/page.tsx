@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/use-auth';
 import { Chrome, Facebook, Mail, LogIn, UserPlus } from "lucide-react";
+import { logActivity } from '@/lib/activity-log';
 
 export default function AccountAuthPage() {
   const { toast } = useToast();
@@ -51,6 +52,7 @@ export default function AccountAuthPage() {
     // 1. Check for Super Admin credentials
     if (loginEmail === 'admin142@gmail.com' && loginPassword === '142024') {
       login('Super Admin', loginEmail);
+      logActivity("Super Admin logged in.");
       toast({
         title: 'Super Admin Login Successful!',
         description: `Welcome back!`,
@@ -70,6 +72,7 @@ export default function AccountAuthPage() {
         return;
       }
       login(subAdmin.fullName, subAdmin.email);
+      logActivity("Sub-Admin logged in.");
       toast({
         title: 'Admin Login Successful!',
         description: `Welcome back, ${subAdmin.fullName}!`,
