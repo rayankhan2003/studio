@@ -55,11 +55,11 @@ export default function AdminDashboardPage() {
               <CardDescription>{feature.description}</CardDescription>
             </CardContent>
             <CardContent>
-               <Link href={feature.href} passHref>
-                  <Button className="w-full" disabled={feature.disabled}>
+               <Button asChild className="w-full" disabled={feature.disabled}>
+                  <Link href={feature.href}>
                     {feature.cta}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
             </CardContent>
           </Card>
         ))}

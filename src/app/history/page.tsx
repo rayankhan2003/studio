@@ -45,11 +45,11 @@ export default function TestHistoryPage() {
         <TableCell>{new Date(test.date).toLocaleDateString()}</TableCell>
         <TableCell className="font-semibold text-primary">{test.overallScorePercentage.toFixed(1)}%</TableCell>
         <TableCell className="text-right space-x-2">
-          <Link href={`/test/${test.id}/review`} passHref>
-            <Button variant="outline" size="sm" aria-label={`Review ${test.name}`}>
+          <Button asChild variant="outline" size="sm" aria-label={`Review ${test.name}`}>
+            <Link href={`/test/${test.id}/review`}>
               <Eye className="mr-1 h-4 w-4" /> Review
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" aria-label={`Download report for ${test.name}`} disabled>
             <Download className="mr-1 h-4 w-4" /> Report
           </Button>
@@ -93,9 +93,9 @@ export default function TestHistoryPage() {
               <FileText className="mx-auto h-12 w-12 mb-4" />
               <p className="text-xl">No test history found.</p>
               <p>Start taking tests to see your progress here.</p>
-              <Link href="/test/custom" className="mt-6 inline-block">
-                <Button>Create a Test</Button>
-              </Link>
+              <Button asChild className="mt-6 inline-block">
+                <Link href="/test/custom">Create a Test</Link>
+              </Button>
             </div>
           )}
         </CardContent>

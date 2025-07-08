@@ -146,11 +146,11 @@ export function Header() {
     }
 
     return (
-       <Link href="/account" passHref legacyBehavior>
-        <Button variant="outline">
+      <Button asChild variant="outline">
+        <Link href="/account">
           <User className="mr-2 h-4 w-4" /> Login
-        </Button>
-      </Link>
+        </Link>
+      </Button>
     );
   };
   

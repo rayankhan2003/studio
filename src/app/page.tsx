@@ -150,11 +150,11 @@ export default function HomePage() {
           <p className="text-md sm:text-lg text-muted-foreground mb-6 sm:mb-8">
             Thousands of students will trust SmarterCat to generate their personal study plans, track their progress with real data, create smart tests, simulate the real exam, and reach their MBBS/BDS dreams.
           </p>
-          <Link href="/account">
-            <Button size="lg" className="text-md sm:text-lg py-3 px-6 sm:py-7 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/50 transition-shadow">
+          <Button asChild size="lg" className="text-md sm:text-lg py-3 px-6 sm:py-7 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/50 transition-shadow">
+            <Link href="/account">
               Register Now & Start Your Journey
-            </Button>
-          </Link>
+            </Link>
+          </Button>
            <p className="mt-4 text-xs sm:text-sm text-muted-foreground">
             Check our <Link href="/pricing" className="underline hover:text-primary">Pricing Page</Link> for Demo and Premium plan details.
           </p>

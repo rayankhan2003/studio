@@ -159,9 +159,9 @@ export default function TestReviewPage() {
                 <Button variant="outline" onClick={() => router.push('/history')} className="w-full">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to History
                 </Button>
-                 <Link href="/dashboard" className="w-full">
-                    <Button className="w-full">Go to Dashboard</Button>
-                </Link>
+                <Button asChild className="w-full">
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
             </CardFooter>
           </Card>
         </div>
@@ -175,9 +175,9 @@ export default function TestReviewPage() {
         <Button variant="outline" onClick={() => router.push('/history')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to History
         </Button>
-         <Link href="/dashboard">
-          <Button size="sm">Go to Dashboard</Button>
-        </Link>
+         <Button asChild size="sm">
+          <Link href="/dashboard">Go to Dashboard</Link>
+        </Button>
       </div>
 
       <Card className="shadow-lg">
@@ -193,9 +193,9 @@ export default function TestReviewPage() {
         <QuestionReviewCard key={q.id} question={q} index={index} />
       ))}
       <div className="flex justify-center mt-8">
-        <Link href="/analytics">
-          <Button size="lg" variant="outline">View Full Analytics</Button>
-        </Link>
+        <Button asChild size="lg" variant="outline">
+          <Link href="/analytics">View Full Analytics</Link>
+        </Button>
       </div>
     </div>
   );
