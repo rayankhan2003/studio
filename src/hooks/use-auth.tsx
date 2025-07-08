@@ -3,22 +3,38 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
-interface User {
+// Define the permissions structure
+export interface SubAdminPermissions {
+  canManageQuestions: boolean;
+  canViewUsers: boolean;
+  canManageEvents: boolean;
+  canManageBlogs: boolean;
+  canViewRevenue: boolean;
+  canEditPaymentSettings: boolean;
+  canViewAnalytics: boolean;
+  canManageSubAdmins: boolean;
+  canDeleteContent: boolean;
+}
+
+export interface User {
   name: string;
+  email?: string;
   isAdmin: boolean;
+  isSuperAdmin: boolean; // True only for the main admin
+  permissions?: SubAdminPermissions; // For sub-admins
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (name: string) => void;
+  login: (name: string, email?: string) => void;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Simple check for admin. In a real app, this would be a server-side check.
-const ADMIN_USER_NAME = 'Admin';
+// Special credential for the super admin
+const SUPER_ADMIN_EMAIL = 'admin142@gmail.com';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -38,11 +54,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = useCallback((name: string) => {
+  const login = useCallback((name: string, email?: string) => {
+    const isSuper = email === SUPER_ADMIN_EMAIL;
     const newUser: User = { 
       name,
-      isAdmin: name === ADMIN_USER_NAME 
+      email,
+      isAdmin: true, // All admins are admins, but only one is super
+      isSuperAdmin: isSuper,
     };
+    // In a real app, if it's a sub-admin, you would fetch their permissions here
+    // and attach them to the newUser object. For now, only super-admin is fully handled.
+    if (!isSuper) {
+        const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
+        const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
+        const subAdminData = subAdmins.find((sa: any) => sa.email === email);
+        if (subAdminData) {
+            newUser.permissions = subAdminData.permissions;
+        }
+    }
+
     localStorage.setItem('smartercat-user', JSON.stringify(newUser));
     setUser(newUser);
   }, []);

@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, BarChart3, Users, CreditCard } from "lucide-react";
+import { BookOpen, BarChart3, Users, CreditCard, UserCog } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
@@ -19,6 +19,13 @@ export default function AdminDashboardPage() {
       icon: BarChart3,
       href: "/admin/analytics",
       cta: "View Analytics",
+    },
+    {
+      title: "Admin Manager",
+      description: "Create and manage sub-admin accounts and permissions.",
+      icon: UserCog,
+      href: "/admin/manager",
+      cta: "Manage Admins",
     },
     {
       title: "Manage Users",

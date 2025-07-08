@@ -27,6 +27,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  // A super admin is identified by having permissions property set to null or undefined.
+  // A sub-admin will have a permissions object.
+  const isSuperAdmin = user.isSuperAdmin;
+
+  // A simple example of route protection based on permissions
+  // This would be expanded as more modules are built.
+  // For now, we only protect the admin manager page.
+  const pathname = useRouter();
+  if (pathname.pathname === '/admin/manager' && !isSuperAdmin) {
+     router.push('/admin/dashboard');
+     return (
+       <div className="flex justify-center items-center min-h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4">Access Denied. Redirecting...</p>
+      </div>
+     )
+  }
+
   return (
     <>
     <Header />

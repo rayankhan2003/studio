@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +32,8 @@ export default function AccountAuthPage() {
     });
     // Mock login with a generic name for social auth
     const mockName = provider === 'Google' ? 'Alex Doe' : 'Sam Smith';
-    login(mockName);
+    // Social auth not supported for admin roles
+    // login(mockName);
     toast({
       title: 'Login Successful!',
       description: `Welcome back, ${mockName}!`,
@@ -46,21 +48,45 @@ export default function AccountAuthPage() {
       return;
     }
 
-    // Special check for admin credentials
+    // 1. Check for Super Admin credentials
     if (loginEmail === 'admin142@gmail.com' && loginPassword === '142024') {
-      const adminName = 'Admin';
-      login(adminName);
+      login('Super Admin', loginEmail);
       toast({
-        title: 'Admin Login Successful!',
-        description: `Welcome back, ${adminName}!`,
+        title: 'Super Admin Login Successful!',
+        description: `Welcome back!`,
       });
-      router.push('/admin/dashboard'); // Redirect admin to admin dashboard
+      router.push('/admin/dashboard');
       return;
     }
 
-    // Default user login
+    // 2. Check for Sub-Admin credentials from localStorage
+    const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
+    const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
+    const subAdmin = subAdmins.find((sa: any) => sa.email === loginEmail && sa.password === loginPassword);
+
+    if (subAdmin) {
+       if (subAdmin.status === 'Inactive') {
+        toast({ title: "Login Failed", description: "Your account is inactive. Please contact the Super Admin.", variant: "destructive" });
+        return;
+      }
+      login(subAdmin.fullName, subAdmin.email);
+      toast({
+        title: 'Admin Login Successful!',
+        description: `Welcome back, ${subAdmin.fullName}!`,
+      });
+      router.push('/admin/dashboard'); // Sub-admins also go to the admin dashboard
+      return;
+    }
+
+    // 3. Default user login (mocked)
+    // A real app would check a user database here
     const name = loginEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    login(name);
+    // Regular users can't log in as 'Admin'
+    if (name.toLowerCase() === 'admin' || name.toLowerCase() === 'super admin') {
+        toast({ title: "Login Failed", description: "Invalid credentials.", variant: "destructive" });
+        return;
+    }
+    // login(name, loginEmail);
     toast({
       title: 'Login Successful!',
       description: `Welcome back, ${name}!`,
@@ -78,7 +104,7 @@ export default function AccountAuthPage() {
       toast({ title: "Signup Error", description: "Passwords do not match.", variant: "destructive" });
       return;
     }
-    login(signupName);
+    // login(signupName, signupEmail);
     toast({
       title: 'Signup Successful!',
       description: `Welcome, ${signupName}!`,
@@ -97,7 +123,7 @@ export default function AccountAuthPage() {
             {authMode === 'login' ? 'Welcome Back!' : 'Create Your Account'}
           </CardTitle>
           <CardDescription>
-            {authMode === 'login' ? 'Log in to access your SmarterCat dashboard.' : 'Sign up to start your SmarterCat journey.'}
+            {authMode === 'login' ? 'Log in to access your dashboard.' : 'Sign up to start your journey.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
