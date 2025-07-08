@@ -35,6 +35,14 @@ interface SubAdmin {
   permissions: SubAdminPermissions;
 }
 
+interface ActivityLog {
+    id: string;
+    timestamp: string;
+    adminName: string;
+    adminRole: string;
+    action: string;
+}
+
 const permissionLabels: { key: keyof SubAdminPermissions; label: string }[] = [
     { key: 'canManageQuestions', label: 'Manage Question Bank' },
     { key: 'canViewUsers', label: 'View/Edit User Data' },
@@ -66,18 +74,11 @@ const initialSubAdminState: Omit<SubAdmin, 'id' | 'lastLogin' | 'status'> = {
     },
 };
 
-const mockActivityLogs = [
-    { id: 'log1', timestamp: new Date(Date.now() - 3600000).toISOString(), adminName: 'Ali Khan', adminRole: 'Content Management', action: 'Uploaded 50 questions to Physics chapter "Work & Energy".' },
-    { id: 'log2', timestamp: new Date(Date.now() - 86400000).toISOString(), adminName: 'Fatima Ahmed', adminRole: 'Accounts', action: 'Viewed revenue analytics for Q2.' },
-    { id: 'log3', timestamp: new Date(Date.now() - 172800000).toISOString(), adminName: 'Ali Khan', adminRole: 'Content Management', action: 'Logged in.' },
-    { id: 'log4', timestamp: new Date(Date.now() - 259200000).toISOString(), adminName: 'Super Admin', adminRole: 'Super Admin', action: 'Deactivated account for John Doe.' },
-    { id: 'log5', timestamp: new Date().toISOString(), adminName: 'New User', adminRole: 'Marketing', action: 'Created a new blog post titled "Top 5 Study Tips".' },
-];
-
 
 export default function AdminManagerPage() {
     const { toast } = useToast();
     const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
+    const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingAdmin, setEditingAdmin] = useState<SubAdmin | null>(null);
     const [formData, setFormData] = useState<Omit<SubAdmin, 'id' | 'lastLogin' | 'status'>>(initialSubAdminState);
@@ -86,6 +87,10 @@ export default function AdminManagerPage() {
         const storedAdmins = localStorage.getItem('smartercat-sub-admins');
         if (storedAdmins) {
             setSubAdmins(JSON.parse(storedAdmins));
+        }
+        const storedLogs = localStorage.getItem('smartercat-activity-logs');
+        if (storedLogs) {
+            setActivityLogs(JSON.parse(storedLogs));
         }
     }, []);
 
@@ -186,7 +191,7 @@ export default function AdminManagerPage() {
             <Tabs defaultValue="admins">
                 <TabsList>
                     <TabsTrigger value="admins">Sub-Admin Accounts</TabsTrigger>
-                    <TabsTrigger value="logs">Activity Logs (Mock)</TabsTrigger>
+                    <TabsTrigger value="logs">Activity Logs</TabsTrigger>
                 </TabsList>
                 <TabsContent value="admins">
                     <Card className="shadow-lg">
@@ -259,13 +264,13 @@ export default function AdminManagerPage() {
                      <Card className="shadow-lg">
                         <CardHeader>
                             <CardTitle>Admin Activity Logs</CardTitle>
-                            <CardDescription>A record of actions performed by administrators. (This is mock data for demonstration).</CardDescription>
+                            <CardDescription>A record of actions performed by administrators. This will populate as admins use the system.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader><TableRow><TableHead>Timestamp</TableHead><TableHead>Admin</TableHead><TableHead>Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {mockActivityLogs.map(log => (
+                                    {activityLogs.length > 0 ? activityLogs.map(log => (
                                         <TableRow key={log.id}>
                                             <TableCell className="text-xs text-muted-foreground">{new Date(log.timestamp).toLocaleString()}</TableCell>
                                             <TableCell>
@@ -274,7 +279,9 @@ export default function AdminManagerPage() {
                                             </TableCell>
                                             <TableCell>{log.action}</TableCell>
                                         </TableRow>
-                                    ))}
+                                    )) : (
+                                        <TableRow><TableCell colSpan={3} className="text-center h-24">No activity logs found.</TableCell></TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
