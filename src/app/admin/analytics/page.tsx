@@ -93,23 +93,54 @@ export default function AdminAnalyticsPage() {
   }
 
   const growthData = useMemo(() => {
-    const format = timeFrame === 'monthly' ? (d: Date) => d.toISOString().slice(0, 7) : (d: Date) => {
-      const year = d.getFullYear();
-      const week = Math.ceil((((d.getTime() - new Date(year, 0, 1).getTime()) / 86400000) + new Date(year, 0, 1).getDay() + 1) / 7);
-      return `${year}-W${String(week).padStart(2, '0')}`;
-    };
+    const allDates = subscribers.map(s => new Date(s.subscriptionDate));
+    // Set minDate to 6 months ago if no subscribers, or the earliest date if they exist
+    const earliestDate = allDates.length > 0 ? new Date(Math.min(...allDates.map(d => d.getTime()))) : new Date();
+    if (allDates.length === 0) {
+        earliestDate.setMonth(earliestDate.getMonth() - 6);
+    }
+    const maxDate = new Date(); // up to today
 
-    const grouped = subscribers.reduce((acc, s) => {
-        const dateKey = format(new Date(s.subscriptionDate));
-        if (!acc[dateKey]) {
-            acc[dateKey] = { date: dateKey, newSubscribers: 0, totalRevenue: 0 };
-        }
-        acc[dateKey].newSubscribers++;
-        acc[dateKey].totalRevenue += s.revenue;
-        return acc;
-    }, {} as Record<string, {date: string, newSubscribers: number, totalRevenue: number}>);
+    const dataMap = new Map<string, { date: string; newSubscribers: number; totalRevenue: number }>();
     
-    return Object.values(grouped).sort((a,b) => a.date.localeCompare(b.date));
+    const getFormatKey = (d: Date, tf: 'monthly' | 'weekly'): string => {
+        if (tf === 'monthly') {
+            return d.toISOString().slice(0, 7); // YYYY-MM
+        }
+        // ISO 8601 week number calculation:
+        const date = new Date(d.getTime());
+        date.setHours(0, 0, 0, 0);
+        // Thursday in current week decides the year.
+        date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+        // January 4 is always in week 1.
+        const week1 = new Date(date.getFullYear(), 0, 4);
+        // Count the number of weeks.
+        const weekNumber = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        return `${date.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+    };
+    
+    // Pre-populate the map with all time intervals from earliestDate to maxDate
+    let iterDate = new Date(earliestDate);
+    while (iterDate <= maxDate) {
+      const key = getFormatKey(iterDate, timeFrame);
+      if (!dataMap.has(key)) {
+        dataMap.set(key, { date: key, newSubscribers: 0, totalRevenue: 0 });
+      }
+      iterDate.setDate(iterDate.getDate() + 1);
+    }
+
+    // Populate the data from subscribers
+    subscribers.forEach(s => {
+      const key = getFormatKey(new Date(s.subscriptionDate), timeFrame);
+      if (dataMap.has(key)) {
+        const entry = dataMap.get(key)!;
+        entry.newSubscribers++;
+        entry.totalRevenue += s.revenue;
+      }
+    });
+
+    return Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
   }, [subscribers, timeFrame]);
 
   const boardData = formatDataForChart(getCountBy('board'));
@@ -150,8 +181,8 @@ export default function AdminAnalyticsPage() {
               <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `PKR ${value/1000}k`} />
               <Tooltip />
               <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="newSubscribers" name="New Subscribers" stroke="#3F51B5" strokeWidth={2} />
-              <Line yAxisId="right" type="monotone" dataKey="totalRevenue" name="Revenue" stroke="#82ca9d" strokeWidth={2} />
+              <Line yAxisId="left" type="monotone" dataKey="newSubscribers" name="New Subscribers" stroke="#3F51B5" strokeWidth={2} connectNulls />
+              <Line yAxisId="right" type="monotone" dataKey="totalRevenue" name="Revenue" stroke="#82ca9d" strokeWidth={2} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
