@@ -2,7 +2,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { Loader2 } from 'lucide-react';
@@ -11,6 +11,7 @@ import { Header } from '@/components/layout/header';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && (!user || !user.isAdmin)) {
@@ -34,8 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // A simple example of route protection based on permissions
   // This would be expanded as more modules are built.
   // For now, we only protect the admin manager page.
-  const pathname = useRouter();
-  if (pathname.pathname === '/admin/manager' && !isSuperAdmin) {
+  if (pathname === '/admin/manager' && !isSuperAdmin) {
      router.push('/admin/dashboard');
      return (
        <div className="flex justify-center items-center min-h-screen bg-background">
