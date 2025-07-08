@@ -84,13 +84,24 @@ export default function AdminManagerPage() {
     const [formData, setFormData] = useState<Omit<SubAdmin, 'id' | 'lastLogin' | 'status'>>(initialSubAdminState);
 
     useEffect(() => {
-        const storedAdmins = localStorage.getItem('smartercat-sub-admins');
-        if (storedAdmins) {
-            setSubAdmins(JSON.parse(storedAdmins));
+        try {
+            const storedAdmins = localStorage.getItem('smartercat-sub-admins');
+            if (storedAdmins) {
+                setSubAdmins(JSON.parse(storedAdmins));
+            }
+        } catch (e) {
+            console.error("Failed to parse sub-admins from localStorage", e);
+            localStorage.removeItem('smartercat-sub-admins'); // Clear corrupted data
         }
-        const storedLogs = localStorage.getItem('smartercat-activity-logs');
-        if (storedLogs) {
-            setActivityLogs(JSON.parse(storedLogs));
+        
+        try {
+            const storedLogs = localStorage.getItem('smartercat-activity-logs');
+            if (storedLogs) {
+                setActivityLogs(JSON.parse(storedLogs));
+            }
+        } catch (e) {
+            console.error("Failed to parse activity logs from localStorage", e);
+            localStorage.removeItem('smartercat-activity-logs'); // Clear corrupted data
         }
     }, []);
 
@@ -101,14 +112,35 @@ export default function AdminManagerPage() {
 
     const handleCreateOrUpdate = () => {
         if (!formData.fullName || !formData.email || (!formData.password && !editingAdmin)) {
-            toast({ title: 'Error', description: 'Full Name, Email, and Password are required.', variant: 'destructive' });
+            toast({ title: 'Error', description: 'Full Name, Email, and Password are required for new admins.', variant: 'destructive' });
             return;
         }
 
+        // --- Start Validation ---
+        const emailExists = subAdmins.some(
+            admin => admin.email.toLowerCase() === formData.email.toLowerCase() && admin.id !== editingAdmin?.id
+        );
+
+        if (emailExists || formData.email.toLowerCase() === 'admin142@gmail.com') {
+            toast({ title: 'Validation Error', description: 'This email address is already in use.', variant: 'destructive' });
+            return;
+        }
+        // --- End Validation ---
+
         if (editingAdmin) {
-            const updatedAdmins = subAdmins.map(admin =>
-                admin.id === editingAdmin.id ? { ...admin, ...formData, password: formData.password || admin.password } : admin
-            );
+            const updatedAdmins = subAdmins.map(admin => {
+                if (admin.id === editingAdmin.id) {
+                    const updatedData = { ...admin, ...formData };
+                    // Only update password if a new one was provided
+                    if (formData.password) {
+                        updatedData.password = formData.password;
+                    } else {
+                        updatedData.password = admin.password; // Keep old password
+                    }
+                    return updatedData;
+                }
+                return admin;
+            });
             saveAdminsToStorage(updatedAdmins);
             toast({ title: 'Success', description: 'Sub-admin updated successfully.' });
         } else {
@@ -122,13 +154,16 @@ export default function AdminManagerPage() {
             saveAdminsToStorage([...subAdmins, newAdmin]);
             toast({ title: 'Success', description: 'New sub-admin created successfully.' });
         }
+        
+        setFormData(prev => ({...prev, password: ''})); // Clear password from form state
         setIsDialogOpen(false);
         setEditingAdmin(null);
     };
 
     const openEditDialog = (admin: SubAdmin) => {
         setEditingAdmin(admin);
-        setFormData({ ...admin });
+        // Don't load existing password into the form for security
+        setFormData({ ...admin, password: '' }); 
         setIsDialogOpen(true);
     };
 
@@ -307,7 +342,7 @@ export default function AdminManagerPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="password">Password</Label>
-                                <Input id="password" name="password" type="password" placeholder={editingAdmin ? 'Leave blank to keep unchanged' : ''} onChange={handleFormInputChange}/>
+                                <Input id="password" name="password" type="password" placeholder={editingAdmin ? 'Leave blank to keep unchanged' : ''} value={formData.password || ''} onChange={handleFormInputChange}/>
                             </div>
                             <div><Label htmlFor="title">Title</Label><Input id="title" name="title" value={formData.title} onChange={handleFormInputChange} placeholder="e.g. Senior Content Manager"/></div>
                         </div>
