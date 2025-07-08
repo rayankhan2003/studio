@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UploadCloud, BookOpen, BarChart3, Users } from "lucide-react";
+import { BookOpen, BarChart3, Users, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
@@ -14,12 +14,11 @@ export default function AdminDashboardPage() {
       cta: "Go to Questions",
     },
     {
-      title: "View User Analytics",
-      description: "See overall user performance and test statistics.",
+      title: "View Subscriber Analytics",
+      description: "See user demographics, subscription stats, and revenue.",
       icon: BarChart3,
-      href: "#",
-      cta: "Coming Soon",
-      disabled: true,
+      href: "/admin/analytics",
+      cta: "View Analytics",
     },
     {
       title: "Manage Users",
@@ -29,12 +28,19 @@ export default function AdminDashboardPage() {
       cta: "Coming Soon",
       disabled: true,
     },
+    {
+      title: "Payment Settings",
+      description: "Manage receiving account details for payments.",
+      icon: CreditCard,
+      href: "/admin/settings",
+      cta: "Go to Settings",
+    }
   ];
 
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {features.map((feature) => (
           <Card key={feature.title} className="flex flex-col">
             <CardHeader>
