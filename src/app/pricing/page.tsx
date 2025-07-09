@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { educationalBoards, provinces, citiesByProvince } from '@/lib/pakistan-data';
+import { Combobox } from '@/components/ui/combobox';
 
 const paymentMethods = [
   { name: "Visa", icon: CreditCard },
@@ -76,6 +77,8 @@ interface PlanDetails {
     price: string;
     billing_desc: string;
 }
+
+const boardOptions = educationalBoards.map(board => ({ value: board, label: board }));
 
 export default function PricingPage() {
   const { toast } = useToast();
@@ -389,12 +392,14 @@ export default function PricingPage() {
                     </div>
                      <div>
                         <Label htmlFor="demoEducationBoard">Education Board</Label>
-                         <Select name="educationBoard" onValueChange={(value) => handleDemoInfoSelectChange('educationBoard', value)} value={demoInfoData.educationBoard}>
-                            <SelectTrigger id="demoEducationBoard"><SelectValue placeholder="Select your board" /></SelectTrigger>
-                            <SelectContent>
-                                {educationalBoards.map(board => <SelectItem key={board} value={board}>{board}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                         <Combobox
+                            options={boardOptions}
+                            value={demoInfoData.educationBoard}
+                            onChange={(value) => handleDemoInfoSelectChange('educationBoard', value)}
+                            placeholder="Select your board..."
+                            searchPlaceholder="Search boards..."
+                            notFoundMessage="No board found."
+                         />
                     </div>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
@@ -473,12 +478,14 @@ export default function PricingPage() {
             </div>
             <div>
                 <Label htmlFor="premiumEducationBoard">Education Board</Label>
-                 <Select name="educationBoard" onValueChange={(value) => handlePremiumSelectChange('educationBoard', value)} value={premiumFormData.educationBoard}>
-                    <SelectTrigger id="premiumEducationBoard"><SelectValue placeholder="Select your board" /></SelectTrigger>
-                    <SelectContent>
-                        {educationalBoards.map(board => <SelectItem key={board} value={board}>{board}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <Combobox
+                    options={boardOptions}
+                    value={premiumFormData.educationBoard}
+                    onChange={(value) => handlePremiumSelectChange('educationBoard', value)}
+                    placeholder="Select your board..."
+                    searchPlaceholder="Search boards..."
+                    notFoundMessage="No board found."
+                />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div>
