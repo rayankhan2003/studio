@@ -23,6 +23,8 @@ type ChapterCounts = Record<string, number>; // chapterName: count
 type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
 type CurriculumCounts = Record<string, SubjectCounts>; // curriculumName: { subjects }
 
+const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Options', 'CorrectAnswer', 'Explanation'];
+
 const ChapterRow = ({ curriculum, subject, chapterName, count, onViewClick, onUploadClick }: { curriculum: string, subject: string, chapterName: string, count: number, onViewClick: (subject: string, chapter: string) => void, onUploadClick: (curriculum: string, subject: string, chapter: string) => void }) => {
     return (
         <div className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
@@ -101,6 +103,7 @@ export default function QuestionBankPage() {
         setCustomQuestionIds(new Set(customQuestions.map(q => q.id)));
 
         const questionMap = new Map<string, MockQuestionDefinition>();
+        // The mockQuestionsDb is intentionally empty as per a previous request.
         [...mockQuestionsDb, ...customQuestions].forEach(q => questionMap.set(q.id, q));
         const combinedQuestions = Array.from(questionMap.values());
         setAllQuestions(combinedQuestions);
@@ -128,16 +131,16 @@ export default function QuestionBankPage() {
     const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-             if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === 'application/vnd.ms-excel' || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                processAndStoreQuestions(file);
-            } else {
+            if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || !file.name.endsWith('.xlsx')) {
                 toast({
-                    title: "Invalid File Type",
-                    description: "Please upload a valid Excel file (.xlsx or .xls).",
+                    title: "Invalid File Format",
+                    description: "File must be in .xlsx format with no merged cells.",
                     variant: "destructive",
                 });
+            } else {
+                processAndStoreQuestions(file);
             }
-            if(e.target) e.target.value = '';
+            if(e.target) e.target.value = ''; // Reset file input
         }
     };
 
@@ -154,12 +157,41 @@ export default function QuestionBankPage() {
                 const workbook = xlsx.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                const json: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+                // Validate headers
+                const headers: any[] = xlsx.utils.sheet_to_json(worksheet, { header: 1 })[0] || [];
+                const trimmedHeaders = headers.map(h => typeof h === 'string' ? h.trim() : '');
+                const missingHeaders = REQUIRED_HEADERS.filter(rh => !trimmedHeaders.includes(rh));
+
+                if (missingHeaders.length > 0) {
+                     toast({
+                        title: "Invalid Headers",
+                        description: `Missing or misnamed headers: ${missingHeaders.join(', ')}. Required: ${REQUIRED_HEADERS.join(', ')}.`,
+                        variant: "destructive",
+                        duration: 8000,
+                    });
+                    return;
+                }
+                
+                const json: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" }); // Use defval to handle empty cells gracefully
+
+                if (json.length === 0) {
+                     toast({
+                        title: "Empty File",
+                        description: "The uploaded Excel file contains no data rows.",
+                        variant: "destructive",
+                    });
+                    return;
+                }
 
                 const newQuestions: MockQuestionDefinition[] = json.map((row, index) => {
-                    if (!row.ID || !row.Text || !row.Type || !row.CorrectAnswer) {
-                        throw new Error(`Row ${index + 2} is missing required fields (ID, Text, Type, CorrectAnswer).`);
+                    const requiredFields = ['ID', 'Text', 'Type', 'CorrectAnswer'];
+                    for(const field of requiredFields) {
+                        if (row[field] === undefined || String(row[field]).trim() === '') {
+                             throw new Error(`Row ${index + 2} is missing required data for column: ${field}.`);
+                        }
                     }
+
                     return {
                         id: String(row.ID).trim(),
                         subject: uploadContext.subject,
@@ -240,7 +272,7 @@ export default function QuestionBankPage() {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileSelected}
-                accept=".xlsx, .xls"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 style={{ display: 'none' }}
                 aria-hidden="true"
             />
@@ -260,14 +292,14 @@ export default function QuestionBankPage() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>Upload Instructions</AlertTitle>
                         <AlertDescription>
-                            <p className="text-xs">To add questions, click the "Upload" button for the specific chapter. Your Excel file must have a header row with these columns:</p>
-                            <ul className="list-disc list-inside mt-2 text-xs space-y-1">
+                            <p className="text-xs">To add questions, click the "Upload" button for the specific chapter. Your Excel file (.xlsx) must have a header row with these exact columns:</p>
+                            <ul className="list-disc list-inside mt-2 text-xs space-y-1 font-mono">
                                 <li><strong>ID</strong> (Unique identifier, e.g., "bio_q1")</li>
                                 <li><strong>Text</strong> (The question)</li>
                                 <li><strong>Type</strong> (single-choice, multiple-choice, fill-in-the-blank, or true-false)</li>
-                                <li><strong>Options</strong> (Comma-separated for choice types)</li>
-                                <li><strong>CorrectAnswer</strong> (Comma-separated for multiple-choice)</li>
-                                <li><strong>Explanation</strong> (Optional)</li>
+                                <li><strong>Options</strong> (Comma-separated for choice types. Leave blank for other types.)</li>
+                                <li><strong>CorrectAnswer</strong> (The correct option text. For multiple-choice, use comma-separated values.)</li>
+                                <li><strong>Explanation</strong> (Optional, can be blank)</li>
                             </ul>
                              <p className="text-xs mt-2">The Curriculum, Subject, and Chapter are set automatically based on where you click "Upload".</p>
                         </AlertDescription>
