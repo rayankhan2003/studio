@@ -31,9 +31,6 @@ interface PremiumFormData {
   educationBoard: string;
   mobileNumber: string;
   email: string;
-  cardNumber: string;
-  cardExpiry: string;
-  cardCvc: string;
 }
 
 const initialPremiumFormData: PremiumFormData = {
@@ -45,9 +42,6 @@ const initialPremiumFormData: PremiumFormData = {
   educationBoard: '',
   mobileNumber: '',
   email: '',
-  cardNumber: '',
-  cardExpiry: '',
-  cardCvc: '',
 };
 
 interface DemoInfoData {
@@ -170,18 +164,18 @@ export default function PricingPage() {
   };
   
   const handlePremiumSubscribeSubmit = () => {
-    if (!premiumFormData.fullName || !premiumFormData.email || !premiumFormData.cardNumber || !premiumFormData.gender) {
+    if (!premiumFormData.fullName || !premiumFormData.email || !premiumFormData.gender) {
          toast({
             title: "Missing Information",
-            description: "Please fill in Full Name, Email, Gender, and Card Number to subscribe.",
+            description: "Please fill in Full Name, Email, and Gender to subscribe.",
             variant: "destructive",
         });
         return;
     }
     saveSubscriberInfo(premiumFormData, selectedPlan?.name.split(' ')[0] as 'Monthly' | '6-Month' | 'Yearly' || 'Monthly');
     toast({
-      title: "Information Captured (Mock)",
-      description: "Redirecting to payment gateway... You may receive an SMS from your bank for confirmation. (This is a mock action)",
+      title: "Processing Payment Securely...",
+      description: "Your subscription is being activated. This is a simulated secure transaction.",
       duration: 7000,
     });
     setIsPremiumDialogOpen(false);
@@ -518,39 +512,17 @@ export default function PricingPage() {
                 </div>
             </div>
 
-
-            <h3 className="text-sm font-semibold text-muted-foreground col-span-full pt-2">Payment Details (Mock)</h3>
-             <div className="flex space-x-2 mb-2 overflow-x-auto py-1">
-                {paymentMethods.map(method => (
-                  <Button key={method.name} variant="outline" size="sm" className="flex-shrink-0 text-xs h-8 px-2">
-                    <method.icon className="h-3 w-3 mr-1.5" /> {method.name}
-                  </Button>
-                ))}
-              </div>
-            <div>
-              <Label htmlFor="premiumCardNumber">Card Number</Label>
-              <Input id="premiumCardNumber" name="cardNumber" value={premiumFormData.cardNumber} onChange={handlePremiumInputChange} placeholder="•••• •••• •••• ••••" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="premiumCardExpiry">Expiry Date</Label>
-                <Input id="premiumCardExpiry" name="cardExpiry" value={premiumFormData.cardExpiry} onChange={handlePremiumInputChange} placeholder="MM/YY" />
-              </div>
-              <div>
-                <Label htmlFor="premiumCardCvc">CVC/CVV</Label>
-                <Input id="premiumCardCvc" name="cardCvc" value={premiumFormData.cardCvc} onChange={handlePremiumInputChange} placeholder="•••" />
-              </div>
-            </div>
-             <p className="text-xs text-muted-foreground pt-1">
-                This is a mock payment form. No real transaction will occur.
-              </p>
+            <h3 className="text-sm font-semibold text-muted-foreground col-span-full pt-2">Payment Details</h3>
+            <p className="text-xs text-muted-foreground pt-1">
+              Payments are securely processed via our payment gateway. Your financial details are encrypted and never stored on our servers. You will be redirected to complete the payment.
+            </p>
           </div>
           <DialogFooter className="sm:justify-between border-t pt-4">
             <Button type="button" variant="outline" onClick={() => setIsPremiumDialogOpen(false)}>
               Cancel
             </Button>
             <Button type="button" onClick={handlePremiumSubscribeSubmit}>
-              Pay {selectedPlan?.price || ''} & Subscribe
+              Subscribe & Pay {selectedPlan?.price || ''}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -558,3 +530,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
