@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Info, Trash2, BookOpen, Upload, Eye } from 'lucide-react';
+import { Info, Trash2, BookOpen, Upload, Eye, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import * as xlsx from 'xlsx';
@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { allSubjects as allMdcatSubjects, syllabus as mdcatSyllabus } from '@/lib/syllabus';
 import { allCambridgeSubjects, cambridgeSyllabus, CambridgeLevels } from '@/lib/cambridge-syllabus';
 import { logActivity } from '@/lib/activity-log';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type ChapterCounts = Record<string, number>; // chapterName: count
 type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
@@ -94,7 +95,22 @@ export default function QuestionBankPage() {
 
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [viewDialogData, setViewDialogData] = useState<{ curriculum: string; subject: string; chapter: string } | null>(null);
+    const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(new Set());
+
+    const questionsForDialog = useMemo(() => {
+        if (!viewDialogData) return [];
+        return allQuestions.filter(q => 
+            q.curriculum === viewDialogData.curriculum &&
+            q.subject === viewDialogData.subject &&
+            q.chapter === viewDialogData.chapter
+        );
+    }, [allQuestions, viewDialogData]);
     
+    const deletableQuestionsInDialog = useMemo(() => {
+        return questionsForDialog.filter(q => customQuestionIds.has(q.id));
+    }, [questionsForDialog, customQuestionIds]);
+
+
     const loadAndProcessQuestions = useCallback(() => {
         setIsLoading(true);
         const customQuestionsRaw = localStorage.getItem('customQuestionBank');
@@ -122,6 +138,12 @@ export default function QuestionBankPage() {
     useEffect(() => {
         loadAndProcessQuestions();
     }, [loadAndProcessQuestions]);
+    
+    useEffect(() => {
+        if (!isViewDialogOpen) {
+            setSelectedQuestionIds(new Set());
+        }
+    }, [isViewDialogOpen]);
 
     const handleUploadClick = (curriculum: string, subject: string, chapter: string) => {
         setUploadContext({ curriculum, subject, chapter });
@@ -174,11 +196,12 @@ export default function QuestionBankPage() {
                 }
                 
                 const json: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" }); // Use defval to handle empty cells gracefully
+                const firstDataRow = json[0];
 
-                if (json.length === 0) {
+                if (json.length === 0 || !firstDataRow || REQUIRED_HEADERS.slice(0, 5).some(field => firstDataRow[field] === undefined || String(firstDataRow[field]).trim() === '')) {
                      toast({
-                        title: "Empty File",
-                        description: "The uploaded Excel file contains no data rows.",
+                        title: "Empty or Incomplete Data",
+                        description: "The first data row (Row 2 in Excel) is empty or missing required values.",
                         variant: "destructive",
                     });
                     return;
@@ -235,20 +258,21 @@ export default function QuestionBankPage() {
         reader.readAsArrayBuffer(uploadedFile);
     }, [uploadContext, toast, loadAndProcessQuestions]);
 
-    const handleDeleteQuestion = (questionId: string) => {
+    const handleDeleteQuestions = (questionIds: Set<string>) => {
         const customQuestionsRaw = localStorage.getItem('customQuestionBank');
         let customQuestions: MockQuestionDefinition[] = customQuestionsRaw ? JSON.parse(customQuestionsRaw) : [];
         
-        const updatedQuestions = customQuestions.filter(q => q.id !== questionId);
+        const updatedQuestions = customQuestions.filter(q => !questionIds.has(q.id));
         localStorage.setItem('customQuestionBank', JSON.stringify(updatedQuestions));
         
-        logActivity(`Deleted question ID: ${questionId}`);
+        logActivity(`Deleted ${questionIds.size} questions.`);
 
         toast({
-            title: "Question Deleted",
-            description: `Question with ID ${questionId} has been removed from the custom bank.`,
+            title: "Questions Deleted",
+            description: `${questionIds.size} questions have been removed from the custom bank.`,
         });
         loadAndProcessQuestions(); // Refresh data
+        setSelectedQuestionIds(new Set()); // Clear selection
     };
     
     const handleViewClick = (subject: string, chapter: string) => {
@@ -257,15 +281,26 @@ export default function QuestionBankPage() {
         setIsViewDialogOpen(true);
     };
 
-    const questionsForDialog = useMemo(() => {
-        if (!viewDialogData) return [];
-        return allQuestions.filter(q => 
-            q.curriculum === viewDialogData.curriculum &&
-            q.subject === viewDialogData.subject &&
-            q.chapter === viewDialogData.chapter
-        );
-    }, [allQuestions, viewDialogData]);
+    const handleSelectAll = (checked: boolean | 'indeterminate') => {
+        if (checked === true) {
+            setSelectedQuestionIds(new Set(deletableQuestionsInDialog.map(q => q.id)));
+        } else {
+            setSelectedQuestionIds(new Set());
+        }
+    };
 
+    const handleSelectOne = (questionId: string, checked: boolean) => {
+        setSelectedQuestionIds(prev => {
+            const newSet = new Set(prev);
+            if (checked) {
+                newSet.add(questionId);
+            } else {
+                newSet.delete(questionId);
+            }
+            return newSet;
+        });
+    };
+    
     return (
         <div className="space-y-8">
             <input
@@ -352,7 +387,7 @@ export default function QuestionBankPage() {
                     <DialogHeader>
                         <DialogTitle>Questions for: {viewDialogData?.subject} - {viewDialogData?.chapter}</DialogTitle>
                         <DialogDescription>
-                            Curriculum: {viewDialogData?.curriculum}. Here you can view and delete individual custom questions.
+                            Curriculum: {viewDialogData?.curriculum}. Select custom questions to delete them. Built-in questions cannot be deleted.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[60vh] overflow-y-auto mt-4 pr-2">
@@ -360,44 +395,69 @@ export default function QuestionBankPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-[50px]">
+                                            <Checkbox
+                                                checked={deletableQuestionsInDialog.length > 0 && selectedQuestionIds.size === deletableQuestionsInDialog.length}
+                                                onCheckedChange={(checked) => handleSelectAll(checked)}
+                                                aria-label="Select all questions in this view"
+                                                disabled={deletableQuestionsInDialog.length === 0}
+                                            />
+                                        </TableHead>
                                         <TableHead>Question Text</TableHead>
                                         <TableHead>Type</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+                                        <TableHead className="text-right">Source</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {questionsForDialog.map(q => (
-                                        <TableRow key={q.id}>
-                                            <TableCell className="max-w-md truncate font-medium">{q.text}</TableCell>
-                                            <TableCell><Badge variant="outline">{q.type}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="destructive" size="sm" disabled={!customQuestionIds.has(q.id)}><Trash2 className="h-4 w-4" /></Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action cannot be undone. This will permanently delete the question "{q.text}" from your custom question bank. Built-in questions cannot be deleted.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteQuestion(q.id)}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {questionsForDialog.map(q => {
+                                        const isCustom = customQuestionIds.has(q.id);
+                                        return (
+                                            <TableRow key={q.id} data-state={selectedQuestionIds.has(q.id) ? 'selected' : ''}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedQuestionIds.has(q.id)}
+                                                        onCheckedChange={(checked) => handleSelectOne(q.id, !!checked)}
+                                                        aria-label={`Select question ${q.id}`}
+                                                        disabled={!isCustom}
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="max-w-md truncate font-medium">{q.text}</TableCell>
+                                                <TableCell><Badge variant="outline">{q.type}</Badge></TableCell>
+                                                <TableCell className="text-right">
+                                                    <Badge variant={isCustom ? "default" : "secondary"}>{isCustom ? "Custom" : "Built-in"}</Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         ) : (
                             <p className="text-muted-foreground text-center py-8">No questions found for this chapter.</p>
                         )}
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="sm:justify-between">
+                        <div>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" disabled={selectedQuestionIds.size === 0}>
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        Delete Selected ({selectedQuestionIds.size})
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete {selectedQuestionIds.size} selected questions from your custom question bank.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteQuestions(selectedQuestionIds)}>Delete Questions</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
                         <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
