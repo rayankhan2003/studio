@@ -54,25 +54,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback((name: string, email?: string) => {
-    const isSuper = email === SUPER_ADMIN_EMAIL;
-    const newUser: User = { 
-      name,
-      email,
-      isAdmin: true, // All admins are admins, but only one is super
-      isSuperAdmin: isSuper,
-    };
+    let newUser: User;
 
-    if (!isSuper) {
-        try {
-            const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
-            const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
-            const subAdminData = subAdmins.find((sa: any) => sa.email === email);
-            if (subAdminData) {
-                newUser.permissions = subAdminData.permissions;
-            }
-        } catch (error) {
-            console.error("Failed to parse sub-admin data for permissions", error);
-        }
+    if (email === SUPER_ADMIN_EMAIL) {
+      // Handle Super Admin Login
+      newUser = {
+        name,
+        email,
+        isAdmin: true,
+        isSuperAdmin: true,
+        // Super admin has all permissions implicitly
+      };
+    } else {
+      // Check if it's a Sub-Admin
+      const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
+      const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
+      const subAdminData = subAdmins.find((sa: any) => sa.email === email);
+
+      if (subAdminData) {
+        // Handle Sub-Admin Login
+        newUser = {
+          name,
+          email,
+          isAdmin: true,
+          isSuperAdmin: false,
+          permissions: subAdminData.permissions,
+        };
+      } else {
+        // Handle Regular User Login (non-admin)
+        newUser = {
+          name,
+          email,
+          isAdmin: false,
+          isSuperAdmin: false,
+        };
+      }
     }
 
     localStorage.setItem('smartercat-user', JSON.stringify(newUser));
