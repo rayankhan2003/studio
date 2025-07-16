@@ -62,7 +62,7 @@ export default function AccountAuthPage() {
     }
 
     // 2. Check for Sub-Admin credentials from localStorage
-    const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
+    const subAdminsRaw = localStorage.getItem('path2med-sub-admins');
     const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
     const subAdmin = subAdmins.find((sa: any) => sa.email === loginEmail && sa.password === loginPassword);
 

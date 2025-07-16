@@ -84,18 +84,18 @@ export default function AdminManagerPage() {
 
     const loadDataFromStorage = useCallback(() => {
         try {
-            const storedAdmins = localStorage.getItem('smartercat-sub-admins');
+            const storedAdmins = localStorage.getItem('path2med-sub-admins');
             if (storedAdmins) setSubAdmins(JSON.parse(storedAdmins));
         } catch (e) {
             console.error("Failed to parse sub-admins from localStorage", e);
-            localStorage.removeItem('smartercat-sub-admins');
+            localStorage.removeItem('path2med-sub-admins');
         }
         try {
-            const storedLogs = localStorage.getItem('smartercat-activity-logs');
+            const storedLogs = localStorage.getItem('path2med-activity-logs');
             if (storedLogs) setActivityLogs(JSON.parse(storedLogs));
         } catch (e) {
             console.error("Failed to parse activity logs from localStorage", e);
-            localStorage.removeItem('smartercat-activity-logs');
+            localStorage.removeItem('path2med-activity-logs');
         }
     }, []);
 
@@ -104,7 +104,7 @@ export default function AdminManagerPage() {
     }, [loadDataFromStorage]);
     
     const refreshLogs = () => {
-        const storedLogs = localStorage.getItem('smartercat-activity-logs');
+        const storedLogs = localStorage.getItem('path2med-activity-logs');
         setActivityLogs(storedLogs ? JSON.parse(storedLogs) : []);
     };
 
@@ -131,7 +131,7 @@ export default function AdminManagerPage() {
                 } : admin
             );
             setSubAdmins(updatedAdmins);
-            localStorage.setItem('smartercat-sub-admins', JSON.stringify(updatedAdmins));
+            localStorage.setItem('path2med-sub-admins', JSON.stringify(updatedAdmins));
             logActivity(`Updated sub-admin: ${formData.fullName}`);
             toast({ title: 'Success', description: 'Sub-admin updated successfully.' });
         } else {
@@ -144,7 +144,7 @@ export default function AdminManagerPage() {
             };
             const updatedAdmins = [...subAdmins, newAdmin];
             setSubAdmins(updatedAdmins);
-            localStorage.setItem('smartercat-sub-admins', JSON.stringify(updatedAdmins));
+            localStorage.setItem('path2med-sub-admins', JSON.stringify(updatedAdmins));
             logActivity(`Created sub-admin: ${formData.fullName}`);
             toast({ title: 'Success', description: 'New sub-admin created successfully.' });
         }
@@ -170,7 +170,7 @@ export default function AdminManagerPage() {
         const newStatus: SubAdminStatus = admin.status === 'Active' ? 'Inactive' : 'Active';
         const updatedAdmins = subAdmins.map(a => a.id === admin.id ? { ...a, status: newStatus } : a);
         setSubAdmins(updatedAdmins);
-        localStorage.setItem('smartercat-sub-admins', JSON.stringify(updatedAdmins));
+        localStorage.setItem('path2med-sub-admins', JSON.stringify(updatedAdmins));
         logActivity(`Set status of ${admin.fullName} to ${newStatus}`);
         refreshLogs();
         toast({ title: 'Status Updated', description: `${admin.fullName}'s account is now ${newStatus}.` });
@@ -179,7 +179,7 @@ export default function AdminManagerPage() {
     const handleDelete = (adminId: string, adminName: string) => {
         const updatedAdmins = subAdmins.filter(a => a.id !== adminId);
         setSubAdmins(updatedAdmins);
-        localStorage.setItem('smartercat-sub-admins', JSON.stringify(updatedAdmins));
+        localStorage.setItem('path2med-sub-admins', JSON.stringify(updatedAdmins));
         logActivity(`Deleted sub-admin: ${adminName}`);
         refreshLogs();
         toast({ title: 'Admin Deleted', description: 'The sub-admin account has been permanently removed.' });

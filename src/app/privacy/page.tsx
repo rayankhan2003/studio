@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
 
       <div className="prose prose-lg max-w-none text-foreground bg-card p-6 sm:p-8 rounded-lg shadow-md">
         <p>
-          Welcome to SmarterCat! This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
+          Welcome to path2med! This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
         </p>
 
         <h2>1. Information We Collect</h2>
@@ -83,8 +83,8 @@ export default function PrivacyPolicyPage() {
           If you have questions or comments about this Privacy Policy, please contact us at:
         </p>
         <p>
-          SmarterCat Support<br />
-          Email: <a href="mailto:privacy@smartercat.com" className="text-primary hover:underline">privacy@smartercat.com</a><br />
+          path2med Support<br />
+          Email: <a href="mailto:privacy@path2med.com" className="text-primary hover:underline">privacy@path2med.com</a><br />
           Address: 123 Learning Lane, Knowledge City, ED 54321
         </p>
       </div>

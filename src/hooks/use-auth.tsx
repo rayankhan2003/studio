@@ -41,13 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem('smartercat-user');
+      const storedUser = localStorage.getItem('path2med-user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('smartercat-user');
+      localStorage.removeItem('path2med-user');
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
     } else {
       // Check if it's a Sub-Admin
-      const subAdminsRaw = localStorage.getItem('smartercat-sub-admins');
+      const subAdminsRaw = localStorage.getItem('path2med-sub-admins');
       const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
       const subAdminData = subAdmins.find((sa: any) => sa.email === email);
 
@@ -91,12 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    localStorage.setItem('smartercat-user', JSON.stringify(newUser));
+    localStorage.setItem('path2med-user', JSON.stringify(newUser));
     setUser(newUser);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('smartercat-user');
+    localStorage.removeItem('path2med-user');
     setUser(null);
   }, []);
 

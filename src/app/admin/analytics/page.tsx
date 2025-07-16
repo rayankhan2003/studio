@@ -37,7 +37,7 @@ export default function AdminAnalyticsPage() {
   const [timeFrame, setTimeFrame] = useState<'weekly' | 'monthly'>('monthly');
 
   useEffect(() => {
-    const storedSubscribersRaw = localStorage.getItem('smartercat-subscribers');
+    const storedSubscribersRaw = localStorage.getItem('path2med-subscribers');
     if (storedSubscribersRaw) {
         try {
             const parsedSubscribers = JSON.parse(storedSubscribersRaw);

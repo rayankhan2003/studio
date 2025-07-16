@@ -97,7 +97,7 @@ export function Header() {
       return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
              <div className="container mx-auto flex h-16 items-center justify-between px-4">
-                <Link href="/admin/dashboard" className="flex items-center gap-2" aria-label="SmarterCat Admin Home">
+                <Link href="/admin/dashboard" className="flex items-center gap-2" aria-label="path2med Admin Home">
                     <ShieldCheck className="h-8 w-8 text-primary" />
                     <span className="text-2xl font-semibold text-primary">Admin</span>
                 </Link>
@@ -157,9 +157,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2" aria-label="SmarterCat Home">
+        <Link href="/" className="flex items-center gap-2" aria-label="path2med Home">
           <Brain className="h-8 w-8 text-primary" />
-          <span className="text-2xl font-semibold text-primary">SmarterCat</span>
+          <span className="text-2xl font-semibold text-primary">path2med</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
@@ -191,9 +191,9 @@ export function Header() {
               <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0">
                 <SheetHeader className="p-4 border-b">
                    <SheetTitle className="sr-only">Main Menu</SheetTitle>
-                   <Link href="/" className="flex items-center gap-2" aria-label="SmarterCat Home" onClick={() => setIsSheetOpen(false)}>
+                   <Link href="/" className="flex items-center gap-2" aria-label="path2med Home" onClick={() => setIsSheetOpen(false)}>
                     <Brain className="h-7 w-7 text-primary" />
-                    <span className="text-xl font-semibold text-primary">SmarterCat</span>
+                    <span className="text-xl font-semibold text-primary">path2med</span>
                   </Link>
                 </SheetHeader>
                 <div className="p-4">
