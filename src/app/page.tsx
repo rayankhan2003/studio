@@ -5,7 +5,7 @@ import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, S
 import Image from "next/image";
 import Link from "next/link";
 
-export default function HomePage() {
+export default function Wh() {
   const features = [
     {
       icon: Brain,
