@@ -1,16 +1,12 @@
 
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+import { config } from "dotenv";
+config();
+import { connectDB } from "./config/db.js";
+import app from "./app.js";
 
-dotenv.config();
+const PORT = process.env.PORT || 4000;
 
-const app = require('./app');
-const db = require('./config/db');
-
-const PORT = process.env.PORT || 5000;
-
-db.connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+await connectDB();
+app.listen(PORT, () => {
+  console.log(`✅ API running on http://localhost:${PORT}`);
 });
