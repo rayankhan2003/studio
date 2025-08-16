@@ -1,15 +1,13 @@
-
 // Placeholder for attempt controller logic
 
-const saveAttempt = async (req, res) => {
-    // saveAttempt logic
+export const startAttempt = async (req, res) => {
+    // startAttempt logic
 };
 
-const getAttemptHistory = async (req, res) => {
-    // getAttemptHistory logic
+export const submitAttempt = async (req, res) => {
+    // submitAttempt logic
 };
 
-module.exports = {
-    saveAttempt,
-    getAttemptHistory,
+export const analyticsForUser = async (req, res) => {
+    // analyticsForUser logic
 };
