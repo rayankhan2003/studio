@@ -1,10 +1,9 @@
 
-// Placeholder for validation middleware using Joi
-const Joi = require('joi');
-
-const validate = (schema) => (req, res, next) => {
-    // Implementation to be added
-    next();
+export const validate = (schema) => (req, res, next) => {
+  const data = { body: req.body, params: req.params, query: req.query };
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    return res.status(400).json({ errors: parsed.error.flatten() });
+  }
+  next();
 };
-
-module.exports = validate;
