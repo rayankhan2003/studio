@@ -1,8 +1,5 @@
-
-const ROLES = {
-    USER: 'user',
-    ADMIN: 'admin',
-    SUPER_ADMIN: 'superadmin'
+export const ROLES = {
+  STUDENT: "student",
+  TEACHER: "teacher",
+  ADMIN: "admin"
 };
-
-module.exports = ROLES;
