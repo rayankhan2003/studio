@@ -1,15 +1,21 @@
 
-// Placeholder for course controller logic
+import Course from "../models/Course.js";
 
-const createCourse = async (req, res) => {
-    // createCourse logic
+export const getCourses = async (_req, res, next) => {
+  try {
+    const courses = await Course.find().lean();
+    res.json({ courses });
+  } catch (e) { next(e); }
 };
 
-const getCourses = async (req, res) => {
-    // getCourses logic
-};
-
-module.exports = {
-    createCourse,
-    getCourses,
+export const upsertCourse = async (req, res, next) => {
+  try {
+    const { level, subjects } = req.body;
+    const course = await Course.findOneAndUpdate(
+      { level },
+      { level, subjects },
+      { upsert: true, new: true }
+    );
+    res.json({ course });
+  } catch (e) { next(e); }
 };
