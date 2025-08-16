@@ -13,9 +13,13 @@ import questionRoutes from "./routes/question.routes.js";
 import testRoutes from "./routes/test.routes.js";
 import attemptRoutes from "./routes/attempt.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
+import { stripeWebhook } from "./controllers/payment.controller.js";
 import { errorHandler } from "./middleware/error.js";
 
 const app = express();
+
+// Stripe webhook needs raw body
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 
 // Security & parsers
 app.use(helmet());
@@ -36,6 +40,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/tests", testRoutes);
 app.use("/api/attempts", attemptRoutes);
 app.use("/api/payments", paymentRoutes);
+
 
 // Health
 app.get("/health", (_req, res) => res.json({ ok: true }));

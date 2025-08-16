@@ -1,9 +1,14 @@
 
-const express = require('express');
+import express from "express";
+import { createCheckout } from "../controllers/payment.controller.js";
+import { requireAuth } from "../middleware/auth.js";
+
 const router = express.Router();
-const paymentController = require('../controllers/payment.controller');
 
-router.post('/create-intent', paymentController.createPaymentIntent);
-router.post('/webhook', paymentController.handleWebhook);
+// This route initiates the payment process
+router.post('/create-checkout', requireAuth, createCheckout);
 
-module.exports = router;
+// The webhook is handled separately in app.js to process the raw body
+// router.post('/webhook', stripeWebhook);
+
+export default router;
