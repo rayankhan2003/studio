@@ -13,6 +13,9 @@ import questionRoutes from "./routes/question.routes.js";
 import testRoutes from "./routes/test.routes.js";
 import attemptRoutes from "./routes/attempt.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
+import institutionRoutes from "./routes/institution.routes.js";
+import sectionRoutes from "./routes/section.routes.js";
+import teacherRoutes from "./routes/teacher.routes.js";
 import { stripeWebhook } from "./controllers/payment.controller.js";
 import { errorHandler } from "./middleware/error.js";
 
@@ -40,6 +43,9 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/tests", testRoutes);
 app.use("/api/attempts", attemptRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/institutions", institutionRoutes);
+app.use("/api/sections", sectionRoutes);
+app.use("/api/teachers", teacherRoutes);
 
 
 // Health
