@@ -34,7 +34,7 @@ export default function AccountAuthPage() {
     // Mock login with a generic name for social auth
     const mockName = provider === 'Google' ? 'Alex Doe' : 'Sam Smith';
     // Social auth not supported for admin roles
-    // login(mockName, undefined, false); // Regular user login
+    login(mockName);
     toast({
       title: 'Login Successful!',
       description: `Welcome back, ${mockName}!`,
@@ -51,7 +51,7 @@ export default function AccountAuthPage() {
 
     // 1. Check for Super Admin credentials
     if (loginEmail === 'admin142@gmail.com' && loginPassword === '142024') {
-      login('Super Admin', loginEmail); // This will set isAdmin and isSuperAdmin correctly
+      login('Super Admin', loginEmail);
       logActivity("Super Admin logged in.");
       toast({
         title: 'Super Admin Login Successful!',
@@ -71,7 +71,7 @@ export default function AccountAuthPage() {
         toast({ title: "Login Failed", description: "Your account is inactive. Please contact the Super Admin.", variant: "destructive" });
         return;
       }
-      login(subAdmin.fullName, subAdmin.email); // This will set isAdmin but not isSuperAdmin
+      login(subAdmin.fullName, subAdmin.email);
       logActivity("Sub-Admin logged in.");
       toast({
         title: 'Admin Login Successful!',
@@ -87,7 +87,7 @@ export default function AccountAuthPage() {
     const institutionalAdmin = institutionalAdmins.find((ia: any) => ia.adminEmail === loginEmail && ia.password === loginPassword);
 
     if (institutionalAdmin) {
-      login(institutionalAdmin.adminName, institutionalAdmin.adminEmail); // Sets user as institutional admin
+      login(institutionalAdmin.adminName, institutionalAdmin.adminEmail);
       // logActivity could be enhanced for institutional admins later
       toast({
         title: 'Institutional Login Successful!',
@@ -106,7 +106,7 @@ export default function AccountAuthPage() {
         toast({ title: "Login Failed", description: "Invalid credentials.", variant: "destructive" });
         return;
     }
-    // login(name, loginEmail, false); // Regular user login
+    login(name, loginEmail);
     toast({
       title: 'Login Successful!',
       description: `Welcome back, ${name}!`,
@@ -124,7 +124,7 @@ export default function AccountAuthPage() {
       toast({ title: "Signup Error", description: "Passwords do not match.", variant: "destructive" });
       return;
     }
-    // login(signupName, signupEmail, false); // Regular user signup
+    login(signupName, signupEmail);
     toast({
       title: 'Signup Successful!',
       description: `Welcome, ${signupName}!`,
@@ -226,5 +226,3 @@ export default function AccountAuthPage() {
     </div>
   );
 }
-
-    
