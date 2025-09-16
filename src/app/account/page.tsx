@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, type User } from '@/hooks/use-auth';
 import { Chrome, Facebook, Mail, LogIn, UserPlus } from "lucide-react";
 import { logActivity } from '@/lib/activity-log';
 
@@ -31,14 +31,17 @@ export default function AccountAuthPage() {
       title: `Mock ${provider} Authentication`,
       description: `Initiating ${authMode} with ${provider}...`,
     });
-    // Mock login with a generic name for social auth
-    const mockName = provider === 'Google' ? 'Alex Doe' : 'Sam Smith';
-    const mockEmail = provider === 'Google' ? 'alex.doe@example.com' : 'sam.smith@example.com';
-    
-    login(mockName, mockEmail);
+    const mockUser = {
+      name: provider === 'Google' ? 'Alex Doe' : 'Sam Smith',
+      email: provider === 'Google' ? 'alex.doe@example.com' : 'sam.smith@example.com',
+      isAdmin: false,
+      isSuperAdmin: false,
+      isInstitutionalAdmin: false,
+    };
+    login(mockUser);
     toast({
       title: 'Login Successful!',
-      description: `Welcome back, ${mockName}!`,
+      description: `Welcome back, ${mockUser.name}!`,
     });
     router.push('/dashboard');
   };
@@ -52,7 +55,8 @@ export default function AccountAuthPage() {
 
     // 1. Check for Super Admin credentials
     if (loginEmail === 'admin142@gmail.com' && loginPassword === '142024') {
-      login('Super Admin', loginEmail);
+      const superAdminUser: User = { name: 'Super Admin', email: loginEmail, isAdmin: true, isSuperAdmin: true, isInstitutionalAdmin: false };
+      login(superAdminUser);
       logActivity("Super Admin logged in.");
       toast({
         title: 'Super Admin Login Successful!',
@@ -65,49 +69,57 @@ export default function AccountAuthPage() {
     // 2. Check for Sub-Admin credentials from localStorage
     const subAdminsRaw = localStorage.getItem('path2med-sub-admins');
     const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
-    const subAdmin = subAdmins.find((sa: any) => sa.email === loginEmail && sa.password === loginPassword);
+    const subAdminData = subAdmins.find((sa: any) => sa.email === loginEmail && sa.password === loginPassword);
 
-    if (subAdmin) {
-       if (subAdmin.status === 'Inactive') {
+    if (subAdminData) {
+       if (subAdminData.status === 'Inactive') {
         toast({ title: "Login Failed", description: "Your account is inactive. Please contact the Super Admin.", variant: "destructive" });
         return;
       }
-      login(subAdmin.fullName, subAdmin.email);
+      const subAdminUser: User = { name: subAdminData.fullName, email: subAdminData.email, isAdmin: true, isSuperAdmin: false, isInstitutionalAdmin: false, permissions: subAdminData.permissions };
+      login(subAdminUser);
       logActivity("Sub-Admin logged in.");
       toast({
         title: 'Admin Login Successful!',
-        description: `Welcome back, ${subAdmin.fullName}!`,
+        description: `Welcome back, ${subAdminData.fullName}!`,
       });
-      router.push('/admin/dashboard'); // Sub-admins also go to the admin dashboard
+      router.push('/admin/dashboard');
       return;
     }
 
     // 3. Check for Institutional Admin credentials
     const institutionalAdminsRaw = localStorage.getItem('path2med-institutional-subscriptions');
     const institutionalAdmins = institutionalAdminsRaw ? JSON.parse(institutionalAdminsRaw) : [];
-    const institutionalAdmin = institutionalAdmins.find((ia: any) => ia.adminEmail === loginEmail && ia.password === loginPassword);
+    const institutionalAdminData = institutionalAdmins.find((ia: any) => ia.adminEmail === loginEmail && ia.password === loginPassword);
 
-    if (institutionalAdmin) {
-      login(institutionalAdmin.adminName, institutionalAdmin.adminEmail);
-      // logActivity could be enhanced for institutional admins later
+    if (institutionalAdminData) {
+      const institutionalAdminUser: User = {
+        name: institutionalAdminData.adminName,
+        email: institutionalAdminData.adminEmail,
+        isAdmin: false,
+        isSuperAdmin: false,
+        isInstitutionalAdmin: true,
+        institutionId: institutionalAdminData.id,
+        institutionName: institutionalAdminData.institutionName,
+      };
+      login(institutionalAdminUser);
       toast({
         title: 'Institutional Login Successful!',
-        description: `Welcome, ${institutionalAdmin.adminName}!`,
+        description: `Welcome, ${institutionalAdminData.adminName}!`,
       });
-      router.push('/institution/dashboard'); // Redirect to institutional dashboard
+      router.push('/institution/dashboard');
       return;
     }
 
 
     // 4. Default user login (mocked)
-    // A real app would check a user database here
     const name = loginEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    // Regular users can't log in as 'Admin' or with admin emails
     if (name.toLowerCase().includes('admin')) {
         toast({ title: "Login Failed", description: "Invalid credentials.", variant: "destructive" });
         return;
     }
-    login(name, loginEmail);
+    const regularUser: User = { name, email: loginEmail, isAdmin: false, isSuperAdmin: false, isInstitutionalAdmin: false };
+    login(regularUser);
     toast({
       title: 'Login Successful!',
       description: `Welcome back, ${name}!`,
@@ -125,7 +137,8 @@ export default function AccountAuthPage() {
       toast({ title: "Signup Error", description: "Passwords do not match.", variant: "destructive" });
       return;
     }
-    login(signupName, signupEmail);
+    const newUser: User = { name: signupName, email: signupEmail, isAdmin: false, isSuperAdmin: false, isInstitutionalAdmin: false };
+    login(newUser);
     toast({
       title: 'Signup Successful!',
       description: `Welcome, ${signupName}!`,

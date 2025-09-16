@@ -28,15 +28,12 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (name: string, email?: string) => void;
+  login: (user: User) => void;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Special credential for the super admin
-const SUPER_ADMIN_EMAIL = 'admin142@gmail.com';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -56,59 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = useCallback((name: string, email?: string) => {
-    let newUser: User;
-    
-    const subAdminsRaw = typeof window !== 'undefined' ? localStorage.getItem('path2med-sub-admins') : null;
-    const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
-    const subAdminData = subAdmins.find((sa: any) => sa.email === email);
-
-    const institutionalAdminsRaw = typeof window !== 'undefined' ? localStorage.getItem('path2med-institutional-subscriptions') : null;
-    const institutionalAdmins = institutionalAdminsRaw ? JSON.parse(institutionalAdminsRaw) : [];
-    const institutionalAdminData = institutionalAdmins.find((ia: any) => ia.adminEmail === email);
-
-    if (email === SUPER_ADMIN_EMAIL) {
-      // Handle Super Admin Login
-      newUser = {
-        name,
-        email,
-        isAdmin: true,
-        isSuperAdmin: true,
-        isInstitutionalAdmin: false,
-      };
-    } else if (subAdminData) {
-      // Handle Sub-Admin Login
-      newUser = {
-        name,
-        email,
-        isAdmin: true,
-        isSuperAdmin: false,
-        isInstitutionalAdmin: false,
-        permissions: subAdminData.permissions,
-      };
-    } else if (institutionalAdminData) {
-        // Handle Institutional Admin Login
-        newUser = {
-            name: institutionalAdminData.adminName,
-            email: institutionalAdminData.adminEmail,
-            isAdmin: false, // Institutional admin is a distinct role, not a site-wide admin
-            isSuperAdmin: false,
-            isInstitutionalAdmin: true,
-            institutionId: institutionalAdminData.id,
-            institutionName: institutionalAdminData.institutionName, // Ensure the name is set here
-        };
-    }
-    else {
-      // Handle Regular User Login
-      newUser = {
-        name,
-        email,
-        isAdmin: false,
-        isSuperAdmin: false,
-        isInstitutionalAdmin: false,
-      };
-    }
-
+  const login = useCallback((newUser: User) => {
     localStorage.setItem('path2med-user', JSON.stringify(newUser));
     setUser(newUser);
   }, []);
