@@ -68,22 +68,28 @@ const initialDemoInfoData: DemoInfoData = {
 
 interface InstitutionalFormData {
     institutionName: string;
-    institutionType: 'Public' | 'Private' | 'College' | 'School' | 'Academy' | '';
+    institutionType: 'Public' | 'Private' | '';
+    businessType: 'College' | 'School' | 'Academy' | '';
     province: string;
     city: string;
     adminName: string;
     adminEmail: string;
     adminPhone: string;
+    password: '';
+    confirmPassword: '';
 }
 
 const initialInstitutionalFormData: InstitutionalFormData = {
     institutionName: '',
     institutionType: '',
+    businessType: '',
     province: '',
     city: '',
     adminName: '',
     adminEmail: '',
     adminPhone: '',
+    password: '',
+    confirmPassword: '',
 };
 
 
@@ -226,23 +232,24 @@ export default function PricingPage() {
   };
   
     const handleInstitutionalSubscribeSubmit = () => {
-    if (!institutionalFormData.institutionName || !institutionalFormData.adminName || !institutionalFormData.adminEmail) {
+        if (!institutionalFormData.institutionName || !institutionalFormData.adminName || !institutionalFormData.adminEmail || !institutionalFormData.password) {
+            toast({ title: "Missing Information", description: "Institution Name, Admin Name, Admin Email, and Password are required.", variant: "destructive" });
+            return;
+        }
+        if (institutionalFormData.password !== institutionalFormData.confirmPassword) {
+            toast({ title: "Password Mismatch", description: "The passwords you entered do not match.", variant: "destructive" });
+            return;
+        }
+
+        // Logic to save institutional subscription data would go here
         toast({
-            title: "Missing Information",
-            description: "Institution Name, Admin Name, and Admin Email are required.",
-            variant: "destructive",
+            title: "Processing Institutional Subscription...",
+            description: "Your subscription is being activated. This is a simulated secure transaction. You will be redirected after payment.",
+            duration: 7000,
         });
-        return;
-    }
-    // Logic to save institutional subscription data would go here
-    toast({
-      title: "Processing Institutional Subscription...",
-      description: "Your subscription is being activated. This is a simulated secure transaction.",
-      duration: 7000,
-    });
-    setIsInstitutionalDialogOpen(false);
-    setInstitutionalFormData(initialInstitutionalFormData);
-    setSelectedInstitutionalProvince('');
+        setIsInstitutionalDialogOpen(false);
+        setInstitutionalFormData(initialInstitutionalFormData);
+        setSelectedInstitutionalProvince('');
   };
 
   const premiumFeatures = [
@@ -643,88 +650,108 @@ export default function PricingPage() {
       </Dialog>
       
        {/* Institutional Subscription Dialog */}
-      <Dialog open={isInstitutionalDialogOpen} onOpenChange={(open) => {
-        setIsInstitutionalDialogOpen(open);
-        if (!open) {
-            setInstitutionalFormData(initialInstitutionalFormData);
-            setSelectedInstitutionalProvince('');
-        }
-      }}>
-        <DialogContent className="sm:max-w-md lg:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-accent">
-              <Building className="h-6 w-6" /> Subscribe to Institutional Plan
-            </DialogTitle>
-            <DialogDescription>
-              Enter your institution's details to get started. You will be billed 100,000 PKR annually.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-            <h3 className="text-lg font-semibold text-muted-foreground">Institution Details</h3>
-            <div>
-                <Label htmlFor="instName">Institution Name</Label>
-                <Input id="instName" name="institutionName" value={institutionalFormData.institutionName} onChange={handleInstitutionalInputChange} placeholder="e.g., City College" />
-            </div>
-            <div>
-                <Label htmlFor="instType">Institution Type</Label>
-                <Select name="institutionType" onValueChange={(value) => handleInstitutionalSelectChange('institutionType', value as InstitutionalFormData['institutionType'])} value={institutionalFormData.institutionType}>
-                    <SelectTrigger id="instType"><SelectValue placeholder="Select Type" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Public">Public</SelectItem>
-                        <SelectItem value="Private">Private</SelectItem>
-                        <SelectItem value="College">College</SelectItem>
-                        <SelectItem value="School">School</SelectItem>
-                        <SelectItem value="Academy">Academy</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 <div>
-                    <Label htmlFor="instProvince">Province</Label>
-                    <Select name="province" onValueChange={(value) => handleInstitutionalSelectChange('province', value)} value={institutionalFormData.province}>
-                        <SelectTrigger id="instProvince"><SelectValue placeholder="Select Province" /></SelectTrigger>
-                        <SelectContent>
-                            {provinces.map(prov => <SelectItem key={prov} value={prov}>{prov}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div>
-                    <Label htmlFor="instCity">City</Label>
-                    <Select name="city" onValueChange={(value) => handleInstitutionalSelectChange('city', value)} value={institutionalFormData.city} disabled={!selectedInstitutionalProvince}>
-                        <SelectTrigger id="instCity"><SelectValue placeholder="Select City" /></SelectTrigger>
-                        <SelectContent>
-                            {availableInstitutionalCities.map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
+        <Dialog open={isInstitutionalDialogOpen} onOpenChange={(open) => {
+            setIsInstitutionalDialogOpen(open);
+            if (!open) {
+                setInstitutionalFormData(initialInstitutionalFormData);
+                setSelectedInstitutionalProvince('');
+            }
+        }}>
+            <DialogContent className="sm:max-w-md lg:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-accent">
+                        <Building className="h-6 w-6" /> Subscribe to Institutional Plan
+                    </DialogTitle>
+                    <DialogDescription>
+                        Enter your institution's details to get started. You will be billed 100,000 PKR annually.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <h3 className="text-lg font-semibold text-muted-foreground">Institution Details</h3>
+                    <div>
+                        <Label htmlFor="instName">Institution Name</Label>
+                        <Input id="instName" name="institutionName" value={institutionalFormData.institutionName} onChange={handleInstitutionalInputChange} placeholder="e.g., City College" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="instType">Institution Type</Label>
+                            <Select name="institutionType" onValueChange={(value) => handleInstitutionalSelectChange('institutionType', value as InstitutionalFormData['institutionType'])} value={institutionalFormData.institutionType}>
+                                <SelectTrigger id="instType"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Public">Public (Government)</SelectItem>
+                                    <SelectItem value="Private">Private</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label htmlFor="businessType">Business Type</Label>
+                            <Select name="businessType" onValueChange={(value) => handleInstitutionalSelectChange('businessType', value as InstitutionalFormData['businessType'])} value={institutionalFormData.businessType}>
+                                <SelectTrigger id="businessType"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="College">College</SelectItem>
+                                    <SelectItem value="School">School</SelectItem>
+                                    <SelectItem value="Academy">Academy</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="instProvince">Province</Label>
+                            <Select name="province" onValueChange={(value) => handleInstitutionalSelectChange('province', value)} value={institutionalFormData.province}>
+                                <SelectTrigger id="instProvince"><SelectValue placeholder="Select Province" /></SelectTrigger>
+                                <SelectContent>
+                                    {provinces.map(prov => <SelectItem key={prov} value={prov}>{prov}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label htmlFor="instCity">City</Label>
+                            <Select name="city" onValueChange={(value) => handleInstitutionalSelectChange('city', value)} value={institutionalFormData.city} disabled={!selectedInstitutionalProvince}>
+                                <SelectTrigger id="instCity"><SelectValue placeholder="Select City" /></SelectTrigger>
+                                <SelectContent>
+                                    {availableInstitutionalCities.map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
 
-            <h3 className="text-lg font-semibold text-muted-foreground pt-4">Administrator Details</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="adminName">Admin Full Name</Label>
-                    <Input id="adminName" name="adminName" value={institutionalFormData.adminName} onChange={handleInstitutionalInputChange} placeholder="e.g., Dr. Ahmad" />
+                    <h3 className="text-lg font-semibold text-muted-foreground pt-4">Administrator Details</h3>
+                     <div>
+                        <Label htmlFor="adminName">Admin Full Name</Label>
+                        <Input id="adminName" name="adminName" value={institutionalFormData.adminName} onChange={handleInstitutionalInputChange} placeholder="e.g., Dr. Ahmad" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="adminEmail">Admin Email</Label>
+                            <Input id="adminEmail" name="adminEmail" type="email" value={institutionalFormData.adminEmail} onChange={handleInstitutionalInputChange} placeholder="e.g., admin@citycollege.edu" />
+                        </div>
+                        <div>
+                            <Label htmlFor="adminPhone">Admin Phone Number</Label>
+                            <Input id="adminPhone" name="adminPhone" type="tel" value={institutionalFormData.adminPhone} onChange={handleInstitutionalInputChange} placeholder="e.g., 03xxxxxxxxx" />
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="password">Password</Label>
+                            <Input id="password" name="password" type="password" value={institutionalFormData.password} onChange={handleInstitutionalInputChange} placeholder="Create a strong password"/>
+                        </div>
+                         <div>
+                            <Label htmlFor="confirmPassword">Confirm Password</Label>
+                            <Input id="confirmPassword" name="confirmPassword" type="password" value={institutionalFormData.confirmPassword} onChange={handleInstitutionalInputChange} placeholder="Repeat your password"/>
+                        </div>
+                    </div>
                 </div>
-                 <div>
-                    <Label htmlFor="adminEmail">Admin Email</Label>
-                    <Input id="adminEmail" name="adminEmail" type="email" value={institutionalFormData.adminEmail} onChange={handleInstitutionalInputChange} placeholder="e.g., admin@citycollege.edu" />
-                </div>
-            </div>
-             <div>
-                <Label htmlFor="adminPhone">Admin Phone Number</Label>
-                <Input id="adminPhone" name="adminPhone" type="tel" value={institutionalFormData.adminPhone} onChange={handleInstitutionalInputChange} placeholder="e.g., 03xxxxxxxxx" />
-            </div>
-          </div>
-          <DialogFooter className="sm:justify-between border-t pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsInstitutionalDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleInstitutionalSubscribeSubmit} style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}}>
-              Subscribe &amp; Pay 100,000 PKR
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                <DialogFooter className="sm:justify-between border-t pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsInstitutionalDialogOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button type="button" onClick={handleInstitutionalSubscribeSubmit} style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}}>
+                        Subscribe &amp; Proceed to Payment
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
     </div>
   );
