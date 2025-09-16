@@ -42,7 +42,7 @@ const subjectsByStream: Record<Stream, string[]> = {
     "Arts": ["English", "Urdu", "History", "Geography"],
 };
 
-const initialSectionState: Omit<Section, '_id' | 'createdAt' | 'name'> = {
+const initialSectionState: Omit<Section, '_id' | 'createdAt' | 'name' | 'subjectTeacherAssignments'> & { subjectTeacherAssignments: Record<string, string> } = {
     className: '',
     stream: 'Pre-Medical',
     section: '',
@@ -57,7 +57,7 @@ export default function ManageSectionsPage() {
     const [availableTeachers, setAvailableTeachers] = useState<Teacher[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSection, setEditingSection] = useState<Section | null>(null);
-    const [formData, setFormData] = useState<Omit<Section, '_id' | 'createdAt' | 'name'>>(initialSectionState);
+    const [formData, setFormData] = useState(initialSectionState);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
@@ -65,11 +65,24 @@ export default function ManageSectionsPage() {
         setIsLoading(true);
         try {
             // MOCK: In a real app, this would be an API call
-            const storedSections = localStorage.getItem(`sections_${user.institutionId}`);
-            setSections(storedSections ? JSON.parse(storedSections).map((s: any) => ({
-                ...s,
-                subjectTeacherAssignments: s.subjectTeacherAssignments || {}
-            })) : []);
+            const storedSectionsRaw = localStorage.getItem(`sections_${user.institutionId}`);
+            const storedSections = storedSectionsRaw ? JSON.parse(storedSectionsRaw) : [];
+            const teacherMap = new Map((availableTeachers || []).map(t => [t._id, t.name]));
+            
+            const populatedSections = storedSections.map((s: any) => {
+                 const assignments: Section['subjectTeacherAssignments'] = {};
+                 if (s.subjectTeacherAssignments) {
+                    for (const [subject, teacherId] of Object.entries(s.subjectTeacherAssignments)) {
+                         assignments[subject] = {
+                            teacherId: teacherId as string,
+                            teacherName: teacherMap.get(teacherId as string) || 'Unknown'
+                        };
+                    }
+                 }
+                return { ...s, subjectTeacherAssignments: assignments };
+            });
+
+            setSections(populatedSections);
             
             const storedTeachers = localStorage.getItem(`teachers_${user.institutionId}`);
             setAvailableTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
@@ -79,7 +92,14 @@ export default function ManageSectionsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [user, toast]);
+    }, [user, toast, availableTeachers]);
+
+    useEffect(() => {
+        if(user?.institutionId){
+            const storedTeachers = localStorage.getItem(`teachers_${user.institutionId}`);
+            setAvailableTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
+        }
+    }, [user]);
 
     useEffect(() => {
         fetchData();
@@ -92,38 +112,49 @@ export default function ManageSectionsPage() {
         }
 
         let updatedSections;
-        const completeAssignments: Record<string, string> = {};
-        Object.entries(formData.subjectTeacherAssignments).forEach(([subject, assignment]) => {
-            if (typeof assignment === 'object' && assignment.teacherId) {
-                completeAssignments[subject] = assignment.teacherId;
-            } else {
-                 completeAssignments[subject] = assignment as string;
-            }
-        });
+        const payload = { ...formData };
         
-        const payload = {
-            ...formData,
-            subjectTeacherAssignments: completeAssignments,
-        };
+        const teacherMap = new Map(availableTeachers.map(t => [t._id, t.name]));
 
         if (editingSection) {
-            updatedSections = sections.map(s => s._id === editingSection._id ? { ...editingSection, ...payload, name: `${payload.className} - ${payload.stream} (Section ${payload.section})` } : s);
+            const updatedSectionData = { 
+                ...editingSection, 
+                ...payload, 
+                name: `${payload.className} - ${payload.stream} (Section ${payload.section})` 
+            };
+            updatedSections = sections.map(s => s._id === editingSection._id ? updatedSectionData : s);
             toast({ title: 'Success', description: 'Section details updated.' });
         } else {
-            const newSection: Section = {
+            const newSectionData = {
                 _id: `section-${Date.now()}`,
                 ...payload,
                 name: `${payload.className} - ${payload.stream} (Section ${payload.section})`,
                 createdAt: new Date().toISOString(),
             };
-            updatedSections = [...sections, newSection];
+            updatedSections = [...sections, newSectionData];
             toast({ title: 'Success', description: 'New section created.' });
         }
         
         if (user?.institutionId) {
             localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
         }
-        setSections(updatedSections);
+
+        // Re-populate names for display
+        const populatedUpdatedSections = updatedSections.map((s: any) => {
+            const assignments: Section['subjectTeacherAssignments'] = {};
+            if (s.subjectTeacherAssignments) {
+                for (const [subject, teacherId] of Object.entries(s.subjectTeacherAssignments)) {
+                    assignments[subject] = {
+                        teacherId: teacherId as string,
+                        teacherName: teacherMap.get(teacherId as string) || 'Unknown'
+                    };
+                }
+            }
+            return { ...s, subjectTeacherAssignments: assignments };
+        });
+
+
+        setSections(populatedUpdatedSections);
         setIsDialogOpen(false);
         setEditingSection(null);
     };
@@ -139,7 +170,7 @@ export default function ManageSectionsPage() {
                 return acc;
             }, {} as Record<string, string>),
         };
-        setFormData(editFormData as any);
+        setFormData(editFormData);
         setIsDialogOpen(true);
     };
 
@@ -318,12 +349,13 @@ export default function ManageSectionsPage() {
                                         </div>
                                     </div>
                                 ))}
+                                {subjectsForStream.length === 0 && <p className="text-muted-foreground text-sm">No subjects defined for this stream.</p>}
                             </div>
                         </div>
                     </div>
                      <DialogFooter className="border-t pt-4">
                         <p className="text-sm text-muted-foreground mr-auto">
-                            Full Name: <span className="font-semibold">{formData.className} - {formData.stream} (Section {formData.section})</span>
+                            Full Name: <span className="font-semibold">{formData.className || '[ClassName]'} - {formData.stream} (Section {formData.section || '[Section]'})</span>
                         </p>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                         <Button onClick={handleSaveSection}>{editingSection ? 'Save Changes' : 'Create Class'}</Button>
@@ -333,3 +365,5 @@ export default function ManageSectionsPage() {
         </div>
     );
 }
+
+    
