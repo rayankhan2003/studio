@@ -6,21 +6,22 @@ import User from "../models/User.js";
 // For institution admin to create a new section
 export const createSection = async (req, res, next) => {
     try {
-        const { name, subjects, teachers } = req.body;
+        const { className, stream, section, subjectTeacherAssignments } = req.body;
         const institutionAdmin = await User.findById(req.user.id);
 
         if (!institutionAdmin.institution) {
             return res.status(400).json({ message: "Admin is not associated with any institution." });
         }
 
-        const section = await Section.create({
-            name,
+        const newSection = await Section.create({
+            className,
+            stream,
+            section,
+            subjectTeacherAssignments: subjectTeacherAssignments || {},
             institution: institutionAdmin.institution,
-            subjects: subjects || [],
-            teachers: teachers || [],
         });
 
-        res.status(201).json({ message: "Section created successfully.", section });
+        res.status(201).json({ message: "Section created successfully.", section: newSection });
     } catch (e) {
         next(e);
     }
@@ -32,11 +33,29 @@ export const listSections = async (req, res, next) => {
         const user = await User.findById(req.user.id);
         const institutionId = user.institution;
 
-        const sections = await Section.find({ institution: institutionId })
-            .populate('teachers', 'name email')
-            .lean();
+        const sections = await Section.find({ institution: institutionId }).lean();
+        
+        // Manually populate teacher names
+        const teacherIds = sections.flatMap(s => Array.from(s.subjectTeacherAssignments.values()));
+        const uniqueTeacherIds = [...new Set(teacherIds.map(id => id.toString()))];
+        const teachers = await User.find({ _id: { $in: uniqueTeacherIds } }).select('_id name').lean();
+        const teacherMap = new Map(teachers.map(t => [t._id.toString(), t.name]));
 
-        res.json({ sections });
+        const populatedSections = sections.map(section => {
+            const assignments = {};
+            for (const [subject, teacherId] of section.subjectTeacherAssignments.entries()) {
+                assignments[subject] = {
+                    teacherId: teacherId,
+                    teacherName: teacherMap.get(teacherId.toString()) || 'Unknown'
+                };
+            }
+            return {
+                ...section,
+                subjectTeacherAssignments: assignments
+            };
+        });
+
+        res.json({ sections: populatedSections });
     } catch (e) {
         next(e);
     }
@@ -46,12 +65,18 @@ export const listSections = async (req, res, next) => {
 export const updateSection = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, subjects, teachers } = req.body;
+        const { className, stream, section, subjectTeacherAssignments } = req.body;
         const user = await User.findById(req.user.id);
 
         const updatedSection = await Section.findOneAndUpdate(
             { _id: id, institution: user.institution },
-            { name, subjects, teachers },
+            { 
+                className, 
+                stream, 
+                section, 
+                subjectTeacherAssignments, 
+                name: `${className} - ${stream} (Section ${section})` // manually update name
+            },
             { new: true }
         );
 

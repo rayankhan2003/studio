@@ -1,25 +1,21 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, MoreHorizontal, Building, AlertTriangle, Check, ChevronsUpDown } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreHorizontal, Building, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
-import { allSubjects as allMdcatSubjects } from '@/lib/syllabus';
-import { allCambridgeSubjects } from '@/lib/cambridge-syllabus';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Teacher {
   _id: string;
@@ -29,21 +25,30 @@ interface Teacher {
 interface Section {
     _id: string;
     name: string;
-    subjects: string[];
-    teachers: string[]; // Store teacher IDs
+    className: string;
+    stream: Stream;
+    section: string;
+    subjectTeacherAssignments: Record<string, { teacherId: string; teacherName: string }>;
     createdAt: string;
 }
 
-const initialSectionState: Omit<Section, '_id' | 'createdAt'> = {
-    name: '',
-    subjects: [],
-    teachers: [],
+const streams = ["Pre-Medical", "Pre-Engineering", "Computer Science", "Arts"] as const;
+type Stream = typeof streams[number];
+
+const subjectsByStream: Record<Stream, string[]> = {
+    "Pre-Medical": ["Biology", "Chemistry", "Physics", "English"],
+    "Pre-Engineering": ["Mathematics", "Chemistry", "Physics", "English"],
+    "Computer Science": ["Computer Science", "Mathematics", "Physics", "English"],
+    "Arts": ["English", "Urdu", "History", "Geography"],
 };
 
-const allAvailableSubjects = [...new Set([...allMdcatSubjects, ...allCambridgeSubjects])].map(subject => ({
-    value: subject.toLowerCase(),
-    label: subject,
-}));
+const initialSectionState: Omit<Section, '_id' | 'createdAt' | 'name'> = {
+    className: '',
+    stream: 'Pre-Medical',
+    section: '',
+    subjectTeacherAssignments: {},
+};
+
 
 export default function ManageSectionsPage() {
     const { toast } = useToast();
@@ -52,22 +57,20 @@ export default function ManageSectionsPage() {
     const [availableTeachers, setAvailableTeachers] = useState<Teacher[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSection, setEditingSection] = useState<Section | null>(null);
-    const [formData, setFormData] = useState(initialSectionState);
+    const [formData, setFormData] = useState<Omit<Section, '_id' | 'createdAt' | 'name'>>(initialSectionState);
     const [isLoading, setIsLoading] = useState(true);
-    
-    const [isSubjectPopoverOpen, setIsSubjectPopoverOpen] = useState(false);
-    const [isTeacherPopoverOpen, setIsTeacherPopoverOpen] = useState(false);
-
 
     const fetchData = useCallback(async () => {
         if (!user || !user.institutionId) return;
         setIsLoading(true);
         try {
-            // MOCK: Fetch sections and teachers for the institution
+            // MOCK: In a real app, this would be an API call
             const storedSections = localStorage.getItem(`sections_${user.institutionId}`);
-            setSections(storedSections ? JSON.parse(storedSections) : []);
+            setSections(storedSections ? JSON.parse(storedSections).map((s: any) => ({
+                ...s,
+                subjectTeacherAssignments: s.subjectTeacherAssignments || {}
+            })) : []);
             
-            // This is where we ensure we get teachers for the current institution
             const storedTeachers = localStorage.getItem(`teachers_${user.institutionId}`);
             setAvailableTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
 
@@ -83,21 +86,34 @@ export default function ManageSectionsPage() {
     }, [fetchData]);
 
     const handleSaveSection = () => {
-        if (!formData.name) {
-            toast({ title: 'Error', description: 'Section Name is required.', variant: 'destructive' });
+        if (!formData.className || !formData.stream || !formData.section) {
+            toast({ title: 'Error', description: 'Class Name, Stream, and Section are required.', variant: 'destructive' });
             return;
         }
 
         let updatedSections;
+        const completeAssignments: Record<string, string> = {};
+        Object.entries(formData.subjectTeacherAssignments).forEach(([subject, assignment]) => {
+            if (typeof assignment === 'object' && assignment.teacherId) {
+                completeAssignments[subject] = assignment.teacherId;
+            } else {
+                 completeAssignments[subject] = assignment as string;
+            }
+        });
+        
+        const payload = {
+            ...formData,
+            subjectTeacherAssignments: completeAssignments,
+        };
+
         if (editingSection) {
-            updatedSections = sections.map(s =>
-                s._id === editingSection._id ? { ...s, ...formData } : s
-            );
+            updatedSections = sections.map(s => s._id === editingSection._id ? { ...editingSection, ...payload, name: `${payload.className} - ${payload.stream} (Section ${payload.section})` } : s);
             toast({ title: 'Success', description: 'Section details updated.' });
         } else {
             const newSection: Section = {
                 _id: `section-${Date.now()}`,
-                ...formData,
+                ...payload,
+                name: `${payload.className} - ${payload.stream} (Section ${payload.section})`,
                 createdAt: new Date().toISOString(),
             };
             updatedSections = [...sections, newSection];
@@ -114,7 +130,16 @@ export default function ManageSectionsPage() {
 
     const openEditDialog = (section: Section) => {
         setEditingSection(section);
-        setFormData(section);
+        const editFormData = {
+            className: section.className,
+            stream: section.stream,
+            section: section.section,
+            subjectTeacherAssignments: Object.entries(section.subjectTeacherAssignments).reduce((acc, [subject, assignment]) => {
+                acc[subject] = (assignment as any).teacherId || assignment;
+                return acc;
+            }, {} as Record<string, string>),
+        };
+        setFormData(editFormData as any);
         setIsDialogOpen(true);
     };
 
@@ -133,36 +158,24 @@ export default function ManageSectionsPage() {
         toast({ title: 'Section Removed', description: 'The section has been removed.' });
     };
 
-    const handleMultiSelect = (type: 'subjects' | 'teachers', value: string) => {
-        setFormData(prev => {
-            const currentValues = new Set(prev[type] as string[]);
-            
-            if (type === 'subjects') {
-                const subjectLabel = allAvailableSubjects.find(s => s.value === value)?.label;
-                if (!subjectLabel) return prev;
-                if (currentValues.has(subjectLabel)) {
-                    currentValues.delete(subjectLabel);
-                } else {
-                    currentValues.add(subjectLabel);
-                }
-            } else { // 'teachers', value is the teacher ID
-                 if (currentValues.has(value)) {
-                    currentValues.delete(value);
-                } else {
-                    currentValues.add(value);
-                }
+    const handleSubjectTeacherChange = (subject: string, teacherId: string) => {
+        setFormData(prev => ({
+            ...prev,
+            subjectTeacherAssignments: {
+                ...prev.subjectTeacherAssignments,
+                [subject]: teacherId
             }
-            return { ...prev, [type]: Array.from(currentValues) };
-        });
-    }
+        }));
+    };
+    
+    const subjectsForStream = useMemo(() => subjectsByStream[formData.stream] || [], [formData.stream]);
 
-    const getTeacherNameById = (id: string) => availableTeachers.find(t => t._id === id)?.name || 'Unknown Teacher';
 
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Building className="h-8 w-8 text-primary" /> Manage Sections
+                    <Building className="h-8 w-8 text-primary" /> Manage Classes & Sections
                 </h1>
             </div>
              <Alert variant="destructive">
@@ -176,11 +189,11 @@ export default function ManageSectionsPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle>Class Sections</CardTitle>
-                            <CardDescription>Create and manage classes like "1st Year - Section A" or "Pre-Med Group".</CardDescription>
+                            <CardTitle>Class List</CardTitle>
+                            <CardDescription>Create and manage classes like "1st Year - Pre-Medical (Section A)".</CardDescription>
                         </div>
                         <Button onClick={openCreateDialog}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Create Section
+                            <PlusCircle className="mr-2 h-4 w-4" /> Create Class
                         </Button>
                     </div>
                 </CardHeader>
@@ -188,28 +201,26 @@ export default function ManageSectionsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Section Name</TableHead>
-                                <TableHead>Subjects</TableHead>
-                                <TableHead>Assigned Teachers</TableHead>
+                                <TableHead>Class Name</TableHead>
+                                <TableHead>Teachers Assigned</TableHead>
                                 <TableHead>Date Created</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={5} className="text-center h-24">Loading...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="text-center h-24">Loading...</TableCell></TableRow>
                             ) : sections.length > 0 ? (
                                 sections.map(section => (
                                     <TableRow key={section._id}>
                                         <TableCell className="font-medium">{section.name}</TableCell>
-                                        <TableCell className="max-w-[200px]">
+                                        <TableCell className="max-w-[300px]">
                                           <div className="flex flex-wrap gap-1">
-                                            {section.subjects?.map(s => <Badge key={s} variant="secondary">{s}</Badge>)}
-                                          </div>
-                                        </TableCell>
-                                         <TableCell className="max-w-[200px]">
-                                          <div className="flex flex-wrap gap-1">
-                                            {section.teachers?.map(tId => <Badge key={tId} variant="outline">{getTeacherNameById(tId)}</Badge>)}
+                                            {Object.entries(section.subjectTeacherAssignments)?.map(([subject, assignment]) => (
+                                                <Badge key={subject} variant="outline" className="text-xs">
+                                                    {subject}: {assignment.teacherName}
+                                                </Badge>
+                                            ))}
                                           </div>
                                         </TableCell>
                                         <TableCell>{new Date(section.createdAt).toLocaleDateString()}</TableCell>
@@ -235,7 +246,7 @@ export default function ManageSectionsPage() {
                                                             <AlertDialogHeader>
                                                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    This will permanently remove the section "{section.name}". It cannot be undone.
+                                                                    This will permanently remove the class "{section.name}". It cannot be undone.
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
@@ -252,7 +263,7 @@ export default function ManageSectionsPage() {
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={5} className="text-center h-24">No sections created yet.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="text-center h-24">No classes created yet.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
@@ -260,86 +271,62 @@ export default function ManageSectionsPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) setEditingSection(null); setIsDialogOpen(open); }}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
-                        <DialogTitle>{editingSection ? 'Edit Section' : 'Create New Section'}</DialogTitle>
-                        <DialogDescription>{editingSection ? `Update details for ${editingSection.name}.` : 'Fill in the details for the new class section.'}</DialogDescription>
+                        <DialogTitle>{editingSection ? 'Edit Class' : 'Create New Class'}</DialogTitle>
+                        <DialogDescription>{editingSection ? `Update details for ${editingSection.name}.` : 'Fill in the details for the new class.'}</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div>
-                            <Label htmlFor="name">Section Name</Label>
-                            <Input id="name" placeholder='e.g., "1st Year - Pre-Med Section A"' value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                        </div>
-                        <div>
-                            <Label>Subjects</Label>
-                            <Popover open={isSubjectPopoverOpen} onOpenChange={setIsSubjectPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" aria-expanded={isSubjectPopoverOpen} className="w-full justify-between h-auto min-h-10">
-                                    <span className="truncate flex flex-wrap gap-1">
-                                        {formData.subjects.length > 0 ? formData.subjects.map(s => <Badge key={s} variant="secondary">{s}</Badge>) : 'Select subjects...'}
-                                    </span>
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search subjects..." />
-                                    <CommandList>
-                                        <CommandEmpty>No subject found.</CommandEmpty>
-                                        <CommandGroup>
-                                        {allAvailableSubjects.map((subject) => (
-                                            <CommandItem
-                                                key={subject.value}
-                                                value={subject.value}
-                                                onSelect={(currentValue) => handleMultiSelect('subjects', currentValue)}
-                                            >
-                                            <Check className={cn("mr-2 h-4 w-4", formData.subjects.includes(subject.label) ? "opacity-100" : "opacity-0")} />
-                                            {subject.label}
-                                            </CommandItem>
-                                        ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                                </PopoverContent>
-                            </Popover>
+                    <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           <div>
+                                <Label htmlFor="className">Class Name</Label>
+                                <Input id="className" placeholder='e.g., "1st Year" or "A Level Year 1"' value={formData.className} onChange={e => setFormData({ ...formData, className: e.target.value })} />
+                            </div>
+                            <div>
+                                <Label htmlFor="stream">Stream</Label>
+                                <Select value={formData.stream} onValueChange={(value: Stream) => setFormData({ ...formData, stream: value, subjectTeacherAssignments: {} })}>
+                                    <SelectTrigger id="stream"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {streams.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                          <div>
-                            <Label>Assign Teachers</Label>
-                            <Popover open={isTeacherPopoverOpen} onOpenChange={setIsTeacherPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" aria-expanded={isTeacherPopoverOpen} className="w-full justify-between h-auto min-h-10">
-                                    <span className="truncate flex flex-wrap gap-1">
-                                        {formData.teachers.length > 0 ? formData.teachers.map(tId => <Badge key={tId} variant="outline">{getTeacherNameById(tId)}</Badge>) : 'Select teachers...'}
-                                    </span>
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search teachers..." />
-                                    <CommandList>
-                                        <CommandEmpty>No teachers found. Add them in the "Manage Teachers" tab first.</CommandEmpty>
-                                        <CommandGroup>
-                                        {availableTeachers.map((teacher) => (
-                                            <CommandItem
-                                                key={teacher._id}
-                                                value={teacher.name} // Use name for search, but ID for selection
-                                                onSelect={() => handleMultiSelect('teachers', teacher._id)}
+                            <Label htmlFor="section">Section</Label>
+                            <Input id="section" placeholder='e.g., "A", "B", "Blue", "Green"' value={formData.section} onChange={e => setFormData({ ...formData, section: e.target.value })} />
+                        </div>
+                        <div className="pt-4 border-t">
+                            <h3 className="text-lg font-semibold mb-2">Assign Teachers to Subjects</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Select a teacher for each subject in the selected stream.</p>
+                            <div className="space-y-4">
+                                {subjectsForStream.map(subject => (
+                                    <div key={subject} className="grid grid-cols-3 items-center gap-4">
+                                        <Label htmlFor={`teacher-${subject}`} className="col-span-1">{subject}</Label>
+                                        <div className="col-span-2">
+                                            <Select
+                                                value={(formData.subjectTeacherAssignments as any)[subject] || ''}
+                                                onValueChange={(teacherId) => handleSubjectTeacherChange(subject, teacherId)}
                                             >
-                                            <Check className={cn("mr-2 h-4 w-4", formData.teachers.includes(teacher._id) ? "opacity-100" : "opacity-0")} />
-                                            {teacher.name}
-                                            </CommandItem>
-                                        ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                                </PopoverContent>
-                            </Popover>
+                                                <SelectTrigger id={`teacher-${subject}`}><SelectValue placeholder="Select Teacher" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {availableTeachers.map(teacher => (
+                                                        <SelectItem key={teacher._id} value={teacher._id}>{teacher.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                     <DialogFooter className="border-t pt-4">
+                        <p className="text-sm text-muted-foreground mr-auto">
+                            Full Name: <span className="font-semibold">{formData.className} - {formData.stream} (Section {formData.section})</span>
+                        </p>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveSection}>{editingSection ? 'Save Changes' : 'Create Section'}</Button>
+                        <Button onClick={handleSaveSection}>{editingSection ? 'Save Changes' : 'Create Class'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
