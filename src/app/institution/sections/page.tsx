@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { allSubjects as allMdcatSubjects } from '@/lib/syllabus';
 import { allCambridgeSubjects } from '@/lib/cambridge-syllabus';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ export default function ManageSectionsPage() {
     const { toast } = useToast();
     const { user } = useAuth();
     const [sections, setSections] = useState<Section[]>([]);
-    const [teachers, setTeachers] = useState<Teacher[]>([]);
+    const [availableTeachers, setAvailableTeachers] = useState<Teacher[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSection, setEditingSection] = useState<Section | null>(null);
     const [formData, setFormData] = useState(initialSectionState);
@@ -67,8 +67,9 @@ export default function ManageSectionsPage() {
             const storedSections = localStorage.getItem(`sections_${user.institutionId}`);
             setSections(storedSections ? JSON.parse(storedSections) : []);
             
-            const storedTeachers = localStorage.getItem(`teachers_${user.email}`); // assuming teachers are stored under admin's email for now
-            setTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
+            // This is where we ensure we get teachers for the current institution
+            const storedTeachers = localStorage.getItem(`teachers_${user.institutionId}`);
+            setAvailableTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
 
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to fetch data.', variant: 'destructive' });
@@ -103,7 +104,9 @@ export default function ManageSectionsPage() {
             toast({ title: 'Success', description: 'New section created.' });
         }
         
-        localStorage.setItem(`sections_${user?.institutionId}`, JSON.stringify(updatedSections));
+        if (user?.institutionId) {
+            localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
+        }
         setSections(updatedSections);
         setIsDialogOpen(false);
         setEditingSection(null);
@@ -123,7 +126,9 @@ export default function ManageSectionsPage() {
 
     const handleDeleteSection = (sectionId: string) => {
         const updatedSections = sections.filter(s => s._id !== sectionId);
-        localStorage.setItem(`sections_${user?.institutionId}`, JSON.stringify(updatedSections));
+        if (user?.institutionId) {
+            localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
+        }
         setSections(updatedSections);
         toast({ title: 'Section Removed', description: 'The section has been removed.' });
     };
@@ -131,6 +136,7 @@ export default function ManageSectionsPage() {
     const handleMultiSelect = (type: 'subjects' | 'teachers', value: string) => {
         setFormData(prev => {
             const currentValues = new Set(prev[type] as string[]);
+            
             if (type === 'subjects') {
                 const subjectLabel = allAvailableSubjects.find(s => s.value === value)?.label;
                 if (!subjectLabel) return prev;
@@ -139,8 +145,8 @@ export default function ManageSectionsPage() {
                 } else {
                     currentValues.add(subjectLabel);
                 }
-            } else { // teachers
-                 if (currentValues.has(value)) { // teacher value is the ID
+            } else { // 'teachers', value is the teacher ID
+                 if (currentValues.has(value)) {
                     currentValues.delete(value);
                 } else {
                     currentValues.add(value);
@@ -150,7 +156,7 @@ export default function ManageSectionsPage() {
         });
     }
 
-    const getTeacherNameById = (id: string) => teachers.find(t => t._id === id)?.name || 'Unknown Teacher';
+    const getTeacherNameById = (id: string) => availableTeachers.find(t => t._id === id)?.name || 'Unknown Teacher';
 
     return (
         <div className="space-y-8">
@@ -278,18 +284,21 @@ export default function ManageSectionsPage() {
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
                                     <CommandInput placeholder="Search subjects..." />
-                                    <CommandEmpty>No subject found.</CommandEmpty>
-                                    <CommandGroup>
-                                    {allAvailableSubjects.map((subject) => (
-                                        <CommandItem
-                                        key={subject.value}
-                                        onSelect={() => handleMultiSelect('subjects', subject.value)}
-                                        >
-                                        <Check className={cn("mr-2 h-4 w-4", formData.subjects.includes(subject.label) ? "opacity-100" : "opacity-0")} />
-                                        {subject.label}
-                                        </CommandItem>
-                                    ))}
-                                    </CommandGroup>
+                                    <CommandList>
+                                        <CommandEmpty>No subject found.</CommandEmpty>
+                                        <CommandGroup>
+                                        {allAvailableSubjects.map((subject) => (
+                                            <CommandItem
+                                                key={subject.value}
+                                                value={subject.value}
+                                                onSelect={(currentValue) => handleMultiSelect('subjects', currentValue)}
+                                            >
+                                            <Check className={cn("mr-2 h-4 w-4", formData.subjects.includes(subject.label) ? "opacity-100" : "opacity-0")} />
+                                            {subject.label}
+                                            </CommandItem>
+                                        ))}
+                                        </CommandGroup>
+                                    </CommandList>
                                 </Command>
                                 </PopoverContent>
                             </Popover>
@@ -308,18 +317,21 @@ export default function ManageSectionsPage() {
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
                                     <CommandInput placeholder="Search teachers..." />
-                                    <CommandEmpty>No teachers found. Add them in the "Manage Teachers" tab first.</CommandEmpty>
-                                    <CommandGroup>
-                                    {teachers.map((teacher) => (
-                                        <CommandItem
-                                        key={teacher._id}
-                                        onSelect={() => handleMultiSelect('teachers', teacher._id)}
-                                        >
-                                        <Check className={cn("mr-2 h-4 w-4", formData.teachers.includes(teacher._id) ? "opacity-100" : "opacity-0")} />
-                                        {teacher.name}
-                                        </CommandItem>
-                                    ))}
-                                    </CommandGroup>
+                                    <CommandList>
+                                        <CommandEmpty>No teachers found. Add them in the "Manage Teachers" tab first.</CommandEmpty>
+                                        <CommandGroup>
+                                        {availableTeachers.map((teacher) => (
+                                            <CommandItem
+                                                key={teacher._id}
+                                                value={teacher.name} // Use name for search, but ID for selection
+                                                onSelect={() => handleMultiSelect('teachers', teacher._id)}
+                                            >
+                                            <Check className={cn("mr-2 h-4 w-4", formData.teachers.includes(teacher._id) ? "opacity-100" : "opacity-0")} />
+                                            {teacher.name}
+                                            </CommandItem>
+                                        ))}
+                                        </CommandGroup>
+                                    </CommandList>
                                 </Command>
                                 </PopoverContent>
                             </Popover>

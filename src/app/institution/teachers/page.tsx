@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { allSubjects as allMdcatSubjects } from '@/lib/syllabus';
 import { allCambridgeSubjects } from '@/lib/cambridge-syllabus';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -53,11 +53,11 @@ export default function ManageTeachersPage() {
     const [isSubjectPopoverOpen, setIsSubjectPopoverOpen] = useState(false);
 
     const fetchTeachers = useCallback(async () => {
-        if (!user) return;
+        if (!user || !user.institutionId) return;
         setIsLoading(true);
         try {
             // MOCK: This would be a fetch call in a real app
-            const storedTeachers = localStorage.getItem(`teachers_${user.email}`);
+            const storedTeachers = localStorage.getItem(`teachers_${user.institutionId}`);
             setTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to fetch teachers.', variant: 'destructive' });
@@ -93,7 +93,9 @@ export default function ManageTeachersPage() {
             toast({ title: 'Success', description: 'New teacher added.' });
         }
         
-        localStorage.setItem(`teachers_${user?.email}`, JSON.stringify(updatedTeachers));
+        if (user?.institutionId) {
+            localStorage.setItem(`teachers_${user.institutionId}`, JSON.stringify(updatedTeachers));
+        }
         setTeachers(updatedTeachers);
         setIsDialogOpen(false);
         setEditingTeacher(null);
@@ -113,7 +115,9 @@ export default function ManageTeachersPage() {
 
     const handleDeleteTeacher = (teacherId: string) => {
         const updatedTeachers = teachers.filter(t => t._id !== teacherId);
-        localStorage.setItem(`teachers_${user?.email}`, JSON.stringify(updatedTeachers));
+        if (user?.institutionId) {
+            localStorage.setItem(`teachers_${user.institutionId}`, JSON.stringify(updatedTeachers));
+        }
         setTeachers(updatedTeachers);
         toast({ title: 'Teacher Removed', description: 'The teacher has been removed from your institution.' });
     };
@@ -247,15 +251,15 @@ export default function ManageTeachersPage() {
                         </div>
                         <div>
                             <Label htmlFor="password">Password</Label>
-                            <Input id="password" type="password" placeholder={editingTeacher ? 'Leave blank to keep unchanged' : '••••••••'} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                            <Input id="password" type="password" placeholder={editingTeacher ? 'Leave blank to keep unchanged' : '••••••••'} value={formData.password || ''} onChange={e => setFormData({ ...formData, password: e.target.value })} />
                         </div>
                         <div>
                             <Label>Subjects</Label>
                             <Popover open={isSubjectPopoverOpen} onOpenChange={setIsSubjectPopoverOpen}>
                                 <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" aria-expanded={isSubjectPopoverOpen} className="w-full justify-between">
-                                    <span className="truncate">
-                                        {formData.subjects.length > 0 ? formData.subjects.join(', ') : 'Select subjects...'}
+                                <Button variant="outline" role="combobox" aria-expanded={isSubjectPopoverOpen} className="w-full justify-between h-auto min-h-10">
+                                    <span className="truncate flex flex-wrap gap-1">
+                                        {formData.subjects.length > 0 ? formData.subjects.map(s => <Badge key={s} variant="secondary">{s}</Badge>) : 'Select subjects...'}
                                     </span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
@@ -263,18 +267,21 @@ export default function ManageTeachersPage() {
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
                                     <CommandInput placeholder="Search subjects..." />
-                                    <CommandEmpty>No subject found.</CommandEmpty>
-                                    <CommandGroup>
-                                    {allAvailableSubjects.map((subject) => (
-                                        <CommandItem
-                                        key={subject.value}
-                                        onSelect={() => handleSubjectSelect(subject.value)}
-                                        >
-                                        <Check className={cn("mr-2 h-4 w-4", formData.subjects.includes(subject.label) ? "opacity-100" : "opacity-0")} />
-                                        {subject.label}
-                                        </CommandItem>
-                                    ))}
-                                    </CommandGroup>
+                                    <CommandList>
+                                        <CommandEmpty>No subject found.</CommandEmpty>
+                                        <CommandGroup>
+                                        {allAvailableSubjects.map((subject) => (
+                                            <CommandItem
+                                            key={subject.value}
+                                            value={subject.value}
+                                            onSelect={(currentValue) => handleSubjectSelect(currentValue)}
+                                            >
+                                            <Check className={cn("mr-2 h-4 w-4", formData.subjects.includes(subject.label) ? "opacity-100" : "opacity-0")} />
+                                            {subject.label}
+                                            </CommandItem>
+                                        ))}
+                                        </CommandGroup>
+                                    </CommandList>
                                 </Command>
                                 </PopoverContent>
                             </Popover>
@@ -289,5 +296,3 @@ export default function ManageTeachersPage() {
         </div>
     );
 }
-
-    
