@@ -128,7 +128,7 @@ export function Header() {
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <Link href="/institution/dashboard" className="flex items-center gap-2" aria-label="Institution Home">
                     <Building className="h-8 w-8 text-primary" />
-                    <span className="text-2xl font-semibold text-primary">{user?.institutionName || 'Institution Portal'}</span>
+                    <span className="text-xl font-semibold text-primary">{user?.institutionName || 'Institution Portal'}</span>
                 </Link>
 
                  <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">

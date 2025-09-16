@@ -59,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((name: string, email?: string) => {
     let newUser: User;
     
-    // This logic is for demonstration. A real app would do this on a secure backend.
     const subAdminsRaw = typeof window !== 'undefined' ? localStorage.getItem('path2med-sub-admins') : null;
     const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
     const subAdminData = subAdmins.find((sa: any) => sa.email === email);
@@ -90,8 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (institutionalAdminData) {
         // Handle Institutional Admin Login
         newUser = {
-            name,
-            email,
+            name: institutionalAdminData.adminName,
+            email: institutionalAdminData.adminEmail,
             isAdmin: false,
             isSuperAdmin: false,
             isInstitutionalAdmin: true,
