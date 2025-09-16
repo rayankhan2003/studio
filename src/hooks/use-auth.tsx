@@ -91,11 +91,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         newUser = {
             name: institutionalAdminData.adminName,
             email: institutionalAdminData.adminEmail,
-            isAdmin: false,
+            isAdmin: false, // Institutional admin is a distinct role, not a site-wide admin
             isSuperAdmin: false,
             isInstitutionalAdmin: true,
             institutionId: institutionalAdminData.id,
-            institutionName: institutionalAdminData.institutionName,
+            institutionName: institutionalAdminData.institutionName, // Ensure the name is set here
         };
     }
     else {
