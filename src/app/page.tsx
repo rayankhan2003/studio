@@ -1,4 +1,4 @@
-
+import { Header } from '@/components/layout/header';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, Send } from "lucide-react";
@@ -60,7 +60,9 @@ export default function Wh() {
   ];
 
   return (
-    <div className="flex flex-col items-center space-y-12 sm:space-y-16 py-8">
+    <>
+    <Header />
+    <div className="flex flex-col items-center space-y-12 sm:space-y-16 py-8 container mx-auto px-4">
       <section className="w-full text-center container px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary/80 pt-8">
@@ -161,5 +163,6 @@ export default function Wh() {
         </div>
       </section>
     </div>
+    </>
   );
 }

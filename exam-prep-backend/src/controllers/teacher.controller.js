@@ -27,8 +27,7 @@ export const addTeacher = async (req, res, next) => {
             role: ROLES.TEACHER,
             institutionalRole: ROLES.TEACHER,
             institution: institutionId,
-            // In a real app, subjects might be stored differently
-            // For now, this is a placeholder if you pass subjects in the body.
+            subjects: subjects || [],
         });
 
         // Add teacher to the institution's list of teachers
@@ -51,7 +50,7 @@ export const listTeachers = async (req, res, next) => {
         const teachers = await User.find({
             institution: institutionId,
             institutionalRole: ROLES.TEACHER
-        }).select('name email createdAt').lean();
+        }).select('name email createdAt subjects').lean();
 
         res.json({ teachers });
     } catch (e) {

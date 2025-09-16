@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     institution: { type: mongoose.Schema.Types.ObjectId, ref: "Institution" },
     section: { type: mongoose.Schema.Types.ObjectId, ref: "Section" },
     institutionalRole: { type: String, enum: [ROLES.INSTITUTION_ADMIN, ROLES.TEACHER, ROLES.STUDENT] },
+    subjects: [String], // For teachers to be assigned subjects
   },
   { timestamps: true }
 );
