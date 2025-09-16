@@ -8,7 +8,12 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 8, select: false },
-    role: { type: String, enum: Object.values(ROLES), default: ROLES.STUDENT }
+    role: { type: String, enum: Object.values(ROLES), default: ROLES.STUDENT },
+    
+    // Fields for Institutional Module
+    institution: { type: mongoose.Schema.Types.ObjectId, ref: "Institution" },
+    section: { type: mongoose.Schema.Types.ObjectId, ref: "Section" },
+    institutionalRole: { type: String, enum: [ROLES.INSTITUTION_ADMIN, ROLES.TEACHER, ROLES.STUDENT] },
   },
   { timestamps: true }
 );
