@@ -81,7 +81,24 @@ export default function AccountAuthPage() {
       return;
     }
 
-    // 3. Default user login (mocked)
+    // 3. Check for Institutional Admin credentials
+    const institutionalAdminsRaw = localStorage.getItem('path2med-institutional-subscriptions');
+    const institutionalAdmins = institutionalAdminsRaw ? JSON.parse(institutionalAdminsRaw) : [];
+    const institutionalAdmin = institutionalAdmins.find((ia: any) => ia.adminEmail === loginEmail && ia.password === loginPassword);
+
+    if (institutionalAdmin) {
+      login(institutionalAdmin.adminName, institutionalAdmin.adminEmail); // Sets user as institutional admin
+      // logActivity could be enhanced for institutional admins later
+      toast({
+        title: 'Institutional Login Successful!',
+        description: `Welcome, ${institutionalAdmin.adminName}!`,
+      });
+      router.push('/institution/dashboard'); // Redirect to institutional dashboard
+      return;
+    }
+
+
+    // 4. Default user login (mocked)
     // A real app would check a user database here
     const name = loginEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     // Regular users can't log in as 'Admin' or with admin emails
@@ -209,3 +226,5 @@ export default function AccountAuthPage() {
     </div>
   );
 }
+
+    

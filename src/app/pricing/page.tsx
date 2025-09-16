@@ -67,6 +67,7 @@ const initialDemoInfoData: DemoInfoData = {
 };
 
 interface InstitutionalFormData {
+    id: string;
     institutionName: string;
     institutionType: 'Public' | 'Private' | '';
     businessType: 'College' | 'School' | 'Academy' | '';
@@ -79,7 +80,7 @@ interface InstitutionalFormData {
     confirmPassword: '';
 }
 
-const initialInstitutionalFormData: InstitutionalFormData = {
+const initialInstitutionalFormData: Omit<InstitutionalFormData, 'id'> = {
     institutionName: '',
     institutionType: '',
     businessType: '',
@@ -111,7 +112,7 @@ export default function PricingPage() {
   const [demoInfoData, setDemoInfoData] = useState<DemoInfoData>(initialDemoInfoData);
   
   const [isInstitutionalDialogOpen, setIsInstitutionalDialogOpen] = useState<boolean>(false);
-  const [institutionalFormData, setInstitutionalFormData] = useState<InstitutionalFormData>(initialInstitutionalFormData);
+  const [institutionalFormData, setInstitutionalFormData] = useState<Omit<InstitutionalFormData, 'id'>>(initialInstitutionalFormData);
   
   const [selectedDemoProvince, setSelectedDemoProvince] = useState('');
   const availableDemoCities = useMemo(() => {
@@ -147,7 +148,7 @@ export default function PricingPage() {
     setInstitutionalFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleInstitutionalSelectChange = (name: keyof InstitutionalFormData, value: string) => {
+  const handleInstitutionalSelectChange = (name: keyof Omit<InstitutionalFormData, 'id'>, value: string) => {
     setInstitutionalFormData(prev => ({ ...prev, [name]: value }));
     if (name === 'province') {
         setSelectedInstitutionalProvince(value);
@@ -241,7 +242,17 @@ export default function PricingPage() {
             return;
         }
 
-        // Logic to save institutional subscription data would go here
+        const existingSubscriptionsRaw = localStorage.getItem('path2med-institutional-subscriptions');
+        const existingSubscriptions = existingSubscriptionsRaw ? JSON.parse(existingSubscriptionsRaw) : [];
+
+        const newSubscription: InstitutionalFormData = {
+            id: `inst-${Date.now()}`,
+            ...institutionalFormData,
+        };
+
+        existingSubscriptions.push(newSubscription);
+        localStorage.setItem('path2med-institutional-subscriptions', JSON.stringify(existingSubscriptions));
+        
         toast({
             title: "Processing Institutional Subscription...",
             description: "Your subscription is being activated. This is a simulated secure transaction. You will be redirected after payment.",
@@ -752,7 +763,8 @@ export default function PricingPage() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-
     </div>
   );
 }
+
+    

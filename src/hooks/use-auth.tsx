@@ -20,6 +20,7 @@ export interface User {
   email?: string;
   isAdmin: boolean;
   isSuperAdmin: boolean; // True only for the main admin
+  isInstitutionalAdmin: boolean; // True for institutional admins
   permissions?: SubAdminPermissions; // For sub-admins
 }
 
@@ -55,6 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback((name: string, email?: string) => {
     let newUser: User;
+    
+    // Check localStorage for various admin types
+    const subAdminsRaw = localStorage.getItem('path2med-sub-admins');
+    const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
+    const subAdminData = subAdmins.find((sa: any) => sa.email === email);
+
+    const institutionalAdminsRaw = localStorage.getItem('path2med-institutional-subscriptions');
+    const institutionalAdmins = institutionalAdminsRaw ? JSON.parse(institutionalAdminsRaw) : [];
+    const institutionalAdminData = institutionalAdmins.find((ia: any) => ia.adminEmail === email);
 
     if (email === SUPER_ADMIN_EMAIL) {
       // Handle Super Admin Login
@@ -63,32 +73,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         isAdmin: true,
         isSuperAdmin: true,
-        // Super admin has all permissions implicitly
+        isInstitutionalAdmin: false,
       };
-    } else {
-      // Check if it's a Sub-Admin
-      const subAdminsRaw = localStorage.getItem('path2med-sub-admins');
-      const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
-      const subAdminData = subAdmins.find((sa: any) => sa.email === email);
-
-      if (subAdminData) {
-        // Handle Sub-Admin Login
+    } else if (subAdminData) {
+      // Handle Sub-Admin Login
+      newUser = {
+        name,
+        email,
+        isAdmin: true,
+        isSuperAdmin: false,
+        isInstitutionalAdmin: false,
+        permissions: subAdminData.permissions,
+      };
+    } else if (institutionalAdminData) {
+        // Handle Institutional Admin Login
         newUser = {
-          name,
-          email,
-          isAdmin: true,
-          isSuperAdmin: false,
-          permissions: subAdminData.permissions,
+            name,
+            email,
+            isAdmin: false,
+            isSuperAdmin: false,
+            isInstitutionalAdmin: true,
         };
-      } else {
-        // Handle Regular User Login (non-admin)
-        newUser = {
-          name,
-          email,
-          isAdmin: false,
-          isSuperAdmin: false,
-        };
-      }
+    }
+    else {
+      // Handle Regular User Login (non-admin)
+      newUser = {
+        name,
+        email,
+        isAdmin: false,
+        isSuperAdmin: false,
+        isInstitutionalAdmin: false,
+      };
     }
 
     localStorage.setItem('path2med-user', JSON.stringify(newUser));
@@ -116,3 +131,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    
