@@ -57,12 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((name: string, email?: string) => {
     let newUser: User;
     
-    // Check localStorage for various admin types
-    const subAdminsRaw = localStorage.getItem('path2med-sub-admins');
+    // Check for different admin types from localStorage based on the email.
+    // This logic is for demonstration. A real app would do this on a secure backend.
+    const subAdminsRaw = typeof window !== 'undefined' ? localStorage.getItem('path2med-sub-admins') : null;
     const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
     const subAdminData = subAdmins.find((sa: any) => sa.email === email);
 
-    const institutionalAdminsRaw = localStorage.getItem('path2med-institutional-subscriptions');
+    const institutionalAdminsRaw = typeof window !== 'undefined' ? localStorage.getItem('path2med-institutional-subscriptions') : null;
     const institutionalAdmins = institutionalAdminsRaw ? JSON.parse(institutionalAdminsRaw) : [];
     const institutionalAdminData = institutionalAdmins.find((ia: any) => ia.adminEmail === email);
 
@@ -90,13 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         newUser = {
             name,
             email,
-            isAdmin: false,
+            isAdmin: false, // Institutional admin is not a site-wide admin
             isSuperAdmin: false,
             isInstitutionalAdmin: true,
         };
     }
     else {
-      // Handle Regular User Login (non-admin)
+      // Handle Regular User Login
       newUser = {
         name,
         email,
@@ -131,5 +132,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

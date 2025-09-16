@@ -33,8 +33,9 @@ export default function AccountAuthPage() {
     });
     // Mock login with a generic name for social auth
     const mockName = provider === 'Google' ? 'Alex Doe' : 'Sam Smith';
-    // Social auth not supported for admin roles
-    login(mockName);
+    const mockEmail = provider === 'Google' ? 'alex.doe@example.com' : 'sam.smith@example.com';
+    
+    login(mockName, mockEmail);
     toast({
       title: 'Login Successful!',
       description: `Welcome back, ${mockName}!`,
