@@ -101,7 +101,7 @@ export default function ManageTeachersPage() {
             localStorage.setItem(`teachers_${user.institutionId}`, JSON.stringify(updatedTeachers));
         }
         
-        setTeachers(updatedTeachers);
+        setTeachers(updatedTeachers); // This line forces the re-render.
         setIsDialogOpen(false);
         setEditingTeacher(null);
         setFormData(initialTeacherState);
@@ -302,5 +302,3 @@ export default function ManageTeachersPage() {
         </div>
     );
 }
-
-    
