@@ -9,9 +9,11 @@ const router = Router();
 // Routes for institution admin to manage teachers
 router.post("/", requireAuth, requireRole(ROLES.INSTITUTION_ADMIN), teacherController.addTeacher);
 router.get("/", requireAuth, requireRole(ROLES.INSTITUTION_ADMIN), teacherController.listTeachers);
-router.delete("/:id", requireAuth, requireRole(ROLES.INSTITUTION_ADMIN), teacherController.removeTeacher);
+router.delete("/:teacherId", requireAuth, requireRole(ROLES.INSTITUTION_ADMIN), teacherController.removeTeacher);
 
 // Routes for teachers themselves
 router.get("/dashboard", requireAuth, requireRole(ROLES.TEACHER), teacherController.getTeacherDashboard);
 
 export default router;
+
+    
