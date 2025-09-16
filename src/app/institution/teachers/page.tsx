@@ -72,13 +72,17 @@ export default function ManageTeachersPage() {
 
     const handleSaveTeacher = () => {
         if (!formData.name || !formData.email || (!formData.password && !editingTeacher)) {
-            toast({ title: 'Error', description: 'Name, Email, and Password are required.', variant: 'destructive' });
+            toast({ title: 'Error', description: 'Name, Email, and Password are required for new teachers.', variant: 'destructive' });
             return;
         }
 
+        const currentTeachersRaw = localStorage.getItem(`teachers_${user?.institutionId}`);
+        const currentTeachers: Teacher[] = currentTeachersRaw ? JSON.parse(currentTeachersRaw) : [];
+
         let updatedTeachers;
+
         if (editingTeacher) {
-            updatedTeachers = teachers.map(t =>
+            updatedTeachers = currentTeachers.map(t =>
                 t._id === editingTeacher._id ? { ...t, ...formData, password: formData.password || t.password } : t
             );
             toast({ title: 'Success', description: 'Teacher details updated.' });
@@ -89,16 +93,18 @@ export default function ManageTeachersPage() {
                 password: formData.password!,
                 createdAt: new Date().toISOString(),
             };
-            updatedTeachers = [...teachers, newTeacher];
+            updatedTeachers = [...currentTeachers, newTeacher];
             toast({ title: 'Success', description: 'New teacher added.' });
         }
         
         if (user?.institutionId) {
             localStorage.setItem(`teachers_${user.institutionId}`, JSON.stringify(updatedTeachers));
         }
+        
         setTeachers(updatedTeachers);
         setIsDialogOpen(false);
         setEditingTeacher(null);
+        setFormData(initialTeacherState);
     };
 
     const openEditDialog = (teacher: Teacher) => {
