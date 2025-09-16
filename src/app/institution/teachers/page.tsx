@@ -76,17 +76,19 @@ export default function ManageTeachersPage() {
             return;
         }
 
+        // Always read the latest from localStorage before writing
         const currentTeachersRaw = localStorage.getItem(`teachers_${user?.institutionId}`);
         const currentTeachers: Teacher[] = currentTeachersRaw ? JSON.parse(currentTeachersRaw) : [];
-
         let updatedTeachers;
 
         if (editingTeacher) {
+            // Update existing teacher
             updatedTeachers = currentTeachers.map(t =>
                 t._id === editingTeacher._id ? { ...t, ...formData, password: formData.password || t.password } : t
             );
             toast({ title: 'Success', description: 'Teacher details updated.' });
         } else {
+            // Add new teacher
             const newTeacher: Teacher = {
                 _id: `teacher-${Date.now()}`,
                 ...formData,
@@ -97,11 +99,15 @@ export default function ManageTeachersPage() {
             toast({ title: 'Success', description: 'New teacher added.' });
         }
         
+        // Save the updated list back to localStorage
         if (user?.institutionId) {
             localStorage.setItem(`teachers_${user.institutionId}`, JSON.stringify(updatedTeachers));
         }
         
-        setTeachers(updatedTeachers); // This line forces the re-render.
+        // Update the state to re-render the component
+        setTeachers(updatedTeachers);
+        
+        // Reset and close the dialog
         setIsDialogOpen(false);
         setEditingTeacher(null);
         setFormData(initialTeacherState);
