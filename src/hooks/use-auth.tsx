@@ -21,6 +21,8 @@ export interface User {
   isAdmin: boolean;
   isSuperAdmin: boolean; // True only for the main admin
   isInstitutionalAdmin: boolean; // True for institutional admins
+  institutionId?: string; // Add institution ID for context
+  institutionName?: string; // Add institution name for display
   permissions?: SubAdminPermissions; // For sub-admins
 }
 
@@ -90,9 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         newUser = {
             name,
             email,
-            isAdmin: false, // Institutional admin is not a site-wide admin
+            isAdmin: false,
             isSuperAdmin: false,
             isInstitutionalAdmin: true,
+            institutionId: institutionalAdminData.id,
+            institutionName: institutionalAdminData.institutionName,
         };
     }
     else {

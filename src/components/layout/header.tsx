@@ -126,9 +126,9 @@ export function Header() {
        return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
-                <Link href="/institution/dashboard" className="flex items-center gap-2" aria-label="path2med Institution Home">
+                <Link href="/institution/dashboard" className="flex items-center gap-2" aria-label="Institution Home">
                     <Building className="h-8 w-8 text-primary" />
-                    <span className="text-2xl font-semibold text-primary">Institution Portal</span>
+                    <span className="text-2xl font-semibold text-primary">{user?.institutionName || 'Institution Portal'}</span>
                 </Link>
 
                  <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
@@ -138,7 +138,7 @@ export function Header() {
                         href={item.href}
                         className={cn(
                             "px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-primary hover:bg-accent/50",
-                            pathname === item.href ? "text-primary bg-accent/80" : "text-foreground/70"
+                            pathname.startsWith(item.href) ? "text-primary bg-accent/80" : "text-foreground/70"
                         )}
                         >
                         {item.label}
@@ -161,7 +161,7 @@ export function Header() {
                                 <SheetHeader className="p-4 border-b">
                                     <SheetTitle className="text-left flex items-center gap-2">
                                         <Building className="h-6 w-6 text-primary"/>
-                                        Institution Menu
+                                        {user?.institutionName || 'Institution Menu'}
                                     </SheetTitle>
                                 </SheetHeader>
                                 <div className="p-4">
