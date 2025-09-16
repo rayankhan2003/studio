@@ -57,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((name: string, email?: string) => {
     let newUser: User;
     
-    // Check for different admin types from localStorage based on the email.
     // This logic is for demonstration. A real app would do this on a secure backend.
     const subAdminsRaw = typeof window !== 'undefined' ? localStorage.getItem('path2med-sub-admins') : null;
     const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
