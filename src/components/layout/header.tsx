@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building } from 'lucide-react';
+import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, UserPlus } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -27,6 +27,7 @@ const institutionalNavItems = [
     { href: '/institution/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/institution/teachers', label: 'Teachers', icon: UserCircle },
     { href: '/institution/sections', label: 'Sections', icon: Building },
+    { href: '/institution/students', label: 'Students', icon: UserPlus },
     { href: '/institution/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 

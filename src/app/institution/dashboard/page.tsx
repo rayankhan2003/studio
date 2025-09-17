@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, BookOpen, BarChart3, PlusCircle } from "lucide-react";
+import { Users, BookOpen, BarChart3, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 export default function InstitutionDashboardPage() {
@@ -23,7 +23,7 @@ export default function InstitutionDashboardPage() {
     {
       title: "Manage Students",
       description: "Add students in bulk, view their progress, and manage accounts.",
-      icon: Users,
+      icon: UserPlus,
       href: "/institution/students",
       cta: "Manage Students",
     },
@@ -66,5 +66,3 @@ export default function InstitutionDashboardPage() {
     </div>
   );
 }
-
-    
