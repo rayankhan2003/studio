@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Header } from '@/components/layout/header';
 
 export default function InstitutionLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -34,7 +33,6 @@ export default function InstitutionLayout({ children }: { children: React.ReactN
   // Render the layout for authenticated institutional admins
   return (
     <>
-      <Header />
       <main className="flex-1 p-6 md:p-8 bg-muted/30">
         {children}
       </main>
