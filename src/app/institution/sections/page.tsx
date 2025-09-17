@@ -60,87 +60,9 @@ export default function ManageSectionsPage() {
     const [formData, setFormData] = useState(initialSectionState);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchData = useCallback(async () => {
-        if (!user || !user.institutionId) return;
-        setIsLoading(true);
-        try {
-            // MOCK: In a real app, this would be an API call
-            const storedSectionsRaw = localStorage.getItem(`sections_${user.institutionId}`);
-            const storedSections = storedSectionsRaw ? JSON.parse(storedSectionsRaw) : [];
-            const teacherMap = new Map((availableTeachers || []).map(t => [t._id, t.name]));
-            
-            const populatedSections = storedSections.map((s: any) => {
-                 const assignments: Section['subjectTeacherAssignments'] = {};
-                 if (s.subjectTeacherAssignments) {
-                    for (const [subject, teacherId] of Object.entries(s.subjectTeacherAssignments)) {
-                         assignments[subject] = {
-                            teacherId: teacherId as string,
-                            teacherName: teacherMap.get(teacherId as string) || 'Unknown'
-                        };
-                    }
-                 }
-                return { ...s, subjectTeacherAssignments: assignments };
-            });
-
-            setSections(populatedSections);
-            
-            const storedTeachers = localStorage.getItem(`teachers_${user.institutionId}`);
-            setAvailableTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
-
-        } catch (error) {
-            toast({ title: 'Error', description: 'Failed to fetch data.', variant: 'destructive' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user, toast, availableTeachers]);
-
-    useEffect(() => {
-        if(user?.institutionId){
-            const storedTeachers = localStorage.getItem(`teachers_${user.institutionId}`);
-            setAvailableTeachers(storedTeachers ? JSON.parse(storedTeachers) : []);
-        }
-    }, [user]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    const handleSaveSection = () => {
-        if (!formData.className || !formData.stream || !formData.section) {
-            toast({ title: 'Error', description: 'Class Name, Stream, and Section are required.', variant: 'destructive' });
-            return;
-        }
-
-        let updatedSections;
-        const payload = { ...formData };
-        
-        const teacherMap = new Map(availableTeachers.map(t => [t._id, t.name]));
-
-        if (editingSection) {
-            const updatedSectionData = { 
-                ...editingSection, 
-                ...payload, 
-                name: `${payload.className} - ${payload.stream} (Section ${payload.section})` 
-            };
-            updatedSections = sections.map(s => s._id === editingSection._id ? updatedSectionData : s);
-            toast({ title: 'Success', description: 'Section details updated.' });
-        } else {
-            const newSectionData = {
-                _id: `section-${Date.now()}`,
-                ...payload,
-                name: `${payload.className} - ${payload.stream} (Section ${payload.section})`,
-                createdAt: new Date().toISOString(),
-            };
-            updatedSections = [...sections, newSectionData];
-            toast({ title: 'Success', description: 'New section created.' });
-        }
-        
-        if (user?.institutionId) {
-            localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
-        }
-
-        // Re-populate names for display
-        const populatedUpdatedSections = updatedSections.map((s: any) => {
+    const populateTeacherNames = useCallback((sectionsData: any[], teachers: Teacher[]) => {
+        const teacherMap = new Map(teachers.map(t => [t._id, t.name]));
+        return sectionsData.map((s: any) => {
             const assignments: Section['subjectTeacherAssignments'] = {};
             if (s.subjectTeacherAssignments) {
                 for (const [subject, teacherId] of Object.entries(s.subjectTeacherAssignments)) {
@@ -152,9 +74,67 @@ export default function ManageSectionsPage() {
             }
             return { ...s, subjectTeacherAssignments: assignments };
         });
+    }, []);
+
+    useEffect(() => {
+        if (!user || !user.institutionId) return;
+        
+        setIsLoading(true);
+        try {
+            const storedTeachersRaw = localStorage.getItem(`teachers_${user.institutionId}`);
+            const storedTeachers = storedTeachersRaw ? JSON.parse(storedTeachersRaw) : [];
+            setAvailableTeachers(storedTeachers);
+
+            const storedSectionsRaw = localStorage.getItem(`sections_${user.institutionId}`);
+            const storedSections = storedSectionsRaw ? JSON.parse(storedSectionsRaw) : [];
+
+            const populatedSections = populateTeacherNames(storedSections, storedTeachers);
+            setSections(populatedSections);
+        } catch (error) {
+             toast({ title: 'Error', description: 'Failed to fetch data.', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user, toast, populateTeacherNames]);
 
 
+    const handleSaveSection = () => {
+        if (!formData.className || !formData.stream || !formData.section) {
+            toast({ title: 'Error', description: 'Class Name, Stream, and Section are required.', variant: 'destructive' });
+            return;
+        }
+
+        const currentSectionsRaw = localStorage.getItem(`sections_${user?.institutionId}`);
+        const currentSections: Section[] = currentSectionsRaw ? JSON.parse(currentSectionsRaw) : [];
+        let updatedSections;
+        
+        const payload = { ...formData };
+
+        if (editingSection) {
+            updatedSections = currentSections.map(s => s._id === editingSection._id ? { 
+                ...s, 
+                ...payload,
+                name: `${payload.className} - ${payload.stream} (Section ${payload.section})`
+            } : s);
+            toast({ title: 'Success', description: 'Section details updated.' });
+        } else {
+            const newSectionData = {
+                _id: `section-${Date.now()}`,
+                ...payload,
+                name: `${payload.className} - ${payload.stream} (Section ${payload.section})`,
+                createdAt: new Date().toISOString(),
+            };
+            updatedSections = [...currentSections, newSectionData];
+            toast({ title: 'Success', description: 'New section created.' });
+        }
+        
+        if (user?.institutionId) {
+            localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
+        }
+
+        const populatedUpdatedSections = populateTeacherNames(updatedSections, availableTeachers);
         setSections(populatedUpdatedSections);
+
         setIsDialogOpen(false);
         setEditingSection(null);
     };
@@ -365,5 +345,3 @@ export default function ManageSectionsPage() {
         </div>
     );
 }
-
-    
