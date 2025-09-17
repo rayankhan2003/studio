@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, BookOpen, BarChart3, UserPlus } from "lucide-react";
+import { Users, BookOpen, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
 export default function InstitutionDashboardPage() {
@@ -14,18 +14,11 @@ export default function InstitutionDashboardPage() {
       cta: "Manage Teachers",
     },
     {
-      title: "Manage Sections",
-      description: "Create and organize student sections or classes.",
+      title: "Manage Classes & Students",
+      description: "Create classes, organize sections, and manage student rosters.",
       icon: BookOpen,
       href: "/institution/sections",
       cta: "Manage Sections",
-    },
-    {
-      title: "Manage Students",
-      description: "Add students in bulk, view their progress, and manage accounts.",
-      icon: UserPlus,
-      href: "/institution/students",
-      cta: "Manage Students",
     },
     {
       title: "View Analytics",

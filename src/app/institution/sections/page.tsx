@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, MoreHorizontal, Building, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreHorizontal, Building, AlertTriangle, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
 
 interface Teacher {
   _id: string;
@@ -29,6 +30,7 @@ interface Section {
     stream: Stream;
     section: string;
     subjectTeacherAssignments: Record<string, { teacherId: string; teacherName: string }>;
+    studentCount: number;
     createdAt: string;
 }
 
@@ -42,7 +44,7 @@ const subjectsByStream: Record<Stream, string[]> = {
     "Arts": ["English", "Urdu", "History", "Geography"],
 };
 
-const initialSectionState: Omit<Section, '_id' | 'createdAt' | 'name' | 'subjectTeacherAssignments'> & { subjectTeacherAssignments: Record<string, string> } = {
+const initialSectionState: Omit<Section, '_id' | 'createdAt' | 'name' | 'studentCount' | 'subjectTeacherAssignments'> & { subjectTeacherAssignments: Record<string, string> } = {
     className: '',
     stream: 'Pre-Medical',
     section: '',
@@ -60,7 +62,14 @@ export default function ManageSectionsPage() {
     const [formData, setFormData] = useState(initialSectionState);
     const [isLoading, setIsLoading] = useState(true);
 
-    const populateTeacherNames = useCallback((sectionsData: any[], teachers: Teacher[]) => {
+    const getStudentCount = (institutionId: string, sectionId: string): number => {
+        const storedStudentsRaw = localStorage.getItem(`students_${institutionId}`);
+        if (!storedStudentsRaw) return 0;
+        const allStudents = JSON.parse(storedStudentsRaw);
+        return allStudents.filter((s: any) => s.sectionId === sectionId).length;
+    };
+    
+    const populateSectionDetails = useCallback((sectionsData: any[], teachers: Teacher[], institutionId: string) => {
         const teacherMap = new Map(teachers.map(t => [t._id, t.name]));
         return sectionsData.map((s: any) => {
             const assignments: Section['subjectTeacherAssignments'] = {};
@@ -72,7 +81,11 @@ export default function ManageSectionsPage() {
                     };
                 }
             }
-            return { ...s, subjectTeacherAssignments: assignments };
+            return { 
+                ...s, 
+                subjectTeacherAssignments: assignments,
+                studentCount: getStudentCount(institutionId, s._id),
+            };
         });
     }, []);
 
@@ -88,14 +101,14 @@ export default function ManageSectionsPage() {
             const storedSectionsRaw = localStorage.getItem(`sections_${user.institutionId}`);
             const storedSections = storedSectionsRaw ? JSON.parse(storedSectionsRaw) : [];
 
-            const populatedSections = populateTeacherNames(storedSections, storedTeachers);
+            const populatedSections = populateSectionDetails(storedSections, storedTeachers, user.institutionId);
             setSections(populatedSections);
         } catch (error) {
              toast({ title: 'Error', description: 'Failed to fetch data.', variant: 'destructive' });
         } finally {
             setIsLoading(false);
         }
-    }, [user, toast, populateTeacherNames]);
+    }, [user, toast, populateSectionDetails]);
 
 
     const handleSaveSection = () => {
@@ -103,6 +116,7 @@ export default function ManageSectionsPage() {
             toast({ title: 'Error', description: 'Class Name, Stream, and Section are required.', variant: 'destructive' });
             return;
         }
+        if (!user?.institutionId) return;
 
         const currentSectionsRaw = localStorage.getItem(`sections_${user?.institutionId}`);
         const currentSections: Section[] = currentSectionsRaw ? JSON.parse(currentSectionsRaw) : [];
@@ -128,11 +142,9 @@ export default function ManageSectionsPage() {
             toast({ title: 'Success', description: 'New section created.' });
         }
         
-        if (user?.institutionId) {
-            localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
-        }
+        localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
 
-        const populatedUpdatedSections = populateTeacherNames(updatedSections, availableTeachers);
+        const populatedUpdatedSections = populateSectionDetails(updatedSections, availableTeachers, user.institutionId);
         setSections(populatedUpdatedSections);
 
         setIsDialogOpen(false);
@@ -161,12 +173,20 @@ export default function ManageSectionsPage() {
     };
 
     const handleDeleteSection = (sectionId: string) => {
+        if (!user?.institutionId) return;
         const updatedSections = sections.filter(s => s._id !== sectionId);
-        if (user?.institutionId) {
-            localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
+        localStorage.setItem(`sections_${user.institutionId}`, JSON.stringify(updatedSections));
+        
+        // Also remove associated students
+        const studentsRaw = localStorage.getItem(`students_${user.institutionId}`);
+        if(studentsRaw){
+            const allStudents = JSON.parse(studentsRaw);
+            const remainingStudents = allStudents.filter((s:any) => s.sectionId !== sectionId);
+            localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(remainingStudents));
         }
+
         setSections(updatedSections);
-        toast({ title: 'Section Removed', description: 'The section has been removed.' });
+        toast({ title: 'Section Removed', description: 'The section and all its students have been removed.' });
     };
 
     const handleSubjectTeacherChange = (subject: string, teacherId: string) => {
@@ -186,14 +206,14 @@ export default function ManageSectionsPage() {
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Building className="h-8 w-8 text-primary" /> Manage Classes & Sections
+                    <Building className="h-8 w-8 text-primary" /> Manage Classes & Students
                 </h1>
             </div>
              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Demonstration Mode</AlertTitle>
                 <AlertDescription>
-                   This page is for demonstration purposes. All data is stored in your browser's local storage.
+                   This page uses your browser's local storage to simulate a database.
                 </AlertDescription>
             </Alert>
             <Card className="shadow-lg">
@@ -201,7 +221,7 @@ export default function ManageSectionsPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle>Class List</CardTitle>
-                            <CardDescription>Create and manage classes like "1st Year - Pre-Medical (Section A)".</CardDescription>
+                            <CardDescription>Create classes and manage their student rosters.</CardDescription>
                         </div>
                         <Button onClick={openCreateDialog}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Create Class
@@ -213,6 +233,7 @@ export default function ManageSectionsPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Class Name</TableHead>
+                                <TableHead>Students</TableHead>
                                 <TableHead>Teachers Assigned</TableHead>
                                 <TableHead>Date Created</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -220,11 +241,14 @@ export default function ManageSectionsPage() {
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={4} className="text-center h-24">Loading...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={5} className="text-center h-24">Loading...</TableCell></TableRow>
                             ) : sections.length > 0 ? (
                                 sections.map(section => (
                                     <TableRow key={section._id}>
                                         <TableCell className="font-medium">{section.name}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="default">{section.studentCount} student(s)</Badge>
+                                        </TableCell>
                                         <TableCell className="max-w-[300px]">
                                           <div className="flex flex-wrap gap-1">
                                             {Object.entries(section.subjectTeacherAssignments)?.map(([subject, assignment]) => (
@@ -236,45 +260,52 @@ export default function ManageSectionsPage() {
                                         </TableCell>
                                         <TableCell>{new Date(section.createdAt).toLocaleDateString()}</TableCell>
                                         <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => openEditDialog(section)}>
-                                                        <Edit className="mr-2 h-4 w-4"/>Edit
-                                                    </DropdownMenuItem>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4"/>Delete
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    This will permanently remove the class "{section.name}". It cannot be undone.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeleteSection(section._id)} className="bg-destructive hover:bg-destructive/90">
-                                                                    Delete
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <div className="flex gap-2 justify-end">
+                                                 <Button asChild size="sm">
+                                                    <Link href={`/institution/sections/${section._id}/students`}>
+                                                        <Users className="mr-2 h-4 w-4"/> Manage Students
+                                                    </Link>
+                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => openEditDialog(section)}>
+                                                            <Edit className="mr-2 h-4 w-4"/>Edit Class Details
+                                                        </DropdownMenuItem>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4"/>Delete Class
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This will permanently remove the class "{section.name}" and all its associated students. This action cannot be undone.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteSection(section._id)} className="bg-destructive hover:bg-destructive/90">
+                                                                        Delete
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={4} className="text-center h-24">No classes created yet.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={5} className="text-center h-24">No classes created yet.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
