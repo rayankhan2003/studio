@@ -206,7 +206,7 @@ export default function ManageSectionsPage() {
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Building className="h-8 w-8 text-primary" /> Manage Classes & Students
+                    <Building className="h-8 w-8 text-primary" /> Manage Classes & Sections
                 </h1>
             </div>
              <Alert variant="destructive">

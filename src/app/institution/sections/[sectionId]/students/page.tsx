@@ -3,12 +3,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, MoreHorizontal, Users, AlertTriangle, Download, Upload, Eye, Search, Info } from 'lucide-react';
+import { PlusCircle, Trash2, MoreHorizontal, Users, AlertTriangle, Download, Upload, Eye, Search, Info, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -17,10 +17,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import * as xlsx from 'xlsx';
+import { useParams } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface Section {
     _id: string;
-    name: string; // e.g., "1st Year - Pre-Medical (Section A)"
+    name: string; 
 }
 
 interface Student {
@@ -37,14 +41,12 @@ interface Student {
 interface StudentFormData {
     fullName: string;
     email: string;
-    sectionId: string;
     gender: 'Male' | 'Female' | 'Other' | '';
 }
 
 const initialStudentState: StudentFormData = {
     fullName: '',
     email: '',
-    sectionId: '',
     gender: '',
 };
 
@@ -64,101 +66,120 @@ const generateUsername = (fullName: string, institutionName: string) => {
 };
 
 
-export default function ManageStudentsPage() {
+export default function ManageStudentsInSectionPage() {
     const { toast } = useToast();
     const { user } = useAuth();
+    const params = useParams();
+    const sectionId = params.sectionId as string;
+
     const [students, setStudents] = useState<Student[]>([]);
-    const [sections, setSections] = useState<Section[]>([]);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [currentSection, setCurrentSection] = useState<Section | null>(null);
+    const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [formData, setFormData] = useState<StudentFormData>(initialStudentState);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [newlyCreatedStudents, setNewlyCreatedStudents] = useState<Student[]>([]);
+    const [isCredentialsDialogOpen, setIsCredentialsDialogOpen] = useState(false);
 
-    const sectionMap = useMemo(() => new Map(sections.map(s => [s._id, s.name])), [sections]);
 
     const fetchData = useCallback(() => {
-        if (!user || !user.institutionId) return;
+        if (!user || !user.institutionId || !sectionId) return;
         setIsLoading(true);
         try {
+            const storedSectionsRaw = localStorage.getItem(`sections_${user.institutionId}`);
+            const allSections = storedSectionsRaw ? JSON.parse(storedSectionsRaw) : [];
+            const section = allSections.find((s: Section) => s._id === sectionId);
+            setCurrentSection(section || null);
+            
             const storedStudents = localStorage.getItem(`students_${user.institutionId}`);
-            setStudents(storedStudents ? JSON.parse(storedStudents) : []);
+            const allStudents: Student[] = storedStudents ? JSON.parse(storedStudents) : [];
+            setStudents(allStudents.filter(s => s.sectionId === sectionId));
 
-            const storedSections = localStorage.getItem(`sections_${user.institutionId}`);
-            setSections(storedSections ? JSON.parse(storedSections) : []);
         } catch (error) {
             toast({ title: 'Error', description: 'Failed to load data.', variant: 'destructive' });
         } finally {
             setIsLoading(false);
         }
-    }, [user, toast]);
+    }, [user, sectionId, toast]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     const handleSaveStudent = () => {
-        if (!formData.fullName || !formData.email || !formData.sectionId) {
-            toast({ title: 'Error', description: 'Full Name, Email, and Class/Section are required.', variant: 'destructive' });
+        if (!formData.fullName || !formData.email) {
+            toast({ title: 'Error', description: 'Full Name and Email are required.', variant: 'destructive' });
             return;
         }
 
-        const currentStudents = students;
+        if (!user?.institutionId || !user?.institutionName) return;
+
+        const allStudentsRaw = localStorage.getItem(`students_${user.institutionId}`);
+        const allStudents: Student[] = allStudentsRaw ? JSON.parse(allStudentsRaw) : [];
         let updatedStudents;
 
         if (editingStudent) {
-            updatedStudents = currentStudents.map(s => s._id === editingStudent._id ? { ...s, ...formData } : s);
+            // This is simplified; editing logic would be more complex in a real app
+            updatedStudents = allStudents.map(s => s._id === editingStudent._id ? { ...s, ...formData } : s);
             toast({ title: 'Success', description: 'Student details updated.' });
         } else {
-            if (!user?.institutionName) {
-                toast({ title: "Error", description: "Institution name not found for username generation.", variant: "destructive" });
+             if (allStudents.some(s => s.email.toLowerCase() === formData.email.toLowerCase())) {
+                toast({ title: "Email Exists", description: "A student with this email already exists in this institution.", variant: "destructive" });
                 return;
-            }
+             }
              const newStudent: Student = {
                 _id: `student-${Date.now()}`,
                 ...formData,
+                sectionId: sectionId,
                 username: generateUsername(formData.fullName, user.institutionName),
                 password: generatePassword(),
                 createdAt: new Date().toISOString(),
             };
-            updatedStudents = [...currentStudents, newStudent];
+            updatedStudents = [...allStudents, newStudent];
+            setNewlyCreatedStudents([newStudent]);
+            setIsCredentialsDialogOpen(true);
             toast({ title: 'Success', description: 'New student added.' });
         }
+        
+        localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(updatedStudents));
+        setStudents(updatedStudents.filter(s => s.sectionId === sectionId));
 
-        setStudents(updatedStudents);
-        if (user?.institutionId) {
-            localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(updatedStudents));
-        }
-
-        setIsDialogOpen(false);
-    };
-
-    const openEditDialog = (student: Student) => {
-        setEditingStudent(student);
-        setFormData({
-            fullName: student.fullName,
-            email: student.email,
-            sectionId: student.sectionId,
-            gender: student.gender,
-        });
-        setIsDialogOpen(true);
+        setIsAddStudentDialogOpen(false);
+        setEditingStudent(null);
+        setFormData(initialStudentState);
     };
 
     const openCreateDialog = () => {
         setEditingStudent(null);
         setFormData(initialStudentState);
-        setIsDialogOpen(true);
+        setIsAddStudentDialogOpen(true);
     };
 
     const handleDeleteStudent = (studentId: string) => {
-        const updatedStudents = students.filter(s => s._id !== studentId);
-        setStudents(updatedStudents);
-        if (user?.institutionId) {
-            localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(updatedStudents));
-        }
+        if (!user?.institutionId) return;
+        const allStudentsRaw = localStorage.getItem(`students_${user.institutionId}`);
+        const allStudents: Student[] = allStudentsRaw ? JSON.parse(allStudentsRaw) : [];
+        const updatedAllStudents = allStudents.filter(s => s._id !== studentId);
+        
+        localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(updatedAllStudents));
+        setStudents(updatedAllStudents.filter(s => s.sectionId === sectionId));
         toast({ title: 'Student Removed', description: 'The student has been removed.' });
     };
+    
+    const handleResetPassword = (studentId: string) => {
+        if (!user?.institutionId) return;
+        const allStudentsRaw = localStorage.getItem(`students_${user.institutionId}`);
+        const allStudents: Student[] = allStudentsRaw ? JSON.parse(allStudentsRaw) : [];
+        const newPassword = generatePassword();
+        
+        const updatedAllStudents = allStudents.map(s => s._id === studentId ? {...s, password: newPassword} : s);
+
+        localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(updatedAllStudents));
+        setStudents(updatedAllStudents.filter(s => s.sectionId === sectionId));
+        toast({ title: 'Password Reset', description: 'The password has been reset successfully.' });
+    }
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -176,33 +197,54 @@ export default function ManageStudentsPage() {
                 const worksheet = workbook.Sheets[sheetName];
                 const json: any[] = xlsx.utils.sheet_to_json(worksheet);
 
-                if (json.length === 0) {
-                    toast({ title: "Empty File", description: "The uploaded Excel file is empty.", variant: "destructive" });
-                    return;
-                }
+                if (json.length === 0) throw new Error("The uploaded Excel file is empty.");
+                if (!json[0]['Full Name'] || !json[0]['Email']) throw new Error("Missing required columns: 'Full Name' and 'Email'.");
 
-                const newStudents: Student[] = json.map((row) => {
-                    const sectionName = `${row.Class} - ${row.Stream} (Section ${row.Section})`;
-                    const section = sections.find(s => s.name === sectionName);
-                    if (!section) {
-                        throw new Error(`Section "${sectionName}" not found for student ${row['Full Name']}. Please create it first.`);
+                const allStudentsRaw = localStorage.getItem(`students_${user.institutionId}`);
+                const allStudents: Student[] = allStudentsRaw ? JSON.parse(allStudentsRaw) : [];
+                const existingEmails = new Set(allStudents.map(s => s.email.toLowerCase()));
+                
+                const createdNow: Student[] = [];
+                const errors: string[] = [];
+
+                json.forEach((row, index) => {
+                    const email = row['Email']?.trim().toLowerCase();
+                    if (!email || !row['Full Name']?.trim()) {
+                        errors.push(`Row ${index + 2}: Missing Full Name or Email.`);
+                        return;
                     }
-                    return {
-                        _id: `student-${Date.now()}-${Math.random()}`,
+                    if (existingEmails.has(email)) {
+                        errors.push(`Row ${index + 2}: Email '${email}' already exists.`);
+                        return;
+                    }
+
+                    const newStudent: Student = {
+                        _id: `student-${Date.now()}-${index}`,
                         fullName: row['Full Name'],
-                        email: row.Email,
-                        sectionId: section._id,
-                        gender: row.Gender,
+                        email: row['Email'],
+                        sectionId: sectionId,
+                        gender: row['Gender'] || '',
                         username: generateUsername(row['Full Name'], user.institutionName!),
                         password: generatePassword(),
                         createdAt: new Date().toISOString()
                     };
+                    createdNow.push(newStudent);
+                    existingEmails.add(email); // Avoid duplicates within the same file
                 });
                 
-                const updatedStudents = [...students, ...newStudents];
-                setStudents(updatedStudents);
-                localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(updatedStudents));
-                toast({ title: "Import Successful", description: `${newStudents.length} students were added.` });
+                if (errors.length > 0) {
+                     toast({ title: "Import Issues", description: `Encountered ${errors.length} errors. ${errors[0]}`, variant: "destructive", duration: 7000 });
+                }
+
+                if (createdNow.length > 0) {
+                    const updatedStudents = [...allStudents, ...createdNow];
+                    localStorage.setItem(`students_${user.institutionId}`, JSON.stringify(updatedStudents));
+                    setStudents(updatedStudents.filter(s => s.sectionId === sectionId));
+                    setNewlyCreatedStudents(createdNow);
+                    setIsCredentialsDialogOpen(true);
+                    toast({ title: "Import Successful", description: `${createdNow.length} students were added.` });
+                }
+
             } catch (error: any) {
                 toast({ title: "Import Error", description: error.message || "Failed to process the file.", variant: "destructive", duration: 7000 });
             } finally {
@@ -213,28 +255,52 @@ export default function ManageStudentsPage() {
     };
 
     const downloadTemplate = () => {
-        const templateData = [
-            { "Full Name": "Aisha Khan", "Class": "1st Year", "Stream": "Pre-Medical", "Section": "A", "Gender": "Female", "Email": "aisha.k@example.com" }
-        ];
+        const templateData = [{ "Full Name": "Aisha Khan", "Gender": "Female", "Email": "aisha.k@example.com" }];
         const worksheet = xlsx.utils.json_to_sheet(templateData);
         const workbook = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(workbook, worksheet, "Students");
         xlsx.writeFile(workbook, "student_upload_template.xlsx");
+    };
+    
+    const exportCredentials = (format: 'pdf' | 'excel') => {
+        const dataToExport = newlyCreatedStudents.map(s => ({
+            'Full Name': s.fullName,
+            'Gender': s.gender,
+            'Email': s.email,
+            'Username': s.username,
+            'Password': s.password
+        }));
+
+        if (format === 'excel') {
+            const worksheet = xlsx.utils.json_to_sheet(dataToExport);
+            const workbook = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook, worksheet, "Student Credentials");
+            xlsx.writeFile(workbook, `student_credentials_${currentSection?.name.replace(/ /g, '_')}.xlsx`);
+        } else {
+            const doc = new jsPDF();
+            doc.text(`Student Credentials for ${currentSection?.name}`, 14, 15);
+            (doc as any).autoTable({
+                head: [['Full Name', 'Gender', 'Email', 'Username', 'Password']],
+                body: dataToExport.map(Object.values),
+                startY: 20
+            });
+            doc.save(`student_credentials_${currentSection?.name.replace(/ /g, '_')}.pdf`);
+        }
+        toast({ title: "Exported!", description: `Credentials exported as ${format.toUpperCase()}.` });
     };
 
     const filteredStudents = useMemo(() => {
         if (!searchTerm) return students;
         return students.filter(s =>
             s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            sectionMap.get(s.sectionId)?.toLowerCase().includes(searchTerm.toLowerCase())
+            s.email.toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [students, searchTerm, sectionMap]);
+    }, [students, searchTerm]);
 
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <Users className="h-8 w-8 text-primary" /> Manage Students
+                <Users className="h-8 w-8 text-primary" /> Manage Students: <span className="text-accent">{currentSection?.name || '...'}</span>
             </h1>
             <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
@@ -246,7 +312,7 @@ export default function ManageStudentsPage() {
             
             <Tabs defaultValue="roster">
                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="roster">Manage Roster</TabsTrigger>
+                    <TabsTrigger value="roster">Student Roster</TabsTrigger>
                     <TabsTrigger value="upload">Bulk Upload</TabsTrigger>
                 </TabsList>
                  <TabsContent value="roster" className="mt-4">
@@ -254,8 +320,8 @@ export default function ManageStudentsPage() {
                         <CardHeader>
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div>
-                                    <CardTitle>Student Roster</CardTitle>
-                                    <CardDescription>Add, view, and manage student accounts in your institution.</CardDescription>
+                                    <CardTitle>Students in this Class</CardTitle>
+                                    <CardDescription>Add, view, and manage student accounts.</CardDescription>
                                 </div>
                                 <Button onClick={openCreateDialog}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Add Student
@@ -264,7 +330,7 @@ export default function ManageStudentsPage() {
                             <div className="relative pt-4">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input 
-                                    placeholder="Search by name, email, or class..."
+                                    placeholder="Search by name or email..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-10"
@@ -276,7 +342,7 @@ export default function ManageStudentsPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Full Name</TableHead>
-                                        <TableHead>Class & Section</TableHead>
+                                        <TableHead>Gender</TableHead>
                                         <TableHead>Username</TableHead>
                                         <TableHead>Password</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
@@ -292,7 +358,7 @@ export default function ManageStudentsPage() {
                                                     <div className="font-medium">{student.fullName}</div>
                                                     <div className="text-xs text-muted-foreground">{student.email}</div>
                                                 </TableCell>
-                                                <TableCell>{sectionMap.get(student.sectionId) || 'N/A'}</TableCell>
+                                                <TableCell><Badge variant="outline">{student.gender || 'N/A'}</Badge></TableCell>
                                                 <TableCell className="font-mono text-xs">{student.username}</TableCell>
                                                 <TableCell className="font-mono text-xs">{student.password}</TableCell>
                                                 <TableCell className="text-right">
@@ -301,7 +367,7 @@ export default function ManageStudentsPage() {
                                                             <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => openEditDialog(student)}>Edit</DropdownMenuItem>
+                                                             <DropdownMenuItem onClick={() => handleResetPassword(student._id)}>Reset Password</DropdownMenuItem>
                                                             <AlertDialog>
                                                                 <AlertDialogTrigger asChild>
                                                                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Delete</DropdownMenuItem>
@@ -317,7 +383,7 @@ export default function ManageStudentsPage() {
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={5} className="text-center h-24">No students found.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={5} className="text-center h-24">No students found for this class.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                             </Table>
@@ -328,7 +394,7 @@ export default function ManageStudentsPage() {
                      <Card className="shadow-lg">
                         <CardHeader>
                             <CardTitle>Bulk Student Upload</CardTitle>
-                            <CardDescription>Add multiple students at once using an Excel file.</CardDescription>
+                            <CardDescription>Add multiple students to <span className="font-bold text-primary">{currentSection?.name}</span> using an Excel file.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                              <Alert>
@@ -336,8 +402,8 @@ export default function ManageStudentsPage() {
                                 <AlertTitle>Instructions</AlertTitle>
                                 <AlertDescription>
                                     <p>1. Download the Excel template.</p>
-                                    <p>2. Fill in the student details. Ensure the Class, Stream, and Section names exactly match those created in the 'Manage Sections' tab.</p>
-                                    <p>3. Upload the completed file. The system will create accounts for all students.</p>
+                                    <p>2. Fill in student details: Full Name, Gender, Email.</p>
+                                    <p>3. Upload the completed file. Accounts will be created for this specific class.</p>
                                 </AlertDescription>
                             </Alert>
                              <div className="flex flex-col sm:flex-row gap-4">
@@ -354,10 +420,11 @@ export default function ManageStudentsPage() {
                 </TabsContent>
             </Tabs>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isAddStudentDialogOpen} onOpenChange={setIsAddStudentDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
+                        <DialogDescription>Adding student to <span className="font-semibold text-primary">{currentSection?.name}</span></DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div>
@@ -367,17 +434,6 @@ export default function ManageStudentsPage() {
                         <div>
                             <Label htmlFor="email">Email Address</Label>
                             <Input id="email" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-                        </div>
-                        <div>
-                            <Label htmlFor="sectionId">Class & Section</Label>
-                            <Select value={formData.sectionId} onValueChange={(value) => setFormData({ ...formData, sectionId: value })}>
-                                <SelectTrigger id="sectionId"><SelectValue placeholder="Select a class" /></SelectTrigger>
-                                <SelectContent>
-                                    {sections.map(section => (
-                                        <SelectItem key={section._id} value={section._id}>{section.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
                          <div>
                             <Label htmlFor="gender">Gender</Label>
@@ -392,8 +448,38 @@ export default function ManageStudentsPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setIsAddStudentDialogOpen(false)}>Cancel</Button>
                         <Button onClick={handleSaveStudent}>{editingStudent ? 'Save Changes' : 'Add Student'}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isCredentialsDialogOpen} onOpenChange={setIsCredentialsDialogOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Student Credentials Created</DialogTitle>
+                        <DialogDescription>
+                            The following student accounts have been created for <span className="font-semibold text-primary">{currentSection?.name}</span>. Please distribute these credentials securely.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[50vh] overflow-y-auto my-4">
+                        <Table>
+                             <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Username</TableHead><TableHead>Password</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {newlyCreatedStudents.map(s => (
+                                    <TableRow key={s._id}>
+                                        <TableCell>{s.fullName}</TableCell>
+                                        <TableCell className="font-mono text-xs">{s.username}</TableCell>
+                                        <TableCell className="font-mono text-xs">{s.password}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => exportCredentials('pdf')}><Printer className="mr-2 h-4 w-4" /> Export PDF</Button>
+                        <Button variant="outline" onClick={() => exportCredentials('excel')}><Download className="mr-2 h-4 w-4" /> Export Excel</Button>
+                        <Button onClick={() => setIsCredentialsDialogOpen(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

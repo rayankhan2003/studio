@@ -14,7 +14,7 @@ export default function InstitutionDashboardPage() {
       cta: "Manage Teachers",
     },
     {
-      title: "Manage Classes & Students",
+      title: "Manage Classes & Sections",
       description: "Create classes, organize sections, and manage student rosters.",
       icon: BookOpen,
       href: "/institution/sections",
