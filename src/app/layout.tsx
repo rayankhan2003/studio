@@ -30,11 +30,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
         <AuthProvider>
-          <Header />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="flex-grow container mx-auto px-4 py-8">
+                {children}
+              </main>
+              <Footer />
+            </div>
           <Toaster />
         </AuthProvider>
       </body>

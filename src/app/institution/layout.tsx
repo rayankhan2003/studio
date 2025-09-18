@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 
 export default function InstitutionLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -35,10 +36,7 @@ export default function InstitutionLayout({ children }: { children: React.ReactN
   // Render the layout for authenticated institutional admins
   return (
     <>
-      <Header />
-      <main className="container mx-auto px-4 py-8">
         {children}
-      </main>
     </>
   );
 }
