@@ -55,7 +55,7 @@ const generateLoginId = (fullName: string, institutionName: string) => {
       .split(' ')[0] // Take the first part of the name
       .replace(/[^a-z0-9]/g, ''); // Sanitize
     
-    const instPart = institutionName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const instPart = institutionName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '');
     
     return `${namePart}@${instPart}.pk`;
 };
@@ -419,5 +419,3 @@ export default function ManageTeachersPage() {
         </div>
     );
 }
-
-    
