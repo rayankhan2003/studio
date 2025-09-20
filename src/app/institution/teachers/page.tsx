@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -48,9 +49,15 @@ const allAvailableSubjects = [...new Set([...allMdcatSubjects, ...allCambridgeSu
 }));
 
 const generateLoginId = (fullName: string, institutionName: string) => {
-    const namePart = fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const namePart = fullName
+      .toLowerCase()
+      .replace(/^(mr|mrs|ms|dr)\.?\s*/, '') // Remove titles
+      .split(' ')[0] // Take the first part of the name
+      .replace(/[^a-z0-9]/g, ''); // Sanitize
+    
     const instPart = institutionName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return `${namePart}.${instPart}`;
+    
+    return `${namePart}@${instPart}.pk`;
 };
 
 const generatePassword = () => {
