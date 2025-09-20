@@ -19,11 +19,12 @@ export interface User {
   name: string;
   email?: string;
   isAdmin: boolean;
-  isSuperAdmin: boolean; // True only for the main admin
-  isInstitutionalAdmin: boolean; // True for institutional admins
-  institutionId?: string; // Add institution ID for context
-  institutionName?: string; // Add institution name for display
-  permissions?: SubAdminPermissions; // For sub-admins
+  isSuperAdmin: boolean;
+  isInstitutionalAdmin: boolean;
+  isTeacher?: boolean;
+  institutionId?: string;
+  institutionName?: string;
+  permissions?: SubAdminPermissions;
 }
 
 interface AuthContextType {
@@ -79,3 +80,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

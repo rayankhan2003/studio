@@ -31,7 +31,7 @@ export default function AccountAuthPage() {
       title: `Mock ${provider} Authentication`,
       description: `Initiating ${authMode} with ${provider}...`,
     });
-    const mockUser = {
+    const mockUser: User = {
       name: provider === 'Google' ? 'Alex Doe' : 'Sam Smith',
       email: provider === 'Google' ? 'alex.doe@example.com' : 'sam.smith@example.com',
       isAdmin: false,
@@ -86,11 +86,42 @@ export default function AccountAuthPage() {
       router.push('/admin/dashboard');
       return;
     }
+    
+    // 3. Check for Teacher credentials
+    const institutionalSubscriptionsRaw = localStorage.getItem('path2med-institutional-subscriptions');
+    const institutionalSubscriptions = institutionalSubscriptionsRaw ? JSON.parse(institutionalSubscriptionsRaw) : [];
+    
+    for (const institution of institutionalSubscriptions) {
+        const teachersRaw = localStorage.getItem(`teachers_${institution.id}`);
+        if(teachersRaw) {
+            const teachers = JSON.parse(teachersRaw);
+            const teacherData = teachers.find((t: any) => t.loginId === loginEmail && t.password === loginPassword);
+            if (teacherData) {
+                 if (teacherData.status === 'Inactive') {
+                    toast({ title: "Login Failed", description: "Your account is inactive. Please contact the Institution Admin.", variant: "destructive" });
+                    return;
+                }
+                const teacherUser: User = {
+                    name: teacherData.name,
+                    email: teacherData.email,
+                    isTeacher: true,
+                    isAdmin: false,
+                    isSuperAdmin: false,
+                    isInstitutionalAdmin: false,
+                    institutionId: institution.id,
+                    institutionName: institution.institutionName,
+                };
+                login(teacherUser);
+                toast({ title: 'Teacher Login Successful!', description: `Welcome, ${teacherData.name}!` });
+                router.push('/teacher/dashboard');
+                return;
+            }
+        }
+    }
 
-    // 3. Check for Institutional Admin credentials
-    const institutionalAdminsRaw = localStorage.getItem('path2med-institutional-subscriptions');
-    const institutionalAdmins = institutionalAdminsRaw ? JSON.parse(institutionalAdminsRaw) : [];
-    const institutionalAdminData = institutionalAdmins.find((ia: any) => ia.adminEmail === loginEmail && ia.password === loginPassword);
+
+    // 4. Check for Institutional Admin credentials
+    const institutionalAdminData = institutionalSubscriptions.find((ia: any) => ia.adminEmail === loginEmail && ia.password === loginPassword);
 
     if (institutionalAdminData) {
       const institutionalAdminUser: User = {
@@ -99,6 +130,7 @@ export default function AccountAuthPage() {
         isAdmin: false,
         isSuperAdmin: false,
         isInstitutionalAdmin: true,
+        isTeacher: false,
         institutionId: institutionalAdminData.id,
         institutionName: institutionalAdminData.institutionName,
       };
@@ -112,13 +144,13 @@ export default function AccountAuthPage() {
     }
 
 
-    // 4. Default user login (mocked)
+    // 5. Default user login (mocked)
     const name = loginEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     if (name.toLowerCase().includes('admin')) {
         toast({ title: "Login Failed", description: "Invalid credentials.", variant: "destructive" });
         return;
     }
-    const regularUser: User = { name, email: loginEmail, isAdmin: false, isSuperAdmin: false, isInstitutionalAdmin: false };
+    const regularUser: User = { name, email: loginEmail, isAdmin: false, isSuperAdmin: false, isInstitutionalAdmin: false, isTeacher: false };
     login(regularUser);
     toast({
       title: 'Login Successful!',
@@ -137,7 +169,7 @@ export default function AccountAuthPage() {
       toast({ title: "Signup Error", description: "Passwords do not match.", variant: "destructive" });
       return;
     }
-    const newUser: User = { name: signupName, email: signupEmail, isAdmin: false, isSuperAdmin: false, isInstitutionalAdmin: false };
+    const newUser: User = { name: signupName, email: signupEmail, isAdmin: false, isSuperAdmin: false, isInstitutionalAdmin: false, isTeacher: false };
     login(newUser);
     toast({
       title: 'Signup Successful!',
@@ -157,7 +189,7 @@ export default function AccountAuthPage() {
             {authMode === 'login' ? 'Welcome Back!' : 'Create Your Account'}
           </CardTitle>
           <CardDescription>
-            {authMode === 'login' ? 'Log in to access your dashboard.' : 'Sign up to start your journey.'}
+            {authMode === 'login' ? 'Log in with your email or Login ID.' : 'Sign up to start your journey.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -176,7 +208,7 @@ export default function AccountAuthPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Or continue with email
+                Or continue with email / login ID
               </span>
             </div>
           </div>
@@ -184,8 +216,8 @@ export default function AccountAuthPage() {
           {authMode === 'login' ? (
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="login-email">Email Address</Label>
-                <Input id="login-email" type="email" placeholder="you@example.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                <Label htmlFor="login-email">Email or Login ID</Label>
+                <Input id="login-email" type="text" placeholder="you@example.com or your.loginid" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="login-password">Password</Label>
@@ -240,3 +272,5 @@ export default function AccountAuthPage() {
     </div>
   );
 }
+
+    

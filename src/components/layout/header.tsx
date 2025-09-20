@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, BookOpen } from 'lucide-react';
+import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, BookOpen, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -25,9 +25,14 @@ const navItems = [
 
 const institutionalNavItems = [
     { href: '/institution/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/institution/teachers', label: 'Teachers', icon: UserCircle },
+    { href: '/institution/teachers', label: 'Teachers', icon: Users },
     { href: '/institution/sections', label: 'Classes', icon: BookOpen },
     { href: '/institution/analytics', label: 'Analytics', icon: BarChart3 },
+];
+
+const teacherNavItems = [
+    { href: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    // Add more teacher-specific links here in the future
 ];
 
 export function Header() {
@@ -91,6 +96,12 @@ export function Header() {
                     <span>Institution Dashboard</span>
                 </DropdownMenuItem>
             )}
+             {user.isTeacher && (
+                 <DropdownMenuItem onClick={() => router.push('/teacher/dashboard')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Teacher Dashboard</span>
+                </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -110,7 +121,6 @@ export function Header() {
     );
   };
   
-  // Admin layout has its own sidebar, so we can render a minimal header
   if (pathname.startsWith('/admin')) {
       return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -121,7 +131,6 @@ export function Header() {
       )
   }
 
-  // Institutional layout gets a focused header
   if (pathname.startsWith('/institution')) {
        return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -180,6 +189,22 @@ export function Header() {
                             </SheetContent>
                         </Sheet>
                     </div>
+                </div>
+            </div>
+        </header>
+      )
+  }
+  
+    if (pathname.startsWith('/teacher')) {
+       return (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4">
+                <Link href="/teacher/dashboard" className="flex items-center gap-2" aria-label="Teacher Home">
+                    <LayoutDashboard className="h-8 w-8 text-primary" />
+                    <span className="text-xl font-semibold text-primary">Teacher Dashboard</span>
+                </Link>
+                <div className="flex items-center gap-2">
+                    <UserMenu />
                 </div>
             </div>
         </header>
@@ -253,3 +278,5 @@ export function Header() {
     </header>
   );
 }
+
+    
