@@ -10,9 +10,9 @@ export default function TeacherDashboardPage() {
       title: "Create & Manage Tests",
       description: "Build new tests from the question bank and assign them to your classes.",
       icon: BookOpen,
-      href: "#",
-      cta: "Coming Soon",
-      disabled: true,
+      href: "/teacher/tests",
+      cta: "Manage Tests",
+      disabled: false,
     },
     {
       title: "View Student Analytics",
@@ -62,5 +62,3 @@ export default function TeacherDashboardPage() {
     </div>
   );
 }
-
-    
