@@ -23,7 +23,7 @@ const createSchema = z.object({
 });
 
 // Middleware to protect teacher/admin routes
-const requireTeacherOrAdmin = [requireAuth, requireRole(ROLES.TEACHER, ROLES.ADMIN)];
+const requireTeacherOrAdmin = [requireAuth, requireRole(ROLES.TEACHER, ROLES.ADMIN, ROLES.INSTITUTION_ADMIN)];
 
 // Routes for teachers/admins
 router.post("/", ...requireTeacherOrAdmin, validate(createSchema), testController.createTest);

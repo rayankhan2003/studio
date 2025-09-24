@@ -4,9 +4,10 @@ import mongoose from "mongoose";
 const testSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
-    level: { type: String, enum: ["O Level", "A Level"], required: true },
-    subject: { type: String, enum: ["Biology", "Physics", "Chemistry", "English", "Logical Reasoning", "Mathematics", "Computer Science", "Urdu", "History", "Geography"], required: true },
+    level: { type: String, enum: ["O Level", "A Level", "MDCAT"], required: true },
+    subject: { type: String, required: true },
     chapterFilter: { type: [String], default: [] }, // optional filter
+    difficulty: { type: [String], enum: ["easy", "medium", "hard"], default: [] },
     questionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
     durationMin: { type: Number, default: 30 },
     isPublished: { type: Boolean, default: false },

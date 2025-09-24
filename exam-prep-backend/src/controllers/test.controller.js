@@ -1,6 +1,7 @@
 
 import Test from "../models/Test.js";
 import Question from "../models/Question.js";
+import User from "../models/User.js";
 
 export const createTest = async (req, res, next) => {
   try {
@@ -15,7 +16,7 @@ export const createTest = async (req, res, next) => {
       section, // for assigning test to a section
     } = req.body;
 
-    const user = req.user;
+    const user = await User.findById(req.user.id);
 
     const filter = { level, subject };
     if (chapterFilter.length) filter.chapter = { $in: chapterFilter };
@@ -37,10 +38,11 @@ export const createTest = async (req, res, next) => {
       level,
       subject,
       chapterFilter,
+      difficulty,
       durationMin,
       questionIds: questionIds,
-      createdBy: user.id,
-      institution: user.institution, // Assuming teacher is linked to an institution
+      createdBy: user._id,
+      institution: user.institution, // Teacher is linked to an institution
       section,
     });
 
