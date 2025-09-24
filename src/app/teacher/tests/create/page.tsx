@@ -13,14 +13,14 @@ import { BookOpen, ListChecks, ChevronDown, Check } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { allSubjects as allMdcatSubjects, syllabus as mdcatSyllabus } from '@/lib/syllabus';
 import { allCambridgeSubjects, cambridgeSyllabus, CambridgeLevels } from '@/lib/cambridge-syllabus';
+import { Input } from '@/components/ui/input';
 
-// Mock interfaces - in a real app, these would come from an API layer
 interface Section {
     _id: string;
     name: string;
     className: string;
     stream: string;
-    subjectTeacherAssignments: Record<string, { teacherId: string }>;
+    subjectTeacherAssignments: Record<string, string>; // Stored as { [subject]: teacherId }
 }
 
 interface Teacher {
@@ -42,25 +42,31 @@ export default function CreateTestPage() {
     const [selectedChapters, setSelectedChapters] = useState<Set<string>>(new Set());
     const [selectedDifficulties, setSelectedDifficulties] = useState<Set<string>>(new Set(['easy', 'medium', 'hard']));
 
-    // Fetch teacher and section data on mount
     useEffect(() => {
-        if (user && user.isTeacher && user.institutionId) {
-            // Mock fetching teacher's own data
-            const allTeachersRaw = localStorage.getItem(`teachers_${user.institutionId}`);
-            const allTeachers = allTeachersRaw ? JSON.parse(allTeachersRaw) : [];
-            const currentTeacher = allTeachers.find((t: any) => t.email === user.email);
-            setTeacherData(currentTeacher || null);
-
-            // Mock fetching sections this teacher is assigned to
-            const allSectionsRaw = localStorage.getItem(`sections_${user.institutionId}`);
-            const allSections: Section[] = allSectionsRaw ? JSON.parse(allSectionsRaw) : [];
-            
-            const teachersSections = allSections.filter(section => {
-                return Object.values(section.subjectTeacherAssignments).some(assignment => assignment.teacherId === currentTeacher?._id);
-            });
-            setAssignedSections(teachersSections);
+        if (user && user.isTeacher && user.institutionId && user.email) {
+            try {
+                const allTeachersRaw = localStorage.getItem(`teachers_${user.institutionId}`);
+                const allTeachers = allTeachersRaw ? JSON.parse(allTeachersRaw) : [];
+                const currentTeacher = allTeachers.find((t: any) => t.email.toLowerCase() === user.email!.toLowerCase());
+                
+                if (currentTeacher) {
+                    setTeacherData(currentTeacher);
+                    const allSectionsRaw = localStorage.getItem(`sections_${user.institutionId}`);
+                    const allSections: Section[] = allSectionsRaw ? JSON.parse(allSectionsRaw) : [];
+                    
+                    const teachersSections = allSections.filter(section => 
+                        Object.values(section.subjectTeacherAssignments).includes(currentTeacher._id)
+                    );
+                    setAssignedSections(teachersSections);
+                } else {
+                    setAssignedSections([]);
+                }
+            } catch (error) {
+                console.error("Failed to load teacher/section data:", error);
+                toast({ title: 'Error', description: 'Could not load your assigned classes.', variant: 'destructive' });
+            }
         }
-    }, [user]);
+    }, [user, toast]);
 
     const subjectsForSelectedSection = useMemo(() => {
         if (!selectedSectionId || !teacherData) return [];
@@ -68,7 +74,7 @@ export default function CreateTestPage() {
         if (!section) return [];
 
         return Object.entries(section.subjectTeacherAssignments)
-            .filter(([_, assignment]) => assignment.teacherId === teacherData._id)
+            .filter(([_, teacherId]) => teacherId === teacherData._id)
             .map(([subject]) => subject);
 
     }, [selectedSectionId, assignedSections, teacherData]);
@@ -125,21 +131,21 @@ export default function CreateTestPage() {
             
             <Card className="shadow-lg">
                 <CardHeader>
-                    <CardTitle>Step 1: Test Setup</CardTitle>
+                    <CardTitle>Step 1: Test Configuration</CardTitle>
                     <CardDescription>Select the class, subject, and chapters for your test.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <Label htmlFor="section" className="font-semibold">Class / Section</Label>
-                            <Select value={selectedSectionId} onValueChange={setSelectedSectionId}>
+                            <Select value={selectedSectionId} onValueChange={setSelectedSectionId} disabled={assignedSections.length === 0}>
                                 <SelectTrigger id="section">
-                                    <SelectValue placeholder="Select a class..." />
+                                    <SelectValue placeholder={assignedSections.length > 0 ? "Select a class..." : "No classes assigned"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {assignedSections.length > 0 ? assignedSections.map(s => (
+                                    {assignedSections.map(s => (
                                         <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
-                                    )) : <SelectItem value="none" disabled>No classes assigned to you</SelectItem>}
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -155,6 +161,20 @@ export default function CreateTestPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t">
+                        <div>
+                            <Label htmlFor="test-title" className="font-semibold">Test Title</Label>
+                            <Input id="test-title" placeholder="e.g. Physics Midterm" />
+                        </div>
+                         <div>
+                            <Label htmlFor="num-questions" className="font-semibold">Number of Questions</Label>
+                            <Input id="num-questions" type="number" placeholder="e.g. 20" />
+                        </div>
+                         <div>
+                            <Label htmlFor="duration" className="font-semibold">Total Duration (Minutes)</Label>
+                            <Input id="duration" type="number" placeholder="e.g. 30" />
                         </div>
                     </div>
                     
@@ -213,7 +233,7 @@ export default function CreateTestPage() {
                 </CardContent>
                 <CardFooter>
                     <Button disabled={!selectedSectionId || !selectedSubject || selectedChapters.size === 0}>
-                        Proceed to Next Step
+                        Preview Test
                     </Button>
                 </CardFooter>
             </Card>
