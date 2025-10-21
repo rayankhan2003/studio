@@ -1,10 +1,69 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, Send, Newspaper } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from 'react';
+
+interface Blog {
+  id: string;
+  title: string;
+  description: string;
+  status: 'Active' | 'Silent';
+  createdAt: string;
+}
+
+const defaultBlogPosts = [
+    {
+      id: 'default-1',
+      title: "5 Time Management Tips for MDCAT Success",
+      description: "Learn how to optimize your study schedule and make every minute count before the big exam.",
+      href: "#",
+      createdAt: "2024-08-05T10:00:00Z",
+      status: 'Active'
+    },
+    {
+      id: 'default-2',
+      title: "Upcoming Workshop: Mastering Physics Concepts",
+      description: "Join our free online workshop on August 15th to tackle the most challenging topics in Physics.",
+      href: "#",
+      createdAt: "2024-08-02T10:00:00Z",
+      status: 'Active'
+    },
+    {
+      id: 'default-3',
+      title: "How to Use Past Papers Effectively",
+      description: "A deep dive into the strategies for analyzing past papers to predict patterns and improve your score.",
+      href: "#",
+      createdAt: "2024-07-28T10:00:00Z",
+      status: 'Active'
+    }
+  ];
 
 export default function Wh() {
+  const [blogPosts, setBlogPosts] = useState<Blog[]>([]);
+
+  useEffect(() => {
+    try {
+        const storedBlogsRaw = localStorage.getItem('path2med-blogs');
+        const storedBlogs: Blog[] = storedBlogsRaw ? JSON.parse(storedBlogsRaw) : [];
+        
+        const activeBlogs = storedBlogs.filter(blog => blog.status === 'Active');
+
+        if (activeBlogs.length > 0) {
+            setBlogPosts(activeBlogs.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3));
+        } else {
+             // If no active blogs, show default ones
+            setBlogPosts(defaultBlogPosts.slice(0, 3));
+        }
+    } catch (e) {
+        console.error("Failed to load blog posts, using default.", e);
+        setBlogPosts(defaultBlogPosts.slice(0, 3));
+    }
+  }, []);
+
   const features = [
     {
       icon: Brain,
@@ -56,27 +115,6 @@ export default function Wh() {
         "Adjustments when your actual performance needs an extra push."
       ],
     },
-  ];
-
-  const blogPosts = [
-    {
-      title: "5 Time Management Tips for MDCAT Success",
-      description: "Learn how to optimize your study schedule and make every minute count before the big exam.",
-      href: "#",
-      date: "August 5, 2024"
-    },
-    {
-      title: "Upcoming Workshop: Mastering Physics Concepts",
-      description: "Join our free online workshop on August 15th to tackle the most challenging topics in Physics.",
-      href: "#",
-      date: "August 2, 2024"
-    },
-    {
-      title: "How to Use Past Papers Effectively",
-      description: "A deep dive into the strategies for analyzing past papers to predict patterns and improve your score.",
-      href: "#",
-      date: "July 28, 2024"
-    }
   ];
 
   return (
@@ -141,17 +179,17 @@ export default function Wh() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogPosts.map((post) => (
-              <Card key={post.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300">
+              <Card key={post.id} className="flex flex-col overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300">
                 <CardHeader>
                     <CardTitle className="text-xl">{post.title}</CardTitle>
-                     <p className="text-xs text-muted-foreground pt-1">{post.date}</p>
+                     <p className="text-xs text-muted-foreground pt-1">{new Date(post.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <p className="text-muted-foreground text-sm">{post.description}</p>
                 </CardContent>
                 <CardContent>
                   <Button variant="outline" asChild>
-                    <Link href={post.href}>Read More</Link>
+                    <Link href="#">Read More</Link>
                   </Button>
                 </CardContent>
               </Card>
