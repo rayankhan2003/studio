@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -69,7 +70,7 @@ export default function AdminContentPage() {
 
         let updatedBlogs;
         if (editingBlog) {
-            updatedBlogs = blogs.map(b => b.id === editingBlog.id ? { ...b, ...blogFormData } : b);
+            updatedBlogs = blogs.map(b => b.id === editingBlog.id ? { ...editingBlog, ...blogFormData } : b);
             toast({ title: 'Success', description: 'Article updated successfully.' });
         } else {
             const newBlog: Blog = {
@@ -121,7 +122,7 @@ export default function AdminContentPage() {
         }
         let updatedEvents;
         if (editingEvent) {
-            updatedEvents = events.map(e => e.id === editingEvent.id ? { ...e, ...eventFormData } : e);
+            updatedEvents = events.map(e => e.id === editingEvent.id ? { ...editingEvent, ...eventFormData } : e);
             toast({ title: 'Success', description: 'Event updated.' });
         } else {
             const newEvent: Event = {
@@ -315,3 +316,5 @@ export default function AdminContentPage() {
     </div>
   );
 }
+
+    
