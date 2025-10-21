@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, Send } from "lucide-react";
+import { CheckCircle2, Brain, Settings2, TrendingUp, BookCopy, Rocket, Target, Send, Newspaper } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -58,6 +58,27 @@ export default function Wh() {
     },
   ];
 
+  const blogPosts = [
+    {
+      title: "5 Time Management Tips for MDCAT Success",
+      description: "Learn how to optimize your study schedule and make every minute count before the big exam.",
+      href: "#",
+      date: "August 5, 2024"
+    },
+    {
+      title: "Upcoming Workshop: Mastering Physics Concepts",
+      description: "Join our free online workshop on August 15th to tackle the most challenging topics in Physics.",
+      href: "#",
+      date: "August 2, 2024"
+    },
+    {
+      title: "How to Use Past Papers Effectively",
+      description: "A deep dive into the strategies for analyzing past papers to predict patterns and improve your score.",
+      href: "#",
+      date: "July 28, 2024"
+    }
+  ];
+
   return (
     <div className="flex flex-col items-center space-y-12 sm:space-y-16 py-8 container mx-auto px-4">
       <section className="w-full text-center container px-4 md:px-6">
@@ -98,6 +119,40 @@ export default function Wh() {
                       <li key={idx}>{item}</li>
                     ))}
                   </ul>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      <section id="blog" className="w-full py-10 sm:py-12">
+        <div className="container px-4 md:px-6">
+           <div className="text-center mb-8 sm:mb-12">
+            <div className="p-3 bg-primary/10 rounded-full inline-block mb-4">
+               <Newspaper className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl">
+              Latest News & Articles
+            </h2>
+            <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              Stay updated with the latest exam tips, announcements, and success stories from the path2med team.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {blogPosts.map((post) => (
+              <Card key={post.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                <CardHeader>
+                    <CardTitle className="text-xl">{post.title}</CardTitle>
+                     <p className="text-xs text-muted-foreground pt-1">{post.date}</p>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-muted-foreground text-sm">{post.description}</p>
+                </CardContent>
+                <CardContent>
+                  <Button variant="outline" asChild>
+                    <Link href={post.href}>Read More</Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}

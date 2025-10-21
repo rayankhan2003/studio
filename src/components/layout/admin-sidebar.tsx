@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, LayoutDashboard, ArrowLeftCircle, BarChart3, Settings, UserCog } from 'lucide-react';
+import { BookOpen, LayoutDashboard, ArrowLeftCircle, BarChart3, Settings, UserCog, Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -12,6 +12,7 @@ const adminNavItems = [
   { href: '/admin/questions', label: 'Question Bank', icon: BookOpen, superAdminOnly: false },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3, superAdminOnly: false },
   { href: '/admin/manager', label: 'Admin Manager', icon: UserCog, superAdminOnly: true },
+  { href: '/admin/content', label: 'Blogs & Events', icon: Newspaper, superAdminOnly: false },
   { href: '/admin/settings', label: 'Settings', icon: Settings, superAdminOnly: false },
 ];
 

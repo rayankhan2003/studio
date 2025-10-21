@@ -10,6 +10,7 @@ const routePermissions: Partial<Record<string, keyof SubAdminPermissions>> = {
   '/admin/questions': 'canManageQuestions',
   '/admin/analytics': 'canViewAnalytics',
   '/admin/settings': 'canEditPaymentSettings',
+  '/admin/content': 'canManageBlogs', // This can cover both blogs and events for now
   // '/admin/manager' is handled by the isSuperAdmin check
 };
 
