@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
 import { BarChart3, TrendingUp, BookOpen, Percent, Target, GraduationCap, Loader2 } from 'lucide-react';
 import { allSubjects as allMdcatSubjects, syllabus as mdcatSyllabus } from '@/lib/syllabus';
 import { allCambridgeSubjects, cambridgeSyllabus, CambridgeLevels } from '@/lib/cambridge-syllabus';
@@ -43,6 +43,7 @@ const AnalyticsDisplay = React.memo(({
   currentView,
   overallPerformance,
   subjectScoreProgressionData,
+  pastPaperPerformanceData,
   availableSubjects,
   overallSubjectAverageScores,
   selectedSubjectForChapterChart,
@@ -93,6 +94,7 @@ const AnalyticsDisplay = React.memo(({
                 <YAxis domain={[0, 100]} tick={{fontSize: 12}}/>
                 <Tooltip />
                 <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
+                <ReferenceLine y={90} label={{ value: '90%', position: 'insideTopRight', fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }} stroke="#dc2626" strokeDasharray="3 3" />
                 {availableSubjects.map((subject: string) => (
                   <Line key={subject} type="monotone" dataKey={subject} stroke={subjectColors[subject] || '#8884d8'} strokeWidth={2} activeDot={{ r: 6 }} connectNulls dot={{r:3}} />
                 ))}
@@ -144,6 +146,35 @@ const AnalyticsDisplay = React.memo(({
       </Card>
     </div>
     
+     {currentView === 'MDCAT' && (
+      <Card className="shadow-lg">
+        <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                Past MDCAT Papers Performance
+            </CardTitle>
+            <CardDescription>Your performance on full-length past paper simulations.</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[350px] sm:h-[400px]">
+            {pastPaperPerformanceData.length > 0 ? (
+                 <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={pastPaperPerformanceData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{fontSize: 12}} />
+                        <YAxis domain={[0, 100]} tick={{fontSize: 12}}/>
+                        <Tooltip />
+                        <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
+                         <ReferenceLine y={90} label={{ value: '90%', position: 'insideTopRight', fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }} stroke="#dc2626" strokeDasharray="3 3" />
+                        <Line type="monotone" dataKey="score" name="Score" stroke="hsl(var(--primary))" strokeWidth={2} activeDot={{ r: 6 }} dot={{r:3}} />
+                    </LineChart>
+                </ResponsiveContainer>
+            ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">No past paper attempts found.</div>
+            )}
+        </CardContent>
+      </Card>
+    )}
+    
     <Card className="shadow-lg">
       <CardHeader>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -182,6 +213,7 @@ const AnalyticsDisplay = React.memo(({
                 labelFormatter={(label: string) => `Attempt: ${label}`}
               />
               <Legend wrapperStyle={{fontSize: "0.8rem"}}/>
+               <ReferenceLine y={90} label={{ value: '90%', position: 'insideTopRight', fill: '#dc2626', fontSize: 12, fontWeight: 'bold' }} stroke="#dc2626" strokeDasharray="3 3" />
               {(availableSyllabus[selectedSubjectForChapterChart] || []).map((chapter: any, index: number) => (
                 <Line
                   key={chapter.name}
@@ -214,6 +246,7 @@ export default function AnalyticsPage() {
 
   const [overallPerformance, setOverallPerformance] = useState({ averageScore: 0, testsTaken: 0 });
   const [subjectScoreProgressionData, setSubjectScoreProgressionData] = useState<Array<Record<string, any>>>([]);
+  const [pastPaperPerformanceData, setPastPaperPerformanceData] = useState<Array<{name: string, score: number}>>([]);
   const [chapterPerformanceHistoryData, setChapterPerformanceHistoryData] = useState<Record<string, Record<string, { testName: string; score: number }[]>>>({});
   
   const [isSetGoalDialogOpen, setIsSetGoalDialogOpen] = useState(false);
@@ -247,8 +280,26 @@ export default function AnalyticsPage() {
     if (!isClient) return;
 
     const storedHistoryString = localStorage.getItem('prepwiseTestHistory');
-    let storedHistory: StoredTestReport[] = storedHistoryString ? JSON.parse(storedHistoryString) : [];
-    storedHistory = storedHistory.filter(report => report.curriculum === currentView);
+    let allStoredHistory: StoredTestReport[] = storedHistoryString ? JSON.parse(storedHistoryString) : [];
+    
+    // Filter history based on current view (MDCAT/Cambridge Level)
+    const storedHistory = allStoredHistory.filter(report => report.curriculum === currentView);
+
+    // Past Paper Performance Data (only for MDCAT view)
+    if (currentView === 'MDCAT') {
+        const pastPaperHistory = allStoredHistory.filter(r => r.testType === 'Past Paper' && r.curriculum === 'MDCAT');
+        const attemptCounts: Record<string, number> = {};
+        const formattedPastPaperData = pastPaperHistory.map(report => {
+            attemptCounts[report.name] = (attemptCounts[report.name] || 0) + 1;
+            return {
+                name: `${report.name} (Attempt ${attemptCounts[report.name]})`,
+                score: report.overallScorePercentage
+            };
+        });
+        setPastPaperPerformanceData(formattedPastPaperData);
+    } else {
+        setPastPaperPerformanceData([]); // Clear for non-MDCAT views
+    }
     
     let newTotalScoreSum = 0;
     const newSubjectProgression: Array<Record<string, any>> = [];
@@ -404,6 +455,7 @@ export default function AnalyticsPage() {
     currentView,
     overallPerformance,
     subjectScoreProgressionData,
+    pastPaperPerformanceData,
     availableSubjects,
     overallSubjectAverageScores,
     selectedSubjectForChapterChart,
