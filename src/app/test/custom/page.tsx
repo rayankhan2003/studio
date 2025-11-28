@@ -74,6 +74,35 @@ export default function CustomTestPage() {
     return { subjects: allMdcatSubjects, syllabus: mdcatSyllabus };
   }, [curriculum]);
 
+  const totalSelectedChaptersCount = useMemo(() => {
+    return Object.values(selectedChaptersMap).reduce((acc, chaptersSet) => acc + chaptersSet.size, 0);
+  }, [selectedChaptersMap]);
+
+  useEffect(() => {
+    // Auto-set test name when exactly one chapter is selected
+    if (totalSelectedChaptersCount === 1) {
+      for (const subject in selectedChaptersMap) {
+        if (selectedChaptersMap[subject].size === 1) {
+          const chapterName = selectedChaptersMap[subject].values().next().value;
+          const today = new Date();
+          const formattedDate = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          setTestName(`${chapterName} - ${formattedDate}`);
+          break;
+        }
+      }
+    } else {
+       // Reset or set a default name if more than one or zero chapters are selected
+       const testNameQuery = searchParams.get('testName');
+       if (testNameQuery) {
+           setTestName(testNameQuery);
+       } else {
+           setTestName(`My ${curriculum} Test`);
+       }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalSelectedChaptersCount, selectedChaptersMap, curriculum]);
+
+
   useEffect(() => {
     // Reset selections when curriculum changes
     setSelectedChaptersMap(initialSelectedChapters());
@@ -84,14 +113,7 @@ export default function CustomTestPage() {
   useEffect(() => {
     const subjectsQuery = searchParams.get('subjects');
     const chaptersQuery = searchParams.get('chapters'); 
-    const testNameQuery = searchParams.get('testName');
-
-    if (testNameQuery) {
-        setTestName(testNameQuery);
-    } else {
-        setTestName(`My ${curriculum} Test`);
-    }
-
+    
     if (subjectsQuery || chaptersQuery) {
       const newSelectedChaptersMap: SelectedChaptersMap = initialSelectedChapters();
       const subjectsToOpenInAccordion: Set<string> = new Set();
@@ -126,10 +148,6 @@ export default function CustomTestPage() {
   const actualQuestionCount = useMemo(() => {
     return questionCountMode === 'preset' ? selectedPresetQuestions : parseInt(customQuestionCount) || 0;
   }, [questionCountMode, selectedPresetQuestions, customQuestionCount]);
-
-  const totalSelectedChaptersCount = useMemo(() => {
-    return Object.values(selectedChaptersMap).reduce((acc, chaptersSet) => acc + chaptersSet.size, 0);
-  }, [selectedChaptersMap]);
 
   const totalAvailableQuestionsFromSelection = useMemo(() => {
     if (!isClient) return 0;
