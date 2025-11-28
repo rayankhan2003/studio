@@ -111,9 +111,9 @@ Student Inputs:
 {{/if}}
 
 Syllabus Overview:
-{{#each @root.syllabusData}}
-Subject: {{@key}}
-Chapters: {{#each this}}{{.name}}{{#unless @last}}, {{/unless}}{{/each}}
+The syllabus is structured by subject, then by chapters. The chapter names you MUST use are provided below.
+{{#each syllabusData}}
+Subject: {{@key}}. Chapters: {{#each this}}{{.name}}{{#unless @last}}, {{/unless}}{{/each}}.
 {{/each}}
 
 Instructions for Plan Generation:
