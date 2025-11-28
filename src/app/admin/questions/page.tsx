@@ -25,7 +25,7 @@ type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
 type CurriculumCounts = Record<string, SubjectCounts>; // curriculumName: { subjects }
 type PastPaperCounts = Record<number, number>; // year: count
 
-const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Option 1', 'Option 2', 'CorrectAnswer'];
+const REQUIRED_HEADERS = ['ID', 'mcqs', 'option 01', 'option 02', 'correct option'];
 
 const pastMDCATYears = Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).reverse();
 
@@ -244,27 +244,30 @@ export default function QuestionBankPage() {
                 }
 
                 const newQuestions: MockQuestionDefinition[] = json.map((row, index) => {
-                    const requiredFields = ['ID', 'Text', 'Type', 'CorrectAnswer'];
+                    const requiredFields = ['ID', 'mcqs', 'correct option'];
                     for(const field of requiredFields) {
                         if (row[field] === undefined || String(row[field]).trim() === '') {
                              throw new Error(`Row ${index + 2} is missing required data for column: ${field}.`);
                         }
                     }
 
-                    const options = [row['Option 1'], row['Option 2'], row['Option 3'], row['Option 4']]
+                    const options = [row['option 01'], row['option 02'], row['option 03'], row['option 04']]
                         .map(opt => String(opt || '').trim())
                         .filter(opt => opt);
                     
                     if (options.length < 2) {
-                        throw new Error(`Row ${index + 2} must have at least Option 1 and Option 2.`);
+                        throw new Error(`Row ${index + 2} must have at least option 01 and option 02.`);
                     }
+
+                    // For now, default to single-choice. A 'Type' column could be added for more flexibility.
+                    const type: MockQuestionDefinition['type'] = 'single-choice'; 
 
                     const questionBase = {
                         id: String(row.ID).trim(),
-                        text: String(row.Text).trim(),
-                        type: String(row.Type).trim() as MockQuestionDefinition['type'],
+                        text: String(row.mcqs).trim(),
+                        type: type,
                         options: options.length > 0 ? options : undefined,
-                        correctAnswer: String(row.CorrectAnswer).split(',').map(s => s.trim()),
+                        correctAnswer: String(row['correct option']).split(',').map(s => s.trim()),
                         explanation: row.Explanation ? String(row.Explanation).trim() : undefined,
                     };
                     
@@ -334,7 +337,7 @@ export default function QuestionBankPage() {
 
         toast({
             title: "Questions Deleted",
-            description: `${questionIds.size} questions have been removed from the custom bank.`,
+            description: `${questionIds.size} questions have been removed from the custom question bank.`,
         });
         loadAndProcessQuestions(); // Refresh data
         setSelectedQuestionIds(new Set()); // Clear selection
@@ -400,10 +403,10 @@ export default function QuestionBankPage() {
                         <AlertDescription>
                             <p className="text-xs">To add questions, click "Upload". Your Excel file (.xlsx) must have specific columns. The required columns are:</p>
                             <ul className="list-disc list-inside mt-2 text-xs space-y-1 font-mono">
-                                <li><strong>ID, Text, Type, Option 1, Option 2, CorrectAnswer</strong></li>
-                                <li>Optional columns: <strong>Option 3, Option 4, Explanation</strong></li>
-                                <li>For Chapter uploads, <strong>Subject</strong> and <strong>Chapter</strong> are set automatically.</li>
-                                <li>For Past Paper uploads, you must include <strong>Subject</strong> and <strong>Chapter</strong> columns in your file.</li>
+                                <li><strong>ID, mcqs, option 01, option 02, correct option</strong></li>
+                                <li>Optional columns: <strong>option 03, option 04, Explanation</strong></li>
+                                <li>The system will automatically set the question type to "single-choice".</li>
+                                <li>For Past Paper uploads, you must also include <strong>Subject</strong> and <strong>Chapter</strong> columns in your file.</li>
                             </ul>
                         </AlertDescription>
                     </Alert>
@@ -553,3 +556,5 @@ export default function QuestionBankPage() {
         </div>
     );
 }
+
+    
