@@ -25,7 +25,8 @@ type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
 type CurriculumCounts = Record<string, SubjectCounts>; // curriculumName: { subjects }
 type PastPaperCounts = Record<number, number>; // year: count
 
-const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Options', 'CorrectAnswer', 'Explanation', 'Subject', 'Chapter'];
+const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Option 1', 'Option 2', 'CorrectAnswer', 'Subject', 'Chapter'];
+
 const pastMDCATYears = Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).reverse();
 
 
@@ -219,17 +220,16 @@ export default function QuestionBankPage() {
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
 
-                // Validate headers
                 const headers: any[] = xlsx.utils.sheet_to_json(worksheet, { header: 1 })[0] || [];
                 const trimmedHeaders = headers.map(h => typeof h === 'string' ? h.trim() : '');
                 
-                const required = 'pastPaperYear' in uploadContext ? ['ID', 'Text', 'Type', 'CorrectAnswer', 'Subject', 'Chapter'] : REQUIRED_HEADERS;
+                const required = REQUIRED_HEADERS;
                 const missingHeaders = required.filter(rh => !trimmedHeaders.includes(rh));
 
                 if (missingHeaders.length > 0) {
                      toast({
                         title: "Invalid Headers",
-                        description: `Missing or misnamed headers: ${missingHeaders.join(', ')}. Required: ${required.join(', ')}.`,
+                        description: `Missing headers: ${missingHeaders.join(', ')}. Required: ${required.join(', ')}.`,
                         variant: "destructive",
                         duration: 8000,
                     });
@@ -237,33 +237,29 @@ export default function QuestionBankPage() {
                 }
                 
                 const json: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
-                const firstDataRow = json[0];
 
-                if (json.length === 0 || !firstDataRow || required.slice(0, 5).some(field => firstDataRow[field] === undefined || String(firstDataRow[field]).trim() === '')) {
-                     toast({
-                        title: "Empty or Incomplete Data",
-                        description: "The first data row (Row 2 in Excel) is empty or missing required values.",
-                        variant: "destructive",
-                    });
+                if (json.length === 0) {
+                     toast({ title: "Empty Data", description: "The Excel file appears to be empty.", variant: "destructive" });
                     return;
                 }
 
                 const newQuestions: MockQuestionDefinition[] = json.map((row, index) => {
-                    const requiredFields = 'pastPaperYear' in uploadContext 
-                        ? ['ID', 'Text', 'Type', 'CorrectAnswer', 'Subject', 'Chapter'] 
-                        : ['ID', 'Text', 'Type', 'CorrectAnswer'];
-
+                    const requiredFields = ['ID', 'Text', 'Type', 'CorrectAnswer'];
                     for(const field of requiredFields) {
                         if (row[field] === undefined || String(row[field]).trim() === '') {
                              throw new Error(`Row ${index + 2} is missing required data for column: ${field}.`);
                         }
                     }
-                    
+
+                    const options = [row['Option 1'], row['Option 2'], row['Option 3'], row['Option 4']]
+                        .map(opt => String(opt || '').trim())
+                        .filter(opt => opt);
+
                     const questionBase = {
                         id: String(row.ID).trim(),
                         text: String(row.Text).trim(),
                         type: String(row.Type).trim() as MockQuestionDefinition['type'],
-                        options: row.Options ? String(row.Options).split(',').map(s => s.trim()) : undefined,
+                        options: options.length > 0 ? options : undefined,
                         correctAnswer: String(row.CorrectAnswer).split(',').map(s => s.trim()),
                         explanation: row.Explanation ? String(row.Explanation).trim() : undefined,
                     };
@@ -305,7 +301,7 @@ export default function QuestionBankPage() {
                     title: "Success!",
                     description: logMessage,
                 });
-                loadAndProcessQuestions(); // Refresh data
+                loadAndProcessQuestions();
             } catch (error: any) {
                 toast({
                     title: "Error Processing File",
@@ -314,7 +310,7 @@ export default function QuestionBankPage() {
                     duration: 7000,
                 });
             } finally {
-                setUploadContext(null); // Reset context
+                setUploadContext(null);
             }
         };
         reader.readAsArrayBuffer(uploadedFile);
@@ -395,10 +391,12 @@ export default function QuestionBankPage() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>Upload Instructions</AlertTitle>
                         <AlertDescription>
-                            <p className="text-xs">To add questions, click "Upload". Your Excel file (.xlsx) must have specific columns.</p>
+                            <p className="text-xs">To add questions, click "Upload". Your Excel file (.xlsx) must have specific columns. The required columns are:</p>
                             <ul className="list-disc list-inside mt-2 text-xs space-y-1 font-mono">
-                                <li><strong>For Chapters:</strong> ID, Text, Type, Options, CorrectAnswer, Explanation. Subject/Chapter are auto-set.</li>
-                                <li><strong>For Past Papers:</strong> ID, Text, Type, Options, CorrectAnswer, Explanation, <strong>Subject</strong>, <strong>Chapter</strong>.</li>
+                                <li><strong>ID, Text, Type, Option 1, Option 2, CorrectAnswer, Explanation</strong></li>
+                                <li>Optional columns: <strong>Option 3, Option 4</strong></li>
+                                <li>For Chapter uploads, <strong>Subject</strong> and <strong>Chapter</strong> are set automatically.</li>
+                                <li>For Past Paper uploads, you must include <strong>Subject</strong> and <strong>Chapter</strong> columns in your file.</li>
                             </ul>
                         </AlertDescription>
                     </Alert>
@@ -548,3 +546,5 @@ export default function QuestionBankPage() {
         </div>
     );
 }
+
+    
