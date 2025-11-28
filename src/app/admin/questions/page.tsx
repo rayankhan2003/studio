@@ -25,7 +25,7 @@ type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
 type CurriculumCounts = Record<string, SubjectCounts>; // curriculumName: { subjects }
 type PastPaperCounts = Record<number, number>; // year: count
 
-const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Option 1', 'Option 2', 'CorrectAnswer', 'Subject', 'Chapter'];
+const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Option 1', 'Option 2', 'CorrectAnswer'];
 
 const pastMDCATYears = Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).reverse();
 
@@ -229,7 +229,7 @@ export default function QuestionBankPage() {
                 if (missingHeaders.length > 0) {
                      toast({
                         title: "Invalid Headers",
-                        description: `Missing headers: ${missingHeaders.join(', ')}. Required: ${required.join(', ')}.`,
+                        description: `Missing required headers: ${missingHeaders.join(', ')}.`,
                         variant: "destructive",
                         duration: 8000,
                     });
@@ -254,6 +254,10 @@ export default function QuestionBankPage() {
                     const options = [row['Option 1'], row['Option 2'], row['Option 3'], row['Option 4']]
                         .map(opt => String(opt || '').trim())
                         .filter(opt => opt);
+                    
+                    if (options.length < 2) {
+                        throw new Error(`Row ${index + 2} must have at least Option 1 and Option 2.`);
+                    }
 
                     const questionBase = {
                         id: String(row.ID).trim(),
@@ -265,6 +269,9 @@ export default function QuestionBankPage() {
                     };
                     
                     if ('pastPaperYear' in uploadContext) {
+                        if (!row.Subject || !row.Chapter) {
+                            throw new Error(`Row ${index + 2}: For past paper uploads, 'Subject' and 'Chapter' columns are required in the Excel file.`);
+                        }
                         return {
                             ...questionBase,
                             subject: String(row.Subject).trim(),
@@ -393,8 +400,8 @@ export default function QuestionBankPage() {
                         <AlertDescription>
                             <p className="text-xs">To add questions, click "Upload". Your Excel file (.xlsx) must have specific columns. The required columns are:</p>
                             <ul className="list-disc list-inside mt-2 text-xs space-y-1 font-mono">
-                                <li><strong>ID, Text, Type, Option 1, Option 2, CorrectAnswer, Explanation</strong></li>
-                                <li>Optional columns: <strong>Option 3, Option 4</strong></li>
+                                <li><strong>ID, Text, Type, Option 1, Option 2, CorrectAnswer</strong></li>
+                                <li>Optional columns: <strong>Option 3, Option 4, Explanation</strong></li>
                                 <li>For Chapter uploads, <strong>Subject</strong> and <strong>Chapter</strong> are set automatically.</li>
                                 <li>For Past Paper uploads, you must include <strong>Subject</strong> and <strong>Chapter</strong> columns in your file.</li>
                             </ul>
@@ -546,5 +553,3 @@ export default function QuestionBankPage() {
         </div>
     );
 }
-
-    
