@@ -94,13 +94,13 @@ Student Inputs:
 - Final Preparation Date: {{finalPreparationDate}}
 - Subject Goals (Target %):
 {{#each subjectGoals}}
-  - {{#if @root.allSubjects.includes(@key)}}{{@key}}{{else}}Unknown Subject: {{@key}}{{/if}}: {{this}}%
+  - {{@key}}: {{this}}%
 {{else}}
   No specific subject goals provided. Aim for general improvement.
 {{/each}}
 - Past Performance Summary (Average %):
 {{#each pastPerformanceSummary}}
-  - {{#if @root.allSubjects.includes(@key)}}{{@key}}{{else}}Unknown Subject: {{@key}}{{/if}}: {{this}}%
+  - {{@key}}: {{this}}%
 {{else}}
   No past performance data provided. Assume beginner level or equal proficiency.
 {{/each}}
