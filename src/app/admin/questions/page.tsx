@@ -23,8 +23,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 type ChapterCounts = Record<string, number>; // chapterName: count
 type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
 type CurriculumCounts = Record<string, SubjectCounts>; // curriculumName: { subjects }
+type PastPaperCounts = Record<number, number>; // year: count
 
-const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Options', 'CorrectAnswer', 'Explanation'];
+const REQUIRED_HEADERS = ['ID', 'Text', 'Type', 'Options', 'CorrectAnswer', 'Explanation', 'Subject', 'Chapter'];
+const pastMDCATYears = Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).reverse();
+
 
 const ChapterRow = ({ curriculum, subject, chapterName, count, onViewClick, onUploadClick }: { curriculum: string, subject: string, chapterName: string, count: number, onViewClick: (subject: string, chapter: string) => void, onUploadClick: (curriculum: string, subject: string, chapter: string) => void }) => {
     return (
@@ -44,6 +47,26 @@ const ChapterRow = ({ curriculum, subject, chapterName, count, onViewClick, onUp
         </div>
     );
 };
+
+const PastPaperRow = ({ year, count, onViewClick, onUploadClick }: { year: number, count: number, onViewClick: (year: number) => void, onUploadClick: (year: number) => void }) => {
+    return (
+        <div className="flex justify-between items-center p-2 border rounded-md hover:bg-muted/50">
+            <div>
+                <p className="font-medium">MDCAT {year}</p>
+                <p className="text-sm text-muted-foreground">{count} questions</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => onUploadClick(year)}>
+                    <Upload className="h-4 w-4 mr-1"/> Upload
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onViewClick(year)}>
+                    <Eye className="h-4 w-4 mr-1"/> View
+                </Button>
+            </div>
+        </div>
+    );
+};
+
 
 const CurriculumView = ({ curriculum, syllabus, subjects, counts, onViewClick, onUploadClick }: { curriculum: string, syllabus: any, subjects: string[], counts: SubjectCounts, onViewClick: (subject: string, chapter: string) => void, onUploadClick: (curriculum: string, subject: string, chapter: string) => void }) => {
     return (
@@ -86,24 +109,28 @@ const CurriculumView = ({ curriculum, syllabus, subjects, counts, onViewClick, o
 export default function QuestionBankPage() {
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [uploadContext, setUploadContext] = useState<{ curriculum: string; subject: string; chapter: string } | null>(null);
+    const [uploadContext, setUploadContext] = useState<{ curriculum: string; subject: string; chapter: string; pastPaperYear?: number } | { pastPaperYear: number } | null>(null);
     
     const [allQuestions, setAllQuestions] = useState<MockQuestionDefinition[]>([]);
     const [questionCounts, setQuestionCounts] = useState<CurriculumCounts>({});
+    const [pastPaperCounts, setPastPaperCounts] = useState<PastPaperCounts>({});
     const [customQuestionIds, setCustomQuestionIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
 
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-    const [viewDialogData, setViewDialogData] = useState<{ curriculum: string; subject: string; chapter: string } | null>(null);
+    const [viewDialogData, setViewDialogData] = useState<{ curriculum?: string; subject?: string; chapter?: string; pastPaperYear?: number } | null>(null);
     const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(new Set());
 
     const questionsForDialog = useMemo(() => {
         if (!viewDialogData) return [];
-        return allQuestions.filter(q => 
-            q.curriculum === viewDialogData.curriculum &&
-            q.subject === viewDialogData.subject &&
-            q.chapter === viewDialogData.chapter
-        );
+        return allQuestions.filter(q => {
+            if (viewDialogData.pastPaperYear) {
+                return q.pastPaperYear === viewDialogData.pastPaperYear;
+            }
+            return q.curriculum === viewDialogData.curriculum &&
+                   q.subject === viewDialogData.subject &&
+                   q.chapter === viewDialogData.chapter;
+        });
     }, [allQuestions, viewDialogData]);
     
     const deletableQuestionsInDialog = useMemo(() => {
@@ -125,13 +152,19 @@ export default function QuestionBankPage() {
         setAllQuestions(combinedQuestions);
 
         const counts: CurriculumCounts = {};
+        const ppCounts: PastPaperCounts = {};
+
         combinedQuestions.forEach(q => {
+            if (q.pastPaperYear) {
+                ppCounts[q.pastPaperYear] = (ppCounts[q.pastPaperYear] || 0) + 1;
+            }
             if (!q.curriculum || !q.subject || !q.chapter) return;
             counts[q.curriculum] = counts[q.curriculum] || {};
             counts[q.curriculum][q.subject] = counts[q.curriculum][q.subject] || {};
             counts[q.curriculum][q.subject][q.chapter] = (counts[q.curriculum][q.subject][q.chapter] || 0) + 1;
         });
         setQuestionCounts(counts);
+        setPastPaperCounts(ppCounts);
         setIsLoading(false);
     }, []);
 
@@ -149,6 +182,12 @@ export default function QuestionBankPage() {
         setUploadContext({ curriculum, subject, chapter });
         fileInputRef.current?.click();
     };
+
+    const handlePastPaperUploadClick = (year: number) => {
+        setUploadContext({ pastPaperYear: year });
+        fileInputRef.current?.click();
+    };
+
 
     const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -168,7 +207,7 @@ export default function QuestionBankPage() {
 
     const processAndStoreQuestions = useCallback((uploadedFile: File) => {
         if (!uploadContext) {
-            toast({ title: "Upload Error", description: "No chapter context was set. Please try clicking 'Upload' again.", variant: "destructive" });
+            toast({ title: "Upload Error", description: "No upload context was set. Please try clicking 'Upload' again.", variant: "destructive" });
             return;
         }
 
@@ -183,22 +222,24 @@ export default function QuestionBankPage() {
                 // Validate headers
                 const headers: any[] = xlsx.utils.sheet_to_json(worksheet, { header: 1 })[0] || [];
                 const trimmedHeaders = headers.map(h => typeof h === 'string' ? h.trim() : '');
-                const missingHeaders = REQUIRED_HEADERS.filter(rh => !trimmedHeaders.includes(rh));
+                
+                const required = 'pastPaperYear' in uploadContext ? ['ID', 'Text', 'Type', 'CorrectAnswer', 'Subject', 'Chapter'] : REQUIRED_HEADERS;
+                const missingHeaders = required.filter(rh => !trimmedHeaders.includes(rh));
 
                 if (missingHeaders.length > 0) {
                      toast({
                         title: "Invalid Headers",
-                        description: `Missing or misnamed headers: ${missingHeaders.join(', ')}. Required: ${REQUIRED_HEADERS.join(', ')}.`,
+                        description: `Missing or misnamed headers: ${missingHeaders.join(', ')}. Required: ${required.join(', ')}.`,
                         variant: "destructive",
                         duration: 8000,
                     });
                     return;
                 }
                 
-                const json: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" }); // Use defval to handle empty cells gracefully
+                const json: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
                 const firstDataRow = json[0];
 
-                if (json.length === 0 || !firstDataRow || REQUIRED_HEADERS.slice(0, 5).some(field => firstDataRow[field] === undefined || String(firstDataRow[field]).trim() === '')) {
+                if (json.length === 0 || !firstDataRow || required.slice(0, 5).some(field => firstDataRow[field] === undefined || String(firstDataRow[field]).trim() === '')) {
                      toast({
                         title: "Empty or Incomplete Data",
                         description: "The first data row (Row 2 in Excel) is empty or missing required values.",
@@ -208,24 +249,41 @@ export default function QuestionBankPage() {
                 }
 
                 const newQuestions: MockQuestionDefinition[] = json.map((row, index) => {
-                    const requiredFields = ['ID', 'Text', 'Type', 'CorrectAnswer'];
+                    const requiredFields = 'pastPaperYear' in uploadContext 
+                        ? ['ID', 'Text', 'Type', 'CorrectAnswer', 'Subject', 'Chapter'] 
+                        : ['ID', 'Text', 'Type', 'CorrectAnswer'];
+
                     for(const field of requiredFields) {
                         if (row[field] === undefined || String(row[field]).trim() === '') {
                              throw new Error(`Row ${index + 2} is missing required data for column: ${field}.`);
                         }
                     }
-
-                    return {
+                    
+                    const questionBase = {
                         id: String(row.ID).trim(),
-                        subject: uploadContext.subject,
-                        chapter: uploadContext.chapter,
-                        curriculum: uploadContext.curriculum,
                         text: String(row.Text).trim(),
                         type: String(row.Type).trim() as MockQuestionDefinition['type'],
                         options: row.Options ? String(row.Options).split(',').map(s => s.trim()) : undefined,
                         correctAnswer: String(row.CorrectAnswer).split(',').map(s => s.trim()),
                         explanation: row.Explanation ? String(row.Explanation).trim() : undefined,
                     };
+                    
+                    if ('pastPaperYear' in uploadContext) {
+                        return {
+                            ...questionBase,
+                            subject: String(row.Subject).trim(),
+                            chapter: String(row.Chapter).trim(),
+                            curriculum: 'MDCAT',
+                            pastPaperYear: uploadContext.pastPaperYear,
+                        }
+                    } else {
+                         return {
+                            ...questionBase,
+                            subject: (uploadContext as any).subject,
+                            chapter: (uploadContext as any).chapter,
+                            curriculum: (uploadContext as any).curriculum,
+                        };
+                    }
                 });
 
                 const existingCustomQuestionsRaw = localStorage.getItem('customQuestionBank');
@@ -237,11 +295,15 @@ export default function QuestionBankPage() {
                 
                 localStorage.setItem('customQuestionBank', JSON.stringify(combined));
                 
-                logActivity(`Uploaded/updated ${newQuestions.length} questions for ${uploadContext.subject} - ${uploadContext.chapter}`);
+                const logMessage = 'pastPaperYear' in uploadContext 
+                    ? `Uploaded/updated ${newQuestions.length} questions for MDCAT ${uploadContext.pastPaperYear}`
+                    : `Uploaded/updated ${newQuestions.length} questions for ${(uploadContext as any).subject} - ${(uploadContext as any).chapter}`;
+                
+                logActivity(logMessage);
 
                 toast({
                     title: "Success!",
-                    description: `${newQuestions.length} questions for ${uploadContext.subject} - ${uploadContext.chapter} have been added/updated.`,
+                    description: logMessage,
                 });
                 loadAndProcessQuestions(); // Refresh data
             } catch (error: any) {
@@ -281,6 +343,12 @@ export default function QuestionBankPage() {
         setIsViewDialogOpen(true);
     };
 
+    const handlePastPaperViewClick = (year: number) => {
+        setViewDialogData({ pastPaperYear: year });
+        setIsViewDialogOpen(true);
+    };
+
+
     const handleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
             setSelectedQuestionIds(new Set(deletableQuestionsInDialog.map(q => q.id)));
@@ -319,7 +387,7 @@ export default function QuestionBankPage() {
                         <BookOpen className="h-6 w-6 text-primary" /> Browse & Upload
                     </CardTitle>
                     <CardDescription>
-                       View questions or upload new ones for a specific chapter.
+                       View questions or upload new ones for a specific chapter or past paper.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -327,25 +395,21 @@ export default function QuestionBankPage() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>Upload Instructions</AlertTitle>
                         <AlertDescription>
-                            <p className="text-xs">To add questions, click the "Upload" button for the specific chapter. Your Excel file (.xlsx) must have a header row with these exact columns:</p>
+                            <p className="text-xs">To add questions, click "Upload". Your Excel file (.xlsx) must have specific columns.</p>
                             <ul className="list-disc list-inside mt-2 text-xs space-y-1 font-mono">
-                                <li><strong>ID</strong> (Unique identifier, e.g., "bio_q1")</li>
-                                <li><strong>Text</strong> (The question)</li>
-                                <li><strong>Type</strong> (single-choice, multiple-choice, fill-in-the-blank, or true-false)</li>
-                                <li><strong>Options</strong> (Comma-separated for choice types. Leave blank for other types.)</li>
-                                <li><strong>CorrectAnswer</strong> (The correct option text. For multiple-choice, use comma-separated values.)</li>
-                                <li><strong>Explanation</strong> (Optional, can be blank)</li>
+                                <li><strong>For Chapters:</strong> ID, Text, Type, Options, CorrectAnswer, Explanation. Subject/Chapter are auto-set.</li>
+                                <li><strong>For Past Papers:</strong> ID, Text, Type, Options, CorrectAnswer, Explanation, <strong>Subject</strong>, <strong>Chapter</strong>.</li>
                             </ul>
-                             <p className="text-xs mt-2">The Curriculum, Subject, and Chapter are set automatically based on where you click "Upload".</p>
                         </AlertDescription>
                     </Alert>
 
                     {isLoading ? <p>Loading question bank...</p> : (
                         <Tabs defaultValue="MDCAT">
-                            <TabsList className="grid w-full grid-cols-3">
+                            <TabsList className="grid w-full grid-cols-4">
                                 <TabsTrigger value="MDCAT">MDCAT</TabsTrigger>
                                 <TabsTrigger value="O Level">O Level</TabsTrigger>
                                 <TabsTrigger value="A Level">A Level</TabsTrigger>
+                                <TabsTrigger value="Past Papers">Past Papers</TabsTrigger>
                             </TabsList>
                             <TabsContent value="MDCAT" className="mt-4">
                                 <CurriculumView
@@ -377,6 +441,19 @@ export default function QuestionBankPage() {
                                     onUploadClick={handleUploadClick}
                                 />
                             </TabsContent>
+                             <TabsContent value="Past Papers" className="mt-4">
+                                <div className="space-y-2">
+                                     {pastMDCATYears.map(year => (
+                                        <PastPaperRow 
+                                            key={year}
+                                            year={year}
+                                            count={pastPaperCounts[year] || 0}
+                                            onViewClick={handlePastPaperViewClick}
+                                            onUploadClick={handlePastPaperUploadClick}
+                                        />
+                                     ))}
+                                </div>
+                            </TabsContent>
                         </Tabs>
                     )}
                 </CardContent>
@@ -385,9 +462,14 @@ export default function QuestionBankPage() {
             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
                 <DialogContent className="max-w-4xl">
                     <DialogHeader>
-                        <DialogTitle>Questions for: {viewDialogData?.subject} - {viewDialogData?.chapter}</DialogTitle>
+                        <DialogTitle>
+                            Questions for: {viewDialogData?.pastPaperYear 
+                                ? `MDCAT ${viewDialogData.pastPaperYear}` 
+                                : `${viewDialogData?.subject} - ${viewDialogData?.chapter}`
+                            }
+                        </DialogTitle>
                         <DialogDescription>
-                            Curriculum: {viewDialogData?.curriculum}. Select custom questions to delete them. Built-in questions cannot be deleted.
+                             Curriculum: {viewDialogData?.pastPaperYear ? 'MDCAT Past Paper' : viewDialogData?.curriculum}. Select custom questions to delete them. Built-in questions cannot be deleted.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[60vh] overflow-y-auto mt-4 pr-2">
@@ -432,7 +514,7 @@ export default function QuestionBankPage() {
                                 </TableBody>
                             </Table>
                         ) : (
-                            <p className="text-muted-foreground text-center py-8">No questions found for this chapter.</p>
+                            <p className="text-muted-foreground text-center py-8">No questions found for this selection.</p>
                         )}
                     </div>
                     <DialogFooter className="sm:justify-between">

@@ -12,6 +12,7 @@ export interface MockQuestionDefinition {
   correctAnswer: string | string[];
   explanation?: string;
   curriculum: 'MDCAT' | 'O Level' | 'A Level';
+  pastPaperYear?: number;
 }
 
 /**
