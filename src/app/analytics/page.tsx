@@ -37,6 +37,7 @@ const subjectColors: Record<string, string> = {
 const chapterLineColors = [
   "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))",
   "hsl(var(--chart-4))", "hsl(var(--chart-5))", "hsl(var(--primary))", "hsl(var(--accent))",
+  "#3F51B5", "#7E57C2", "#2196F3", "#4CAF50", "#FFC107", "#FF5722",
 ];
 
 const AnalyticsDisplay = React.memo(({
@@ -222,7 +223,6 @@ const AnalyticsDisplay = React.memo(({
                   stroke={chapterLineColors[index % chapterLineColors.length]}
                   strokeWidth={2}
                   activeDot={{ r: 6 }}
-                  dot={false}
                   connectNulls
                 />
               ))}
@@ -409,8 +409,8 @@ export default function AnalyticsPage() {
     chartData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     // 4. Ensure all chapters are present in each data point, filling with null for 'connectNulls'
-    return chartData.map(dataPoint => {
-      const finalDataPoint = { ...dataPoint };
+    return chartData.map((dataPoint, index) => {
+      const finalDataPoint = { ...dataPoint, name: `Test ${index + 1}` }; // Use generic name for x-axis
       subjectChapters.forEach(chapter => {
         if (!(chapter.name in finalDataPoint)) {
           finalDataPoint[chapter.name] = null;
