@@ -25,7 +25,7 @@ type SubjectCounts = Record<string, ChapterCounts>; // subjectName: { chapters }
 type CurriculumCounts = Record<string, SubjectCounts>; // curriculumName: { subjects }
 type PastPaperCounts = Record<number, number>; // year: count
 
-const REQUIRED_HEADERS = ['ID', 'mcqs', 'option 01', 'option 02', 'correct option'];
+const REQUIRED_HEADERS = ['id', 'mcqs', 'option 01', 'option 02', 'correct option'];
 
 const pastMDCATYears = Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).reverse();
 
@@ -220,11 +220,20 @@ export default function QuestionBankPage() {
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
 
-                const headers: any[] = xlsx.utils.sheet_to_json(worksheet, { header: 1 })[0] || [];
-                const trimmedHeaders = headers.map(h => typeof h === 'string' ? h.trim() : '');
+                const json: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
+
+                if (json.length === 0) {
+                     toast({ title: "Empty Data", description: "The Excel file appears to be empty.", variant: "destructive" });
+                    return;
+                }
                 
-                const required = REQUIRED_HEADERS;
-                const missingHeaders = required.filter(rh => !trimmedHeaders.includes(rh));
+                const firstRow = json[0];
+                const headerMap: Record<string, string> = {};
+                Object.keys(firstRow).forEach(key => {
+                    headerMap[key.trim().toLowerCase()] = key;
+                });
+                
+                const missingHeaders = REQUIRED_HEADERS.filter(rh => !headerMap[rh]);
 
                 if (missingHeaders.length > 0) {
                      toast({
@@ -235,50 +244,44 @@ export default function QuestionBankPage() {
                     });
                     return;
                 }
-                
-                const json: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
-
-                if (json.length === 0) {
-                     toast({ title: "Empty Data", description: "The Excel file appears to be empty.", variant: "destructive" });
-                    return;
-                }
 
                 const newQuestions: MockQuestionDefinition[] = json.map((row, index) => {
-                    const requiredFields = ['ID', 'mcqs', 'correct option'];
+                     const getVal = (key: string) => row[headerMap[key.toLowerCase()]];
+
+                    const requiredFields = ['id', 'mcqs', 'correct option'];
                     for(const field of requiredFields) {
-                        if (row[field] === undefined || String(row[field]).trim() === '') {
+                        if (getVal(field) === undefined || String(getVal(field)).trim() === '') {
                              throw new Error(`Row ${index + 2} is missing required data for column: ${field}.`);
                         }
                     }
 
-                    const options = [row['option 01'], row['option 02'], row['option 03'], row['option 04']]
+                    const options = [getVal('option 01'), getVal('option 02'), getVal('option 03'), getVal('option 04')]
                         .map(opt => String(opt || '').trim())
                         .filter(opt => opt);
                     
                     if (options.length < 2) {
                         throw new Error(`Row ${index + 2} must have at least option 01 and option 02.`);
                     }
-
-                    // For now, default to single-choice. A 'Type' column could be added for more flexibility.
+                    
                     const type: MockQuestionDefinition['type'] = 'single-choice'; 
 
                     const questionBase = {
-                        id: String(row.ID).trim(),
-                        text: String(row.mcqs).trim(),
+                        id: String(getVal('id')).trim(),
+                        text: String(getVal('mcqs')).trim(),
                         type: type,
                         options: options.length > 0 ? options : undefined,
-                        correctAnswer: String(row['correct option']).split(',').map(s => s.trim()),
-                        explanation: row.Explanation ? String(row.Explanation).trim() : undefined,
+                        correctAnswer: String(getVal('correct option')).split(',').map(s => s.trim()),
+                        explanation: getVal('explanation') ? String(getVal('explanation')).trim() : undefined,
                     };
                     
                     if ('pastPaperYear' in uploadContext) {
-                        if (!row.Subject || !row.Chapter) {
+                        if (!getVal('subject') || !getVal('chapter')) {
                             throw new Error(`Row ${index + 2}: For past paper uploads, 'Subject' and 'Chapter' columns are required in the Excel file.`);
                         }
                         return {
                             ...questionBase,
-                            subject: String(row.Subject).trim(),
-                            chapter: String(row.Chapter).trim(),
+                            subject: String(getVal('subject')).trim(),
+                            chapter: String(getVal('chapter')).trim(),
                             curriculum: 'MDCAT',
                             pastPaperYear: uploadContext.pastPaperYear,
                         }
@@ -557,4 +560,3 @@ export default function QuestionBankPage() {
     );
 }
 
-    
