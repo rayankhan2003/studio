@@ -186,15 +186,26 @@ export default function TestPage() {
 
   const isAnswerCorrect = useCallback((question: QuestionForTest, userAnswer: string | string[] | undefined): boolean => {
     if (userAnswer === undefined) return false;
+    
+    // Ensure correctAnswer is always an array for uniform comparison
+    const correctAnswerAsArray = Array.isArray(question.correctAnswer)
+      ? question.correctAnswer
+      : [question.correctAnswer];
 
     if (question.type === 'multiple-choice') {
-      if (!Array.isArray(userAnswer) || !Array.isArray(question.correctAnswer)) return false;
-      if (userAnswer.length !== question.correctAnswer.length) return false;
+      if (!Array.isArray(userAnswer)) return false;
+      if (userAnswer.length !== correctAnswerAsArray.length) return false;
       const sortedUserAnswer = [...userAnswer].sort();
-      const sortedCorrectAnswer = [...question.correctAnswer].sort();
+      const sortedCorrectAnswer = [...correctAnswerAsArray].sort();
       return sortedUserAnswer.every((val, index) => val === sortedCorrectAnswer[index]);
     }
-    return userAnswer === question.correctAnswer;
+    
+    // For single-choice, true-false, fill-in-the-blank
+    if (typeof userAnswer === 'string') {
+        return correctAnswerAsArray.length === 1 && userAnswer === correctAnswerAsArray[0];
+    }
+
+    return false;
   }, []);
 
   const proceedToSubmitTest = useCallback(() => {
