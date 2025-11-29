@@ -9,86 +9,88 @@ body {
 @layer base {
   :root {
     --background: 220 29% 96%; /* Off-White */
-    --foreground: 207 12% 32%; /* Slate Gray */
+    --foreground: 220 25% 15%; /* Dark Blue */
 
-    --card: 0 0% 100%; /* White for cards to pop */
-    --card-foreground: 207 12% 32%; /* Slate Gray */
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 207 12% 32%;
+    --popover-foreground: 220 25% 15%;
 
-    --primary: 225 73% 15%; /* Deep Royal Blue */
-    --primary-foreground: 0 0% 98%; /* White */
+    --primary: 220 70% 20%; /* Royal Navy Blue */
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 220 20% 90%; /* Lighter shade of Off-White */
-    --secondary-foreground: 225 73% 15%; /* Deep Royal Blue */
+    --secondary: 220 20% 90%;
+    --secondary-foreground: 220 70% 20%;
 
     --muted: 220 20% 90%;
-    --muted-foreground: 207 12% 45%; /* Lighter Slate Gray */
+    --muted-foreground: 220 15% 45%;
 
-    --accent: 45 52% 54%; /* Gold Accent */
-    --accent-foreground: 225 73% 10%; /* Darker Royal Blue for contrast */
+    --accent: 45 88% 60%; /* Royal Gold */
+    --accent-foreground: 220 70% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 15% 88%;
     --input: 220 15% 92%;
-    --ring: 225 73% 15%; /* Deep Royal Blue */
+    --ring: 220 70% 30%;
 
-    --radius: 0.75rem; /* Increased radius for a softer look */
+    --radius: 0.75rem;
 
-    --chart-1: 225 73% 15%; /* Deep Royal Blue */
-    --chart-2: 45 52% 54%; /* Gold Accent */
-    --chart-3: 164 100% 28%; /* Emerald Green */
-    --chart-4: 207 12% 50%; /* Medium Slate Gray */
-    --chart-5: 220 20% 80%; /* Light Gray */
+    /* Chart Colors */
+    --chart-1: 220 70% 25%; /* Deep Blue */
+    --chart-2: 45 88% 60%; /* Royal Gold */
+    --chart-3: 160 50% 45%; /* Muted Emerald */
+    --chart-4: 220 20% 70%; /* Light Gray */
+    --chart-5: 220 15% 45%; /* Slate Gray */
 
-    /* Sidebar specific colors can be themed similarly if needed */
-    --sidebar-background: 225 73% 12%;
+    /* Sidebar specific colors */
+    --sidebar-background: 220 70% 12%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 225 73% 12%;
-    --sidebar-accent: 225 73% 20%;
+    --sidebar-primary-foreground: 220 70% 12%;
+    --sidebar-accent: 220 70% 20%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 225 73% 18%;
+    --sidebar-border: 220 70% 18%;
     --sidebar-ring: 0 0% 98%;
   }
 
   .dark {
-    --background: 207 12% 10%; /* Very Dark Slate */
-    --foreground: 220 29% 96%; /* Off-White */
+    --background: 220 25% 10%; /* Charcoal Black */
+    --foreground: 220 20% 90%; /* Soft Grey */
 
-    --card: 225 73% 10%; /* Darker Royal Blue */
-    --card-foreground: 220 29% 96%;
+    --card: 220 70% 12%; /* Royal Navy Blue */
+    --card-foreground: 220 20% 90%;
 
-    --popover: 225 73% 8%;
-    --popover-foreground: 220 29% 96%;
+    --popover: 220 70% 8%;
+    --popover-foreground: 220 20% 90%;
 
-    --primary: 45 52% 60%; /* Brighter Gold for dark mode */
-    --primary-foreground: 225 73% 10%;
+    --primary: 45 88% 65%; /* Brighter Royal Gold */
+    --primary-foreground: 220 70% 10%;
 
-    --secondary: 225 73% 15%; /* Deep Royal Blue */
-    --secondary-foreground: 220 29% 96%;
+    --secondary: 220 70% 15%;
+    --secondary-foreground: 220 20% 90%;
 
-    --muted: 225 73% 15%;
-    --muted-foreground: 220 20% 70%;
+    --muted: 220 70% 15%;
+    --muted-foreground: 220 15% 60%;
 
-    --accent: 164 100% 35%; /* Emerald Green */
+    --accent: 160 60% 50%; /* Brighter Emerald */
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 50.6%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 225 73% 18%;
-    --input: 225 73% 18%;
-    --ring: 45 52% 60%;
+    --border: 220 70% 18%;
+    --input: 220 70% 18%;
+    --ring: 45 88% 65%;
 
-    --chart-1: 45 52% 60%; /* Brighter Gold */
-    --chart-2: 164 100% 35%; /* Emerald Green */
-    --chart-3: 220 29% 96%; /* Off-White */
-    --chart-4: 207 12% 50%; /* Medium Slate Gray */
-    --chart-5: 225 73% 25%; /* Lighter Royal Blue */
+    /* Chart Colors */
+    --chart-1: 45 88% 65%; /* Royal Gold */
+    --chart-2: 160 60% 50%; /* Emerald */
+    --chart-3: 220 20% 85%; /* Soft White */
+    --chart-4: 220 15% 50%; /* Mid Gray */
+    --chart-5: 220 70% 25%; /* Lighter Royal Blue */
   }
 }
 
