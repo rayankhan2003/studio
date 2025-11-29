@@ -8,96 +8,87 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* White */
-    --foreground: 0 0% 0%; /* Black */
+    --background: 220 29% 96%; /* Off-White */
+    --foreground: 207 12% 32%; /* Slate Gray */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card: 0 0% 100%; /* White for cards to pop */
+    --card-foreground: 207 12% 32%; /* Slate Gray */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 207 12% 32%;
 
-    --primary: 0 0% 9%; /* Near Black */
+    --primary: 225 73% 15%; /* Deep Royal Blue */
     --primary-foreground: 0 0% 98%; /* White */
 
-    --secondary: 0 0% 96.1%; /* Light Gray */
-    --secondary-foreground: 0 0% 9%; /* Near Black */
+    --secondary: 220 20% 90%; /* Lighter shade of Off-White */
+    --secondary-foreground: 225 73% 15%; /* Deep Royal Blue */
 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%; /* Muted Text */
+    --muted: 220 20% 90%;
+    --muted-foreground: 207 12% 45%; /* Lighter Slate Gray */
 
-    --accent: 0 0% 96.1%; /* Light Gray */
-    --accent-foreground: 0 0% 9%; /* Near Black */
+    --accent: 45 52% 54%; /* Gold Accent */
+    --accent-foreground: 225 73% 10%; /* Darker Royal Blue for contrast */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 9%;
+    --border: 220 15% 88%;
+    --input: 220 15% 92%;
+    --ring: 225 73% 15%; /* Deep Royal Blue */
 
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Increased radius for a softer look */
 
-    --chart-1: 0 0% 9%;
-    --chart-2: 0 0% 40%;
-    --chart-3: 0 0% 60%;
-    --chart-4: 0 0% 75%;
-    --chart-5: 0 0% 85%;
+    --chart-1: 225 73% 15%; /* Deep Royal Blue */
+    --chart-2: 45 52% 54%; /* Gold Accent */
+    --chart-3: 164 100% 28%; /* Emerald Green */
+    --chart-4: 207 12% 50%; /* Medium Slate Gray */
+    --chart-5: 220 20% 80%; /* Light Gray */
 
-    /* Sidebar specific colors */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 9%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 90%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 89.8%;
-    --sidebar-ring: 0 0% 9%;
+    /* Sidebar specific colors can be themed similarly if needed */
+    --sidebar-background: 225 73% 12%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 225 73% 12%;
+    --sidebar-accent: 225 73% 20%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 225 73% 18%;
+    --sidebar-ring: 0 0% 98%;
   }
 
   .dark {
-    --background: 0 0% 9%; /* Near Black */
-    --foreground: 0 0% 98%; /* White */
+    --background: 207 12% 10%; /* Very Dark Slate */
+    --foreground: 220 29% 96%; /* Off-White */
 
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 98%;
+    --card: 225 73% 10%; /* Darker Royal Blue */
+    --card-foreground: 220 29% 96%;
 
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 225 73% 8%;
+    --popover-foreground: 220 29% 96%;
 
-    --primary: 0 0% 98%; /* White */
-    --primary-foreground: 0 0% 9%; /* Near Black */
+    --primary: 45 52% 60%; /* Brighter Gold for dark mode */
+    --primary-foreground: 225 73% 10%;
 
-    --secondary: 0 0% 14.9%; /* Dark Gray */
-    --secondary-foreground: 0 0% 98%; /* White */
+    --secondary: 225 73% 15%; /* Deep Royal Blue */
+    --secondary-foreground: 220 29% 96%;
 
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted: 225 73% 15%;
+    --muted-foreground: 220 20% 70%;
 
-    --accent: 0 0% 14.9%;
+    --accent: 164 100% 35%; /* Emerald Green */
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 50.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 98%;
+    --border: 225 73% 18%;
+    --input: 225 73% 18%;
+    --ring: 45 52% 60%;
 
-    --chart-1: 0 0% 98%;
-    --chart-2: 0 0% 80%;
-    --chart-3: 0 0% 60%;
-    --chart-4: 0 0% 45%;
-    --chart-5: 0 0% 30%;
-
-    --sidebar-background: 0 0% 9%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 0 0% 9%;
-    --sidebar-accent: 0 0% 14.9%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 14.9%;
-    --sidebar-ring: 0 0% 98%;
+    --chart-1: 45 52% 60%; /* Brighter Gold */
+    --chart-2: 164 100% 35%; /* Emerald Green */
+    --chart-3: 220 29% 96%; /* Off-White */
+    --chart-4: 207 12% 50%; /* Medium Slate Gray */
+    --chart-5: 225 73% 25%; /* Lighter Royal Blue */
   }
 }
 
