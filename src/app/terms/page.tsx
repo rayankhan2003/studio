@@ -1,3 +1,4 @@
+
 import { FileText } from "lucide-react";
 
 export default function TermsOfUsePage() {
@@ -13,7 +14,7 @@ export default function TermsOfUsePage() {
 
       <div className="prose prose-lg max-w-none text-foreground bg-card p-6 sm:p-8 rounded-lg shadow-md">
         <p>
-          Please read these Terms of Use ("Terms", "Terms of Use") carefully before using the path2med website and services (the "Service") operated by path2med ("us", "we", or "our").
+          Please read these Terms of Use ("Terms", "Terms of Use") carefully before using the DojoBeacon website and services (the "Service") operated by DojoBeacon ("us", "we", or "our").
         </p>
         <p>
           Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service. By accessing or using the Service you agree to be bound by these Terms. If you disagree with any part of the terms then you may not access the Service.
@@ -29,10 +30,10 @@ export default function TermsOfUsePage() {
 
         <h2>2. Intellectual Property</h2>
         <p>
-          The Service and its original content (excluding Content provided by users), features and functionality are and will remain the exclusive property of path2med and its licensors. The Service is protected by copyright, trademark, and other laws of both the [Your Country/Jurisdiction] and foreign countries. Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of path2med.
+          The Service and its original content (excluding Content provided by users), features and functionality are and will remain the exclusive property of DojoBeacon and its licensors. The Service is protected by copyright, trademark, and other laws of both the [Your Country/Jurisdiction] and foreign countries. Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of DojoBeacon.
         </p>
         <p>
-          All questions, content, and materials provided within the Test Module and Question Bank are the intellectual property of path2med or its content suppliers and are protected by copyright laws. You may not reproduce, distribute, modify, create derivative works of, publicly display, publicly perform, republish, download, store, or transmit any of the material on our Service, except as follows: your computer may temporarily store copies of such materials in RAM incidental to your accessing and viewing those materials.
+          All questions, content, and materials provided within the Test Module and Question Bank are the intellectual property of DojoBeacon or its content suppliers and are protected by copyright laws. You may not reproduce, distribute, modify, create derivative works of, publicly display, publicly perform, republish, download, store, or transmit any of the material on our Service, except as follows: your computer may temporarily store copies of such materials in RAM incidental to your accessing and viewing those materials.
         </p>
         
         <h2>3. User Conduct</h2>
@@ -43,8 +44,8 @@ export default function TermsOfUsePage() {
           <li>In any way that violates any applicable national or international law or regulation.</li>
           <li>For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way by exposing them to inappropriate content or otherwise.</li>
           <li>To transmit, or procure the sending of, any advertising or promotional material, including any "junk mail", "chain letter," "spam," or any other similar solicitation.</li>
-          <li>To impersonate or attempt to impersonate path2med, a path2med employee, another user, or any other person or entity.</li>
-          <li>To engage in any other conduct that restricts or inhibits anyone's use or enjoyment of the Service, or which, as determined by us, may harm path2med or users of the Service or expose them to liability.</li>
+          <li>To impersonate or attempt to impersonate DojoBeacon, a DojoBeacon employee, another user, or any other person or entity.</li>
+          <li>To engage in any other conduct that restricts or inhibits anyone's use or enjoyment of the Service, or which, as determined by us, may harm DojoBeacon or users of the Service or expose them to liability.</li>
         </ul>
 
         <h2>4. Termination</h2>
@@ -54,7 +55,7 @@ export default function TermsOfUsePage() {
         
         <h2>5. Limitation of Liability</h2>
         <p>
-          In no event shall path2med, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the Service; (ii) any conduct or content of any third party on the Service; (iii) any content obtained from the Service; and (iv) unauthorized access, use or alteration of your transmissions or content, whether based on warranty, contract, tort (including negligence) or any other legal theory, whether or not we have been informed of the possibility of such damage, and even if a remedy set forth herein is found to have failed of its essential purpose.
+          In no event shall DojoBeacon, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the Service; (ii) any conduct or content of any third party on the Service; (iii) any content obtained from the Service; and (iv) unauthorized access, use or alteration of your transmissions or content, whether based on warranty, contract, tort (including negligence) or any other legal theory, whether or not we have been informed of the possibility of such damage, and even if a remedy set forth herein is found to have failed of its essential purpose.
         </p>
 
         <h2>6. Disclaimer</h2>
@@ -62,7 +63,7 @@ export default function TermsOfUsePage() {
           Your use of the Service is at your sole risk. The Service is provided on an "AS IS" and "AS AVAILABLE" basis. The Service is provided without warranties of any kind, whether express or implied, including, but not limited to, implied warranties of merchantability, fitness for a particular purpose, non-infringement or course of performance.
         </p>
         <p>
-          path2med its subsidiaries, affiliates, and its licensors do not warrant that a) the Service will function uninterrupted, secure or available at any particular time or location; b) any errors or defects will be corrected; c) the Service is free of viruses or other harmful components; or d) the results of using the Service will meet your requirements.
+          DojoBeacon its subsidiaries, affiliates, and its licensors do not warrant that a) the Service will function uninterrupted, secure or available at any particular time or location; b) any errors or defects will be corrected; c) the Service is free of viruses or other harmful components; or d) the results of using the Service will meet your requirements.
         </p>
 
         <h2>7. Governing Law</h2>
@@ -83,8 +84,8 @@ export default function TermsOfUsePage() {
           If you have any questions about these Terms, please contact us:
         </p>
         <p>
-          path2med Legal Team<br />
-          Email: <a href="mailto:legal@path2med.com" className="text-primary hover:underline">legal@path2med.com</a><br />
+          DojoBeacon Legal Team<br />
+          Email: <a href="mailto:legal@dojobeacon.com" className="text-primary hover:underline">legal@dojobeacon.com</a><br />
           Address: 123 Learning Lane, Knowledge City, ED 54321
         </p>
       </div>

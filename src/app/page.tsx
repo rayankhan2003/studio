@@ -48,7 +48,7 @@ export default function Wh() {
 
   useEffect(() => {
     try {
-        const storedBlogsRaw = localStorage.getItem('path2med-blogs');
+        const storedBlogsRaw = localStorage.getItem('dojobeacon-blogs');
         const storedBlogs: Blog[] = storedBlogsRaw ? JSON.parse(storedBlogsRaw) : [];
         
         const activeBlogs = storedBlogs.filter(blog => blog.status === 'Active');
@@ -134,11 +134,11 @@ export default function Wh() {
         </div>
       </section>
 
-      <section id="why-path2med" className="w-full py-10 sm:py-12 bg-muted/50 rounded-lg">
+      <section id="why-dojobeacon" className="w-full py-10 sm:py-12 bg-muted/50 rounded-lg">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl">
-              🚀 Why Thousands of MDCAT Students Will Trust path2med
+              🚀 Why Thousands of MDCAT Students Will Trust DojoBeacon
             </h2>
           </div>
           <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
@@ -175,7 +175,7 @@ export default function Wh() {
               Latest News & Articles
             </h2>
             <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-              Stay updated with the latest exam tips, announcements, and success stories from the path2med team.
+              Stay updated with the latest exam tips, announcements, and success stories from the DojoBeacon team.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -227,7 +227,7 @@ export default function Wh() {
             Make Your MDCAT Prep a Journey — Not a Struggle
           </h2>
           <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            With path2med, your preparation is <strong>calculated</strong>, <strong>goal-driven</strong>, and <strong>data-backed</strong>. Whether it's your daily schedule, chapter mastery, or your final MDCAT strategy, you’ll always know <strong>where you stand</strong> — and what to do next.
+            With DojoBeacon, your preparation is <strong>calculated</strong>, <strong>goal-driven</strong>, and <strong>data-backed</strong>. Whether it's your daily schedule, chapter mastery, or your final MDCAT strategy, you’ll always know <strong>where you stand</strong> — and what to do next.
           </p>
         </div>
       </section>
@@ -241,7 +241,7 @@ export default function Wh() {
             Join Now — Demo Access Available!
           </h2>
           <p className="text-md sm:text-lg text-muted-foreground mb-6 sm:mb-8">
-            Thousands of students will trust path2med to generate their personal study plans, track their progress with real data, create smart tests, simulate the real exam, and reach their MBBS/BDS dreams.
+            Thousands of students will trust DojoBeacon to generate their personal study plans, track their progress with real data, create smart tests, simulate the real exam, and reach their MBBS/BDS dreams.
           </p>
           <Button asChild size="lg" className="text-md sm:text-lg py-3 px-6 sm:py-7 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/50 transition-shadow">
             <Link href="/account">
@@ -256,5 +256,3 @@ export default function Wh() {
     </div>
   );
 }
-
-    

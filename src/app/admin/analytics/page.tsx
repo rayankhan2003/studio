@@ -37,7 +37,7 @@ export default function AdminAnalyticsPage() {
   const [timeFrame, setTimeFrame] = useState<'weekly' | 'monthly'>('monthly');
 
   useEffect(() => {
-    const storedSubscribersRaw = localStorage.getItem('path2med-subscribers');
+    const storedSubscribersRaw = localStorage.getItem('dojobeacon-subscribers');
     if (storedSubscribersRaw) {
         try {
             const parsedSubscribers = JSON.parse(storedSubscribersRaw);

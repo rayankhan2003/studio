@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Target, Lightbulb } from "lucide-react";
 import Image from "next/image";
@@ -6,7 +7,7 @@ export default function AboutPage() {
   return (
     <div className="space-y-12">
       <section className="text-center py-12 bg-gradient-to-r from-primary/10 via-background to-accent/10 rounded-lg">
-        <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">About path2med</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">About DojoBeacon</h1>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
           Empowering students to achieve their academic dreams through personalized and intelligent test preparation.
         </p>
@@ -16,7 +17,7 @@ export default function AboutPage() {
         <div>
           <h2 className="text-3xl font-semibold text-primary mb-4">Our Mission</h2>
           <p className="text-muted-foreground leading-relaxed mb-4">
-            At path2med, our mission is to revolutionize the way students prepare for exams. We believe that every student has unique learning needs and potential. By leveraging cutting-edge technology, including artificial intelligence and data analytics, we provide a tailored learning experience that adapts to individual strengths and weaknesses. Our goal is to make high-quality test preparation accessible, engaging, and ultimately, more effective.
+            At DojoBeacon, our mission is to revolutionize the way students prepare for exams. We believe that every student has unique learning needs and potential. By leveraging cutting-edge technology, including artificial intelligence and data analytics, we provide a tailored learning experience that adapts to individual strengths and weaknesses. Our goal is to make high-quality test preparation accessible, engaging, and ultimately, more effective.
           </p>
           <p className="text-muted-foreground leading-relaxed">
             We strive to build a platform that not only helps students achieve higher scores but also fosters a deeper understanding of subjects and builds lasting confidence.
@@ -76,7 +77,7 @@ export default function AboutPage() {
       <section className="text-center py-12">
         <h2 className="text-2xl font-semibold mb-4">Join Us on Your Journey to Success</h2>
         <p className="text-muted-foreground max-w-xl mx-auto">
-          path2med is more than just a test prep tool; it's your dedicated partner in achieving academic excellence.
+          DojoBeacon is more than just a test prep tool; it's your dedicated partner in achieving academic excellence.
         </p>
       </section>
     </div>

@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'path2med - AI Study Planner & Test Prep',
-  description: 'AI-powered study planner, personalized test preparation, real-time performance analytics, and an intuitive dashboard for path2med.',
+  title: 'DojoBeacon - AI Study Planner & Test Prep',
+  description: 'AI-powered study planner, personalized test preparation, real-time performance analytics, and an intuitive dashboard for DojoBeacon.',
 };
 
 export default function RootLayout({

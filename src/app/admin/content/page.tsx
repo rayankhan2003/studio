@@ -51,8 +51,8 @@ export default function AdminContentPage() {
     const [eventFormData, setEventFormData] = useState(initialEventState);
 
     const loadContent = useCallback(() => {
-        const storedBlogs = localStorage.getItem('path2med-blogs');
-        const storedEvents = localStorage.getItem('path2med-events');
+        const storedBlogs = localStorage.getItem('dojobeacon-blogs');
+        const storedEvents = localStorage.getItem('dojobeacon-events');
         setBlogs(storedBlogs ? JSON.parse(storedBlogs) : []);
         setEvents(storedEvents ? JSON.parse(storedEvents) : []);
     }, []);
@@ -82,7 +82,7 @@ export default function AdminContentPage() {
             updatedBlogs = [newBlog, ...blogs];
             toast({ title: 'Success', description: 'New article created.' });
         }
-        localStorage.setItem('path2med-blogs', JSON.stringify(updatedBlogs));
+        localStorage.setItem('dojobeacon-blogs', JSON.stringify(updatedBlogs));
         setBlogs(updatedBlogs);
         setIsBlogDialogOpen(false);
     };
@@ -102,14 +102,14 @@ export default function AdminContentPage() {
     const handleToggleBlogStatus = (blog: Blog) => {
         const newStatus = blog.status === 'Active' ? 'Silent' : 'Active';
         const updatedBlogs = blogs.map(b => b.id === blog.id ? { ...b, status: newStatus } : b);
-        localStorage.setItem('path2med-blogs', JSON.stringify(updatedBlogs));
+        localStorage.setItem('dojobeacon-blogs', JSON.stringify(updatedBlogs));
         setBlogs(updatedBlogs);
         toast({ title: 'Status Updated', description: `Article is now ${newStatus}.` });
     };
 
     const handleDeleteBlog = (blogId: string) => {
         const updatedBlogs = blogs.filter(b => b.id !== blogId);
-        localStorage.setItem('path2med-blogs', JSON.stringify(updatedBlogs));
+        localStorage.setItem('dojobeacon-blogs', JSON.stringify(updatedBlogs));
         setBlogs(updatedBlogs);
         toast({ title: 'Article Deleted', description: 'The article has been removed.' });
     };
@@ -134,7 +134,7 @@ export default function AdminContentPage() {
             updatedEvents = [newEvent, ...events];
             toast({ title: 'Success', description: 'New event created.' });
         }
-        localStorage.setItem('path2med-events', JSON.stringify(updatedEvents));
+        localStorage.setItem('dojobeacon-events', JSON.stringify(updatedEvents));
         setEvents(updatedEvents);
         setIsEventDialogOpen(false);
     };
@@ -154,14 +154,14 @@ export default function AdminContentPage() {
     const handleToggleEventStatus = (event: Event) => {
         const newStatus = event.status === 'Active' ? 'Silent' : 'Active';
         const updatedEvents = events.map(e => e.id === event.id ? { ...e, status: newStatus } : e);
-        localStorage.setItem('path2med-events', JSON.stringify(updatedEvents));
+        localStorage.setItem('dojobeacon-events', JSON.stringify(updatedEvents));
         setEvents(updatedEvents);
         toast({ title: 'Status Updated', description: `Event is now ${newStatus}.` });
     };
 
     const handleDeleteEvent = (eventId: string) => {
         const updatedEvents = events.filter(e => e.id !== eventId);
-        localStorage.setItem('path2med-events', JSON.stringify(updatedEvents));
+        localStorage.setItem('dojobeacon-events', JSON.stringify(updatedEvents));
         setEvents(updatedEvents);
         toast({ title: 'Event Deleted', description: 'The event has been removed.' });
     };
@@ -316,5 +316,3 @@ export default function AdminContentPage() {
     </div>
   );
 }
-
-    

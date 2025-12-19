@@ -176,7 +176,7 @@ export default function PricingPage() {
 
   // Mock data saving for analytics
   const saveSubscriberInfo = (data: DemoInfoData | PremiumFormData, planType: 'Demo' | 'Monthly' | '6-Month' | 'Yearly') => {
-    const existingSubscribersRaw = localStorage.getItem('path2med-subscribers');
+    const existingSubscribersRaw = localStorage.getItem('dojobeacon-subscribers');
     const existingSubscribers = existingSubscribersRaw ? JSON.parse(existingSubscribersRaw) : [];
 
     const newSubscriber = {
@@ -189,7 +189,7 @@ export default function PricingPage() {
     };
     
     existingSubscribers.push(newSubscriber);
-    localStorage.setItem('path2med-subscribers', JSON.stringify(existingSubscribers));
+    localStorage.setItem('dojobeacon-subscribers', JSON.stringify(existingSubscribers));
   };
 
 
@@ -242,7 +242,7 @@ export default function PricingPage() {
             return;
         }
 
-        const existingSubscriptionsRaw = localStorage.getItem('path2med-institutional-subscriptions');
+        const existingSubscriptionsRaw = localStorage.getItem('dojobeacon-institutional-subscriptions');
         const existingSubscriptions = existingSubscriptionsRaw ? JSON.parse(existingSubscriptionsRaw) : [];
 
         const newSubscription: InstitutionalFormData = {
@@ -251,7 +251,7 @@ export default function PricingPage() {
         };
 
         existingSubscriptions.push(newSubscription);
-        localStorage.setItem('path2med-institutional-subscriptions', JSON.stringify(existingSubscriptions));
+        localStorage.setItem('dojobeacon-institutional-subscriptions', JSON.stringify(existingSubscriptions));
         
         toast({
             title: "Processing Institutional Subscription...",
@@ -281,7 +281,7 @@ export default function PricingPage() {
           Choose Your Plan
         </h1>
         <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-          Start with our Demo plan to get a feel for path2med, or unlock the full potential of your exam preparation with path2med Premium.
+          Start with our Demo plan to get a feel for DojoBeacon, or unlock the full potential of your exam preparation with DojoBeacon Premium.
         </p>
       </section>
 
@@ -294,7 +294,7 @@ export default function PricingPage() {
               Free
             </CardDescription>
             <p className="text-sm text-muted-foreground mt-1">
-              Get a taste of path2med. Provide some basic info to start.
+              Get a taste of DojoBeacon. Provide some basic info to start.
             </p>
           </CardHeader>
           <CardContent className="space-y-6 flex-grow">
@@ -326,7 +326,7 @@ export default function PricingPage() {
             <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
                <Zap className="h-8 w-8 text-primary" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">path2med Premium Plans</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">DojoBeacon Premium Plans</h2>
             <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
               Get unlimited access to all features and accelerate your preparation.
             </p>
@@ -492,7 +492,7 @@ export default function PricingPage() {
             <DialogContent className="sm:max-w-md lg:max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <UserPlus className="h-6 w-6 text-accent" /> Start path2med Demo
+                        <UserPlus className="h-6 w-6 text-accent" /> Start DojoBeacon Demo
                     </DialogTitle>
                     <DialogDescription>
                         Please provide some basic information to activate your demo access.
@@ -577,7 +577,7 @@ export default function PricingPage() {
         <DialogContent className="sm:max-w-md lg:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-6 w-6 text-primary" /> Subscribe to {selectedPlan?.name || 'path2med Premium'}
+              <CreditCard className="h-6 w-6 text-primary" /> Subscribe to {selectedPlan?.name || 'DojoBeacon Premium'}
             </DialogTitle>
             <DialogDescription>
               Enter your details to unlock all premium features. {selectedPlan?.billing_desc}
@@ -766,5 +766,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    

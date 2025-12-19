@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedSettings = localStorage.getItem('path2med-payment-settings');
+    const storedSettings = localStorage.getItem('dojobeacon-payment-settings');
     if (storedSettings) {
       setSettings(JSON.parse(storedSettings));
     }
@@ -48,7 +48,7 @@ export default function AdminSettingsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('path2med-payment-settings', JSON.stringify(settings));
+    localStorage.setItem('dojobeacon-payment-settings', JSON.stringify(settings));
     toast({
       title: "Settings Saved",
       description: "Your payment receiving details have been updated (mock action).",

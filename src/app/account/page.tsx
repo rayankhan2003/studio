@@ -67,7 +67,7 @@ export default function AccountAuthPage() {
     }
 
     // 2. Check for Sub-Admin credentials from localStorage
-    const subAdminsRaw = localStorage.getItem('path2med-sub-admins');
+    const subAdminsRaw = localStorage.getItem('dojobeacon-sub-admins');
     const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
     const subAdminData = subAdmins.find((sa: any) => sa.email === loginEmail && sa.password === loginPassword);
 
@@ -88,7 +88,7 @@ export default function AccountAuthPage() {
     }
     
     // 3. Check for Teacher credentials
-    const institutionalSubscriptionsRaw = localStorage.getItem('path2med-institutional-subscriptions');
+    const institutionalSubscriptionsRaw = localStorage.getItem('dojobeacon-institutional-subscriptions');
     const institutionalSubscriptions = institutionalSubscriptionsRaw ? JSON.parse(institutionalSubscriptionsRaw) : [];
     
     for (const institution of institutionalSubscriptions) {
@@ -272,5 +272,3 @@ export default function AccountAuthPage() {
     </div>
   );
 }
-
-    

@@ -14,14 +14,14 @@ interface ActivityLog {
 
 export function logActivity(action: string) {
     try {
-        const storedUserRaw = localStorage.getItem('path2med-user');
+        const storedUserRaw = localStorage.getItem('dojobeacon-user');
         if (!storedUserRaw) {
             console.warn("Could not log activity: No user found in storage.");
             return;
         }
         const user = JSON.parse(storedUserRaw);
 
-        const storedAdminsRaw = localStorage.getItem('path2med-sub-admins');
+        const storedAdminsRaw = localStorage.getItem('dojobeacon-sub-admins');
         const subAdmins = storedAdminsRaw ? JSON.parse(storedAdminsRaw) : [];
         const subAdminInfo = user.isSuperAdmin ? null : subAdmins.find((sa: any) => sa.email === user.email);
 
@@ -33,13 +33,13 @@ export function logActivity(action: string) {
             action: action,
         };
 
-        const existingLogsRaw = localStorage.getItem('path2med-activity-logs');
+        const existingLogsRaw = localStorage.getItem('dojobeacon-activity-logs');
         const existingLogs: ActivityLog[] = existingLogsRaw ? JSON.parse(existingLogsRaw) : [];
         
         // Add new log to the beginning of the array and limit to 100 entries
         const updatedLogs = [newLog, ...existingLogs].slice(0, 100);
 
-        localStorage.setItem('path2med-activity-logs', JSON.stringify(updatedLogs));
+        localStorage.setItem('dojobeacon-activity-logs', JSON.stringify(updatedLogs));
 
     } catch (error) {
         console.error("Failed to write to activity log:", error);

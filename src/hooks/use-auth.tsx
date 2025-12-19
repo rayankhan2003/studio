@@ -42,25 +42,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem('path2med-user');
+      const storedUser = localStorage.getItem('dojobeacon-user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('path2med-user');
+      localStorage.removeItem('dojobeacon-user');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const login = useCallback((newUser: User) => {
-    localStorage.setItem('path2med-user', JSON.stringify(newUser));
+    localStorage.setItem('dojobeacon-user', JSON.stringify(newUser));
     setUser(newUser);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('path2med-user');
+    localStorage.removeItem('dojobeacon-user');
     setUser(null);
   }, []);
 
