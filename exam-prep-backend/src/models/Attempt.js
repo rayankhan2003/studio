@@ -1,22 +1,33 @@
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Represents a user's attempt at a test
 const AttemptSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  test: { type: mongoose.Schema.Types.ObjectId, ref: 'Test' }, // For pre-defined tests
-  testName: { type: String, required: true }, // For custom or pre-defined tests
+  test: { type: mongoose.Schema.Types.ObjectId, ref: 'Test', required: true },
+  testName: { type: String }, // denormalized for easy display
   curriculum: { type: String, required: true },
   testType: { type: String, enum: ['Custom', 'Past Paper'], required: true },
-  overallScorePercentage: { type: Number, required: true },
-  subjectScores: { type: Map, of: Number }, // { "Biology": 85.5, "Physics": 70.0 }
-  chapterScores: { type: Map, of: new mongoose.Schema({ _id: false, scores: { type: Map, of: Number } }) }, // { "Biology": { "Genetics": 90, ... } }
+  
   answers: [{
-    question: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
+    _id: false,
+    questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
     selectedAnswer: mongoose.Schema.Types.Mixed,
     isCorrect: Boolean
   }],
+  
+  score: { type: Number, default: 0 },
+  totalQuestions: { type: Number, default: 0 },
+  scorePercentage: { type: Number, default: 0 },
+  
+  subjectScores: { type: Map, of: { correct: Number, total: Number, percentage: Number }, default: {} },
+  chapterScores: { type: Map, of: { type: Map, of: { correct: Number, total: Number, percentage: Number } }, default: {} },
+
+  startedAt: { type: Date, required: true },
+  completedAt: { type: Date },
   timeTaken: { type: Number }, // in seconds
+
+  status: { type: String, enum: ['in-progress', 'completed'], default: 'in-progress' },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Attempt', AttemptSchema);
+export default mongoose.model('Attempt', AttemptSchema);
