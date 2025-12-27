@@ -8,9 +8,9 @@ const router = Router();
 
 router.use(requireAuth, requireRole(ROLES.INSTITUTION_ADMIN, ROLES.TEACHER));
 
-router.post("/", sectionController.createSection);
+router.post("/", requireRole(ROLES.INSTITUTION_ADMIN), sectionController.createSection);
 router.get("/", sectionController.listSections);
-router.put("/:id", sectionController.updateSection);
-router.delete("/:id", sectionController.deleteSection);
+router.put("/:id", requireRole(ROLES.INSTITUTION_ADMIN), sectionController.updateSection);
+router.delete("/:id", requireRole(ROLES.INSTITUTION_ADMIN), sectionController.deleteSection);
 
 export default router;
