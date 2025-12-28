@@ -14,10 +14,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { toast } from '@/hooks/use-toast';
 import { allSubjects as allMdcatSubjects, syllabus as mdcatSyllabus, type Chapter as MdcatChapter } from '@/lib/syllabus';
 import { allCambridgeSubjects, cambridgeSyllabus, CambridgeLevels, type CambridgeChapter } from '@/lib/cambridge-syllabus';
-import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive, ChevronDown, GraduationCap } from 'lucide-react';
+import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive, ChevronDown, GraduationCap, Zap } from 'lucide-react';
 import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/use-auth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 const questionCountPresets = [5, 10, 15, 20, 30, 50, 100];
 const timePerQuestionOptions = [
@@ -40,6 +43,7 @@ type SelectedChaptersMap = Record<string, Set<string>>;
 export default function CustomTestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   
   const [curriculum, setCurriculum] = useState<Curriculum>('MDCAT');
 
@@ -65,14 +69,33 @@ export default function CustomTestPage() {
   }, []);
 
   const { subjects, syllabus } = useMemo(() => {
+    const isDemo = user?.isDemo === true;
+    let originalSubjects: string[];
+    let originalSyllabus: Record<string, any>;
+
     if (curriculum === 'O Level') {
-        return { subjects: allCambridgeSubjects, syllabus: cambridgeSyllabus[CambridgeLevels.O_LEVEL] };
+        originalSubjects = allCambridgeSubjects;
+        originalSyllabus = cambridgeSyllabus[CambridgeLevels.O_LEVEL];
+    } else if (curriculum === 'A Level') {
+        originalSubjects = allCambridgeSubjects;
+        originalSyllabus = cambridgeSyllabus[CambridgeLevels.A_LEVEL];
+    } else {
+        originalSubjects = allMdcatSubjects;
+        originalSyllabus = mdcatSyllabus;
     }
-    if (curriculum === 'A Level') {
-        return { subjects: allCambridgeSubjects, syllabus: cambridgeSyllabus[CambridgeLevels.A_LEVEL] };
+    
+    if (isDemo) {
+        const demoSyllabus: Record<string, any> = {};
+        for(const subject in originalSyllabus) {
+            if(Object.prototype.hasOwnProperty.call(originalSyllabus, subject)) {
+                demoSyllabus[subject] = originalSyllabus[subject].slice(0, 1);
+            }
+        }
+        return { subjects: originalSubjects, syllabus: demoSyllabus };
     }
-    return { subjects: allMdcatSubjects, syllabus: mdcatSyllabus };
-  }, [curriculum]);
+
+    return { subjects: originalSubjects, syllabus: originalSyllabus };
+  }, [curriculum, user?.isDemo]);
 
   const totalSelectedChaptersCount = useMemo(() => {
     return Object.values(selectedChaptersMap).reduce((acc, chaptersSet) => acc + chaptersSet.size, 0);
@@ -246,7 +269,7 @@ export default function CustomTestPage() {
         if (actualQuestionCount > totalAvailableQuestionsFromSelection && totalAvailableQuestionsFromSelection > 0) {
           toast({
             title: "Warning",
-            description: `Requested ${actualQuestionCount} questions, but selected topics have only ${totalAvailableQuestionsFromSelection}. The test will use ${totalAvailableQuestionsFromSelection} questions.`,
+            description: `Requested ${actualQuestionCount} questions, but selected topics have only ${totalAvailableQuestionsFromSelection}. The test will use this count.`,
             duration: 7000,
           });
         }
@@ -311,6 +334,16 @@ export default function CustomTestPage() {
           <h1 className="text-3xl font-bold tracking-tight">Make Your Test</h1>
         </div>
       </div>
+       {user?.isDemo && (
+          <Alert variant="default" className="bg-primary/5 border-primary/20">
+            <Zap className="h-4 w-4 text-primary" />
+            <AlertTitle className="text-primary font-semibold">Demo Mode Active</AlertTitle>
+            <AlertDescription className="text-xs">
+              You are currently in demo mode. Access is limited to the first chapter of each subject. 
+              <Link href="/pricing" className="font-bold underline ml-1">Upgrade to Premium</Link> to unlock all chapters and features.
+            </AlertDescription>
+          </Alert>
+        )}
       
       <Tabs value={curriculum} onValueChange={(value) => setCurriculum(value as Curriculum)}>
         <TabsList className="grid w-full grid-cols-3">

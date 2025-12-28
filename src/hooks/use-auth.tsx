@@ -25,6 +25,8 @@ export interface User {
   institutionId?: string;
   institutionName?: string;
   permissions?: SubAdminPermissions;
+  plan?: 'Demo' | 'Monthly' | '6-Month' | 'Yearly';
+  isDemo?: boolean; // Added for demo plan
 }
 
 interface AuthContextType {
@@ -42,9 +44,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem('dojobeacon-user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      const storedUserRaw = localStorage.getItem('dojobeacon-user');
+      if (storedUserRaw) {
+        let storedUser = JSON.parse(storedUserRaw);
+        
+        // Check for demo plan status
+        const subscribersRaw = localStorage.getItem('dojobeacon-subscribers');
+        if (subscribersRaw && storedUser.email) {
+            const subscribers = JSON.parse(subscribersRaw);
+            const currentUserSubscriberInfo = subscribers.find((s: any) => s.email === storedUser.email);
+            
+            if (currentUserSubscriberInfo && currentUserSubscriberInfo.plan === 'Demo') {
+                const subscriptionDate = new Date(currentUserSubscriberInfo.subscriptionDate);
+                const threeDaysAgo = new Date();
+                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+                if (subscriptionDate > threeDaysAgo) {
+                    storedUser = { ...storedUser, isDemo: true, plan: 'Demo' };
+                } else {
+                    // Demo expired, but what should happen? For now, we'll just not set the isDemo flag.
+                    // A more robust implementation might log them out or restrict access further.
+                     storedUser = { ...storedUser, isDemo: false, plan: 'Demo Expired' };
+                }
+            }
+        }
+        
+        setUser(storedUser);
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
