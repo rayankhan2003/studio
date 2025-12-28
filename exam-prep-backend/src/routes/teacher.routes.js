@@ -14,6 +14,4 @@ router.delete("/:teacherId", requireAuth, requireRole(ROLES.INSTITUTION_ADMIN), 
 // Routes for teachers themselves
 router.get("/dashboard", requireAuth, requireRole(ROLES.TEACHER), teacherController.getTeacherDashboard);
 
-export default router;
-
     
