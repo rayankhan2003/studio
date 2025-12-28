@@ -156,8 +156,8 @@ export default function TestReviewPage() {
               </CardDescription>
             </CardHeader>
             <CardFooter className="flex-col gap-4">
-                <Button variant="outline" onClick={() => router.push('/history')} className="w-full">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to History
+                <Button variant="outline" onClick={() => router.push('/dashboard')} className="w-full">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
                 </Button>
                 <Button asChild className="w-full">
                   <Link href="/dashboard">Go to Dashboard</Link>
@@ -172,8 +172,8 @@ export default function TestReviewPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <Button variant="outline" onClick={() => router.push('/history')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to History
+        <Button variant="outline" onClick={() => router.push('/dashboard')}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
         </Button>
          <Button asChild size="sm">
           <Link href="/dashboard">Go to Dashboard</Link>

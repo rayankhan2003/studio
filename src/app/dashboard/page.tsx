@@ -137,9 +137,11 @@ export default function DashboardPage() {
             ) : (
               <p className="text-muted-foreground text-center py-4">No recent tests found.</p>
             )}
-            <Button asChild variant="outline" className="w-full mt-4">
-              <Link href="/history">View All History</Link>
-            </Button>
+            {recentTests.length > 0 && (
+                <Button asChild variant="outline" className="w-full mt-4">
+                  <Link href="/analytics">View Detailed Analytics</Link>
+                </Button>
+            )}
           </CardContent>
         </Card>
         

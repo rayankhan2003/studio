@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, History as HistoryIcon, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, BookOpen, Users } from 'lucide-react';
+import { Menu, Home, LayoutDashboard, BarChart3, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, BookOpen, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -19,7 +19,6 @@ const navItems = [
   { href: '/test/custom', label: 'Create Test', icon: Settings },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/planner', label: 'AI Planner', icon: Brain },
-  { href: '/history', label: 'History', icon: HistoryIcon },
   { href: '/pricing', label: 'Pricing', icon: ShoppingCart },
 ];
 
@@ -255,7 +254,7 @@ export function Header() {
                 </SheetHeader>
                 <div className="p-4">
                   <nav className="flex flex-col space-y-2">
-                    {(user ? navItems : navItems.filter(item => item.label !== 'Dashboard' && item.label !== 'History' && item.label !== 'AI Planner')).map((item) => (
+                    {(user ? navItems : navItems.filter(item => item.label !== 'Dashboard' && item.label !== 'Analytics' && item.label !== 'AI Planner')).map((item) => (
                       <NavLink key={item.label} {...item} closeSheet={() => setIsSheetOpen(false)} />
                     ))}
                     <div className="pt-2 mt-2 border-t">
