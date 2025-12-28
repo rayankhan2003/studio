@@ -15,13 +15,25 @@ interface StoredTestReport {
   overallScorePercentage: number;
 }
 
+interface Event {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    status: 'Active' | 'Silent';
+    createdAt: string;
+}
+
+
 export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);
   const [performance, setPerformance] = useState({ averageScore: 0, testsTaken: 0 });
   const [recentTests, setRecentTests] = useState<StoredTestReport[]>([]);
+  const [upcomingExams, setUpcomingExams] = useState<Event[]>([]);
 
   useEffect(() => {
     setIsClient(true);
+    // Load test history
     const storedHistoryString = localStorage.getItem('prepwiseTestHistory');
     if (storedHistoryString) {
       const storedHistory: StoredTestReport[] = JSON.parse(storedHistoryString);
@@ -37,12 +49,22 @@ export default function DashboardPage() {
       storedHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setRecentTests(storedHistory.slice(0, 3));
     }
-  }, []);
+    
+    // Load upcoming events
+    const storedEventsString = localStorage.getItem('dojobeacon-events');
+    if (storedEventsString) {
+        const allEvents: Event[] = JSON.parse(storedEventsString);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of today
 
-  const upcomingExams = [
-    { id: "exam1", name: "Mathematics - Algebra Midterm", date: "2024-08-15", time: "10:00 AM" },
-    { id: "exam2", name: "Physics - Mechanics Final", date: "2024-08-22", time: "02:00 PM" },
-  ];
+        const futureActiveEvents = allEvents
+            .filter(event => event.status === 'Active' && new Date(event.date) >= today)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            
+        setUpcomingExams(futureActiveEvents);
+    }
+
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -60,24 +82,29 @@ export default function DashboardPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center gap-2">
               <CalendarDays className="h-6 w-6 text-primary" />
-              Upcoming Exams
+              Upcoming Exams & Events
             </CardTitle>
-            <CardDescription>Stay prepared for what's next. (Mock Data)</CardDescription>
+            <CardDescription>Stay prepared for what's next.</CardDescription>
           </CardHeader>
           <CardContent>
-            {upcomingExams.length > 0 ? (
+            {!isClient ? (
+                 <div className="flex justify-center items-center h-24">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : upcomingExams.length > 0 ? (
               <ul className="space-y-3">
                 {upcomingExams.map((exam) => (
                   <li key={exam.id} className="p-3 bg-muted/50 rounded-md">
-                    <h3 className="font-semibold">{exam.name}</h3>
+                    <h3 className="font-semibold">{exam.title}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {exam.date} at {exam.time}
+                      {new Date(exam.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
+                    {exam.description && <p className="text-xs text-muted-foreground mt-1">{exam.description}</p>}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No upcoming exams scheduled.</p>
+              <p className="text-muted-foreground text-center py-8">No upcoming exams or events scheduled.</p>
             )}
           </CardContent>
         </Card>
