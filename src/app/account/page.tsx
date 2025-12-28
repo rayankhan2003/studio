@@ -66,7 +66,7 @@ export default function AccountAuthPage() {
       return;
     }
 
-    // 2. Check for Sub-Admin credentials from localStorage
+    // 2. Check for Sub-Admin credentials
     const subAdminsRaw = localStorage.getItem('dojobeacon-sub-admins');
     const subAdmins = subAdminsRaw ? JSON.parse(subAdminsRaw) : [];
     const subAdminData = subAdmins.find((sa: any) => sa.email === loginEmail && sa.password === loginPassword);
@@ -87,18 +87,37 @@ export default function AccountAuthPage() {
       return;
     }
     
-    // 3. Check for Teacher credentials
+    // 3. Institutional Logins (Admin, Teacher, Student)
     const institutionalSubscriptionsRaw = localStorage.getItem('dojobeacon-institutional-subscriptions');
     const institutionalSubscriptions = institutionalSubscriptionsRaw ? JSON.parse(institutionalSubscriptionsRaw) : [];
-    
+
     for (const institution of institutionalSubscriptions) {
+        // Check for Institutional Admin
+        if (institution.adminEmail.toLowerCase() === loginEmail.toLowerCase() && institution.password === loginPassword) {
+            const institutionalAdminUser: User = {
+                name: institution.adminName,
+                email: institution.adminEmail,
+                isAdmin: false,
+                isSuperAdmin: false,
+                isInstitutionalAdmin: true,
+                isTeacher: false,
+                institutionId: institution.id,
+                institutionName: institution.institutionName,
+            };
+            login(institutionalAdminUser);
+            toast({ title: 'Institutional Login Successful!', description: `Welcome, ${institution.adminName}!` });
+            router.push('/institution/dashboard');
+            return;
+        }
+
+        // Check for Teachers
         const teachersRaw = localStorage.getItem(`teachers_${institution.id}`);
         if(teachersRaw) {
             const teachers = JSON.parse(teachersRaw);
-            const teacherData = teachers.find((t: any) => t.loginId === loginEmail && t.password === loginPassword);
+            const teacherData = teachers.find((t: any) => t.loginId.toLowerCase() === loginEmail.toLowerCase() && t.password === loginPassword);
             if (teacherData) {
                  if (teacherData.status === 'Inactive') {
-                    toast({ title: "Login Failed", description: "Your account is inactive. Please contact the Institution Admin.", variant: "destructive" });
+                    toast({ title: "Login Failed", description: "Your account is inactive. Please contact your Institution Admin.", variant: "destructive" });
                     return;
                 }
                 const teacherUser: User = {
@@ -117,36 +136,33 @@ export default function AccountAuthPage() {
                 return;
             }
         }
+        
+        // Check for Students
+        const studentsRaw = localStorage.getItem(`students_${institution.id}`);
+        if (studentsRaw) {
+            const students = JSON.parse(studentsRaw);
+            const studentData = students.find((s: any) => s.username.toLowerCase() === loginEmail.toLowerCase() && s.password === loginPassword);
+            if (studentData) {
+                const studentUser: User = {
+                    name: studentData.fullName,
+                    email: studentData.email,
+                    isInstitutionalStudent: true,
+                    isAdmin: false, isSuperAdmin: false, isInstitutionalAdmin: false, isTeacher: false,
+                    institutionId: institution.id,
+                    institutionName: institution.institutionName,
+                };
+                login(studentUser);
+                toast({ title: 'Student Login Successful!', description: `Welcome, ${studentData.fullName}!` });
+                router.push('/student/dashboard');
+                return;
+            }
+        }
     }
 
 
-    // 4. Check for Institutional Admin credentials
-    const institutionalAdminData = institutionalSubscriptions.find((ia: any) => ia.adminEmail === loginEmail && ia.password === loginPassword);
-
-    if (institutionalAdminData) {
-      const institutionalAdminUser: User = {
-        name: institutionalAdminData.adminName,
-        email: institutionalAdminData.adminEmail,
-        isAdmin: false,
-        isSuperAdmin: false,
-        isInstitutionalAdmin: true,
-        isTeacher: false,
-        institutionId: institutionalAdminData.id,
-        institutionName: institutionalAdminData.institutionName,
-      };
-      login(institutionalAdminUser);
-      toast({
-        title: 'Institutional Login Successful!',
-        description: `Welcome, ${institutionalAdminData.adminName}!`,
-      });
-      router.push('/institution/dashboard');
-      return;
-    }
-
-
-    // 5. Default user login (mocked)
+    // 5. Default public user login (mocked)
     const name = loginEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    if (name.toLowerCase().includes('admin')) {
+    if (name.toLowerCase().includes('admin') || name.toLowerCase().includes('teacher')) {
         toast({ title: "Login Failed", description: "Invalid credentials.", variant: "destructive" });
         return;
     }

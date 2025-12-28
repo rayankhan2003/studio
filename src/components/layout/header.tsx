@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, BookOpen, Users } from 'lucide-react';
+import { Menu, Home, LayoutDashboard, BarChart3, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, BookOpen, Users, GraduationCap } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -33,6 +33,12 @@ const teacherNavItems = [
     { href: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     // Add more teacher-specific links here in the future
 ];
+
+const studentNavItems = [
+  { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/student/analytics', label: 'My Analytics', icon: BarChart3 },
+  { href: '/student/tests', label: 'My Tests', icon: BookOpen },
+]
 
 export function Header() {
   const pathname = usePathname();
@@ -210,6 +216,26 @@ export function Header() {
       )
   }
   
+    if (pathname.startsWith('/student')) {
+       return (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4">
+                <Link href="/student/dashboard" className="flex items-center gap-2" aria-label="Student Home">
+                    <GraduationCap className="h-8 w-8 text-primary" />
+                    <span className="text-xl font-semibold text-primary">{user?.institutionName || 'Student Portal'}</span>
+                </Link>
+                <div className="flex items-center gap-2">
+                    <UserMenu />
+                </div>
+            </div>
+        </header>
+      )
+  }
+  
+  const publicNavItems = user?.isInstitutionalStudent 
+    ? [] 
+    : navItems;
+    
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -219,7 +245,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-          {navItems.map((item) => (
+          {publicNavItems.map((item) => (
             <Link
               key={item.label}
               href={item.href}
@@ -254,7 +280,7 @@ export function Header() {
                 </SheetHeader>
                 <div className="p-4">
                   <nav className="flex flex-col space-y-2">
-                    {(user ? navItems : navItems.filter(item => item.label !== 'Dashboard' && item.label !== 'Analytics' && item.label !== 'AI Planner')).map((item) => (
+                    {(user ? publicNavItems : publicNavItems.filter(item => item.label !== 'Dashboard' && item.label !== 'Analytics' && item.label !== 'AI Planner')).map((item) => (
                       <NavLink key={item.label} {...item} closeSheet={() => setIsSheetOpen(false)} />
                     ))}
                     <div className="pt-2 mt-2 border-t">

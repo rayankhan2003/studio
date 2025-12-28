@@ -22,6 +22,7 @@ export interface User {
   isSuperAdmin: boolean;
   isInstitutionalAdmin: boolean;
   isTeacher?: boolean;
+  isInstitutionalStudent?: boolean;
   institutionId?: string;
   institutionName?: string;
   permissions?: SubAdminPermissions;
