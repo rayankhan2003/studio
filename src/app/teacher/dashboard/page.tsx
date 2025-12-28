@@ -18,9 +18,9 @@ export default function TeacherDashboardPage() {
       title: "View Student Analytics",
       description: "See performance reports for your students and classes.",
       icon: BarChart3,
-      href: "#",
-      cta: "Coming Soon",
-      disabled: true,
+      href: "/teacher/analytics",
+      cta: "View Analytics",
+      disabled: false,
     },
     {
       title: "Manage Your Classes",
