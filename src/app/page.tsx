@@ -123,7 +123,7 @@ export default function Wh() {
       <section className="w-full text-center container px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary/80 pt-8">
-            🩺 Crack MDCAT 2025 with Confidence
+            🩺 Crack MDCAT with Confidence
           </h1>
           <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-muted-foreground">
             Your Personalized Study Companion
