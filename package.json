@@ -9,7 +9,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "api:dev": "node --watch src/api/src/server.js",
+    "api:start": "NODE_ENV=production node src/api/src/server.js",
+    "api:seed": "node src/api/src/seed/seedCambridge.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
