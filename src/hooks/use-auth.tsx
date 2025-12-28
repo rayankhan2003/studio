@@ -26,7 +26,7 @@ export interface User {
   institutionId?: string;
   institutionName?: string;
   permissions?: SubAdminPermissions;
-  plan?: 'Demo' | 'Monthly' | '6-Month' | 'Yearly';
+  plan?: 'Demo' | 'Monthly' | '6-Month' | 'Yearly' | 'Demo Expired';
   isDemo?: boolean; // Added for demo plan
 }
 

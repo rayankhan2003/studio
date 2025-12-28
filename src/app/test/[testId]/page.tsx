@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
+import { useAuth } from '@/hooks/use-auth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +51,7 @@ interface StoredTestReport {
     isCorrect: boolean;
     explanation?: string;
   }>;
+  userId?: string; // To associate with the user
 }
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -111,6 +113,7 @@ export default function TestPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const testId = params.testId as string; 
 
   const parsedQuestionCount = parseInt(searchParams.get('questionCount') || '') || 10;
@@ -209,7 +212,7 @@ export default function TestPage() {
   }, []);
 
   const proceedToSubmitTest = useCallback(() => {
-    if (testSubmitted) return;
+    if (testSubmitted || !user) return; // Also check if user exists
     setTestSubmitted(true);
 
     const chapterResults: Record<string, Record<string, { correct: number, total: number }>> = {};
@@ -282,13 +285,14 @@ export default function TestPage() {
       subjectScores: finalSubjectScores,
       chapterScores: finalChapterScores,
       rawQuestions: rawQuestionsReport,
+      userId: user.email, // Associate the test with the logged-in user
     };
 
     existingHistory.push(newTestReport);
     localStorage.setItem('prepwiseTestHistory', JSON.stringify(existingHistory));
 
     router.push(`/test/${reportId}/review`);
-  }, [testSubmitted, questions, answers, isAnswerCorrect, testId, testNameFromParams, curriculum, testType, router]);
+  }, [testSubmitted, user, questions, answers, isAnswerCorrect, testId, testNameFromParams, curriculum, testType, router]);
 
   const handleSubmitTest = useCallback((isAutoSubmit = false) => {
     if (testSubmitted) return;

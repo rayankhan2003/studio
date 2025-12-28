@@ -14,7 +14,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { toast } from '@/hooks/use-toast';
 import { allSubjects as allMdcatSubjects, syllabus as mdcatSyllabus, type Chapter as MdcatChapter } from '@/lib/syllabus';
 import { allCambridgeSubjects, cambridgeSyllabus, CambridgeLevels, type CambridgeChapter } from '@/lib/cambridge-syllabus';
-import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive, ChevronDown, GraduationCap, Zap } from 'lucide-react';
+import { Settings, ListChecks, Clock, Hash, PlayCircle, AlertCircle, Info, Archive, ChevronDown, GraduationCap, Zap, User } from 'lucide-react';
 import { mockQuestionsDb, type MockQuestionDefinition } from '@/lib/mock-questions-db';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -244,6 +244,21 @@ export default function CustomTestPage() {
   }, [actualQuestionCount, timePerQuestion]);
 
   const handleStartCustomTest = useCallback((isPastPaper: boolean = false, year?: number) => {
+    if (!user) {
+        toast({
+            title: "Authentication Required",
+            description: "Please log in or create an account to start a test.",
+            variant: "default",
+            action: (
+                <Button asChild>
+                    <Link href="/account">Login</Link>
+                </Button>
+            ),
+        });
+        router.push('/account');
+        return;
+    }
+
     let finalQuestionCount = actualQuestionCount;
     let finalTotalDuration = totalTestDuration;
     let finalTestName = testName || `My ${curriculum} Test`;
@@ -313,7 +328,7 @@ export default function CustomTestPage() {
     }
 
     router.push(`/test/custom-session?${queryParams.toString()}`);
-  }, [actualQuestionCount, totalTestDuration, testName, curriculum, totalSelectedChaptersCount, totalAvailableQuestionsFromSelection, timePerQuestion, router, subjects, selectedChaptersMap, toast]);
+  }, [user, actualQuestionCount, totalTestDuration, testName, curriculum, totalSelectedChaptersCount, totalAvailableQuestionsFromSelection, timePerQuestion, router, subjects, selectedChaptersMap, toast]);
 
   const selectedChaptersForPreview = useMemo(() => {
     const preview: { subject: string, chapters: string[] }[] = [];
@@ -344,6 +359,15 @@ export default function CustomTestPage() {
             </AlertDescription>
           </Alert>
         )}
+       {!user && (
+         <Alert variant="default" className="border-amber-500/50 bg-amber-50/50">
+          <User className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-700 font-semibold">Login to Track Progress</AlertTitle>
+          <AlertDescription className="text-xs text-amber-600">
+              <Link href="/account" className="font-bold underline">Log in or create an account</Link> to save your test results and track your performance analytics.
+          </AlertDescription>
+        </Alert>
+       )}
       
       <Tabs value={curriculum} onValueChange={(value) => setCurriculum(value as Curriculum)}>
         <TabsList className="grid w-full grid-cols-3">
