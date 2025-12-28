@@ -60,8 +60,8 @@ const generatePassword = () => {
 };
 
 const generateUsername = (fullName: string, institutionName: string) => {
-    const namePart = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
-    const instPart = institutionName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10);
+    const namePart = fullName.toLowerCase().split(' ')[0].replace(/[^a-z0-9]/g, '');
+    const instPart = institutionName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '');
     return `${namePart}_${instPart}`;
 };
 
@@ -486,3 +486,5 @@ export default function ManageStudentsInSectionPage() {
         </div>
     );
 }
+
+    
