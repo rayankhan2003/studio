@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Building, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 
 interface Section {
