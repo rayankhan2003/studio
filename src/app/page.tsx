@@ -138,7 +138,7 @@ export default function Wh() {
         <div className="container px-4 md:px-6">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight md:text-4xl">
-              🚀 Why Thousands of MDCAT Students Will Trust DojoBeacon
+              🚀 Why Thousands of MDCAT Students Trust DojoBeacon
             </h2>
           </div>
           <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
