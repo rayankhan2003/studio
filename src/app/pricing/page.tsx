@@ -294,16 +294,16 @@ export default function PricingPage() {
               Free
             </CardDescription>
             <p className="text-sm text-muted-foreground mt-1">
-              Get a taste of DojoBeacon. Provide some basic info to start.
+              Get a taste of DojoBeacon with a 3-day trial.
             </p>
           </CardHeader>
           <CardContent className="space-y-6 flex-grow">
             <ul className="space-y-3 text-muted-foreground">
               {[
-                "Access to 25 sample questions",
+                "3-Day Free Trial",
+                "Access to the first chapter of all subjects",
+                "Create custom tests from available content",
                 "Limited Analytics Preview",
-                "Basic Test Features",
-                "Try before you subscribe",
               ].map((feature) => (
                 <li key={feature} className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
@@ -314,7 +314,7 @@ export default function PricingPage() {
           </CardContent>
           <CardFooter className="mt-auto">
             <Button onClick={() => setIsDemoInfoDialogOpen(true)} className="w-full text-lg py-6" variant="outline">
-              Start Demo
+              Activate 3-Day Trial
             </Button>
           </CardFooter>
         </Card>
@@ -492,7 +492,7 @@ export default function PricingPage() {
             <DialogContent className="sm:max-w-md lg:max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <UserPlus className="h-6 w-6 text-accent" /> Start DojoBeacon Demo
+                        <UserPlus className="h-6 w-6 text-accent" /> Activate Your 3-Day Demo
                     </DialogTitle>
                     <DialogDescription>
                         Please provide some basic information to activate your demo access.
