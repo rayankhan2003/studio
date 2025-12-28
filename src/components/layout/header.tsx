@@ -232,9 +232,9 @@ export function Header() {
       )
   }
   
-  const publicNavItems = user?.isInstitutionalStudent 
-    ? [] 
-    : navItems;
+  const publicNavItems = user 
+    ? navItems 
+    : navItems.filter(item => item.label !== 'Dashboard' && item.label !== 'Analytics' && item.label !== 'AI Planner');
     
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -280,7 +280,7 @@ export function Header() {
                 </SheetHeader>
                 <div className="p-4">
                   <nav className="flex flex-col space-y-2">
-                    {(user ? publicNavItems : publicNavItems.filter(item => item.label !== 'Dashboard' && item.label !== 'Analytics' && item.label !== 'AI Planner')).map((item) => (
+                    {publicNavItems.map((item) => (
                       <NavLink key={item.label} {...item} closeSheet={() => setIsSheetOpen(false)} />
                     ))}
                     <div className="pt-2 mt-2 border-t">
