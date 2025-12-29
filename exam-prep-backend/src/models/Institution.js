@@ -12,8 +12,10 @@ const institutionSchema = new mongoose.Schema(
     teachers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     sections: [{ type: mongoose.Schema.Types.ObjectId, ref: "Section" }],
-    subscriptionPlan: { type: String, default: "institutional" },
-    subscriptionStatus: { type: String, enum: ["active", "inactive"], default: "active" },
+    subscriptionPlan: { type: String, enum: ["monthly", "yearly", "lifetime", "institutional"], default: "institutional" },
+    subscriptionStatus: { type: String, enum: ["active", "inactive", "expired", "pending"], default: "active" },
+    subscriptionId: { type: String }, // Stripe subscription ID
+    subscriptionExpiresAt: { type: Date },
   },
   { timestamps: true }
 );

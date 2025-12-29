@@ -16,6 +16,7 @@ import paymentRoutes from "./routes/payment.routes.js";
 import institutionRoutes from "./routes/institution.routes.js";
 import sectionRoutes from "./routes/section.routes.js";
 import teacherRoutes from "./routes/teacher.routes.js";
+import subscriptionRoutes from "./routes/subscription.routes.js"; // New route
 import { stripeWebhook } from "./controllers/payment.controller.js";
 import { errorHandler } from "./middleware/error.js";
 
@@ -46,7 +47,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/institutions", institutionRoutes);
 app.use("/api/sections", sectionRoutes);
 app.use("/api/teachers", teacherRoutes);
-
+app.use("/api/subscriptions", subscriptionRoutes); // New route
 
 // Health
 app.get("/health", (_req, res) => res.json({ ok: true }));

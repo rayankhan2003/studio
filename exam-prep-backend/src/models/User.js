@@ -15,6 +15,12 @@ const userSchema = new mongoose.Schema(
     section: { type: mongoose.Schema.Types.ObjectId, ref: "Section" },
     institutionalRole: { type: String, enum: [ROLES.INSTITUTION_ADMIN, ROLES.TEACHER, ROLES.STUDENT] },
     subjects: [String], // For teachers to be assigned subjects
+
+    // Fields for Individual Subscription
+    subscriptionPlan: { type: String, enum: ["monthly", "yearly", "lifetime"] },
+    subscriptionStatus: { type: String, enum: ["active", "inactive", "expired", "pending"], default: "inactive" },
+    subscriptionId: { type: String }, // Stripe subscription ID
+    subscriptionExpiresAt: { type: Date },
   },
   { timestamps: true }
 );
