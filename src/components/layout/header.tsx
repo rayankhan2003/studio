@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, LayoutDashboard, BarChart3, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, Building, BookOpen, Users, GraduationCap } from 'lucide-react';
+import { Menu, Home, LayoutDashboard, BarChart3, Settings, ShoppingCart, User, Brain, LogOut, UserCircle, ShieldCheck, School, BookOpen, Users, GraduationCap } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -97,7 +97,7 @@ export function Header() {
             )}
              {user.isInstitutionalAdmin && (
                  <DropdownMenuItem onClick={() => router.push('/institution/dashboard')}>
-                    <Building className="mr-2 h-4 w-4" />
+                    <School className="mr-2 h-4 w-4" />
                     <span>Institution Dashboard</span>
                 </DropdownMenuItem>
             )}
@@ -141,7 +141,7 @@ export function Header() {
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <Link href="/institution/dashboard" className="flex items-center gap-2" aria-label="Institution Home">
-                    <Building className="h-8 w-8 text-primary" />
+                    <School className="h-8 w-8 text-primary" />
                     <span className="text-xl font-semibold text-primary">{user?.institutionName || 'Institution Portal'}</span>
                 </Link>
 
@@ -174,7 +174,7 @@ export function Header() {
                             <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0">
                                 <SheetHeader className="p-4 border-b">
                                     <SheetTitle className="text-left flex items-center gap-2">
-                                        <Building className="h-6 w-6 text-primary"/>
+                                        <School className="h-6 w-6 text-primary"/>
                                         {user?.institutionName || 'Institution Menu'}
                                     </SheetTitle>
                                 </SheetHeader>

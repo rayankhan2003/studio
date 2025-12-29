@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, MoreHorizontal, Building, AlertTriangle, Users } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MoreHorizontal, School, AlertTriangle, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -206,7 +206,7 @@ export default function ManageSectionsPage() {
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Building className="h-8 w-8 text-primary" /> Manage Classes & Sections
+                    <School className="h-8 w-8 text-primary" /> Manage Classes & Sections
                 </h1>
             </div>
              <Alert variant="destructive">

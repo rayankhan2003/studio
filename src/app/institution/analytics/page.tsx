@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Building, AlertTriangle } from 'lucide-react';
+import { Loader2, School, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -58,7 +58,7 @@ export default function InstitutionAnalyticsPage() {
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <Building className="h-8 w-8 text-primary"/>
+                <School className="h-8 w-8 text-primary"/>
                 Institutional Analytics
             </h1>
 

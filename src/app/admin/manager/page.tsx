@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, ShieldCheck, ShieldOff, MoreHorizontal, UserCog, Activity, AlertTriangle, Building } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, ShieldCheck, ShieldOff, MoreHorizontal, UserCog, Activity, AlertTriangle, School } from 'lucide-react';
 import { type SubAdminPermissions } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -463,7 +463,7 @@ export default function AdminManagerPage() {
             <Dialog open={isInstitutionDialogOpen} onOpenChange={setIsInstitutionDialogOpen}>
                  <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2"><Building className="h-6 w-6 text-primary"/>Create New Institution</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2"><School className="h-6 w-6 text-primary"/>Create New Institution</DialogTitle>
                         <DialogDescription>Fill in the details for the new institution and its primary administrator account.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">

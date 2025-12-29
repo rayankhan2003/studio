@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, BookOpen, BarChart3 } from "lucide-react";
+import { Users, BookOpen, BarChart3, School } from "lucide-react";
 import Link from "next/link";
 
 export default function InstitutionDashboardPage() {

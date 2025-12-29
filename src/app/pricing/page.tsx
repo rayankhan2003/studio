@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, CreditCard, Smartphone, UserPlus, Zap, Building } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, UserPlus, Zap, School } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -494,19 +494,19 @@ export default function PricingPage() {
        {/* Institutional Plan Section */}
       <section>
         <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center p-3 bg-accent/10 rounded-full mb-4">
-               <Building className="h-8 w-8 text-accent" />
+            <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
+               <School className="h-8 w-8 text-primary" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-accent sm:text-4xl">For Institutions</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">For Institutions</h2>
             <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
               Empower your entire school, college, or academy with a dedicated institutional plan.
             </p>
         </div>
         <div className="flex justify-center">
-            <Card className="shadow-xl border-accent/80 border-2 flex flex-col max-w-2xl">
+            <Card className="shadow-xl border-primary/80 border-2 flex flex-col max-w-2xl">
               <CardHeader className="text-center">
                 <CardTitle className="text-3xl mb-2">Institutional Plan</CardTitle>
-                <CardDescription className="text-xl font-semibold text-accent">
+                <CardDescription className="text-xl font-semibold text-primary">
                   100,000 PKR / year
                 </CardDescription>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -535,7 +535,7 @@ export default function PricingPage() {
                 </ul>
               </CardContent>
               <CardFooter className="mt-auto">
-                <Button onClick={() => setIsInstitutionalDialogOpen(true)} className="w-full text-lg py-6" variant="default" style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}}>
+                <Button onClick={() => setIsInstitutionalDialogOpen(true)} className="w-full text-lg py-6" variant="default">
                   Subscribe
                 </Button>
               </CardFooter>
@@ -732,8 +732,8 @@ export default function PricingPage() {
         }}>
             <DialogContent className="sm:max-w-md lg:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-accent">
-                        <Building className="h-6 w-6" /> Subscribe to Institutional Plan
+                    <DialogTitle className="flex items-center gap-2 text-primary">
+                        <School className="h-6 w-6" /> Subscribe to Institutional Plan
                     </DialogTitle>
                     <DialogDescription>
                         Enter your institution's details to get started. You will be billed 100,000 PKR annually.
@@ -819,7 +819,7 @@ export default function PricingPage() {
                     <Button type="button" variant="outline" onClick={() => setIsInstitutionalDialogOpen(false)}>
                         Cancel
                     </Button>
-                    <Button type="button" onClick={handleInstitutionalSubscribeSubmit} style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}}>
+                    <Button type="button" onClick={handleInstitutionalSubscribeSubmit}>
                         Subscribe &amp; Proceed to Payment
                     </Button>
                 </DialogFooter>
@@ -828,5 +828,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    
