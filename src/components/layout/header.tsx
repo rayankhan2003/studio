@@ -119,7 +119,7 @@ export function Header() {
 
     return (
       <Button asChild variant="outline">
-        <Link href="/account">
+        <Link href="/auth">
           <User className="mr-2 h-4 w-4" /> Login
         </Link>
       </Button>
@@ -290,7 +290,7 @@ export function Header() {
                             Logout
                           </Button>
                       ) : (
-                         <NavLink href="/account" label="Login / Sign Up" icon={User} closeSheet={() => setIsSheetOpen(false)} />
+                         <NavLink href="/auth" label="Login / Sign Up" icon={User} closeSheet={() => setIsSheetOpen(false)} />
                       )}
                     </div>
                   </nav>

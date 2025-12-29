@@ -251,11 +251,11 @@ export default function CustomTestPage() {
             variant: "default",
             action: (
                 <Button asChild>
-                    <Link href="/account">Login</Link>
+                    <Link href="/auth">Login</Link>
                 </Button>
             ),
         });
-        router.push('/account');
+        router.push('/auth');
         return;
     }
 
@@ -364,7 +364,7 @@ export default function CustomTestPage() {
           <User className="h-4 w-4 text-amber-600" />
           <AlertTitle className="text-amber-700 font-semibold">Login to Track Progress</AlertTitle>
           <AlertDescription className="text-xs text-amber-600">
-              <Link href="/account" className="font-bold underline">Log in or create an account</Link> to save your test results and track your performance analytics.
+              <Link href="/auth" className="font-bold underline">Log in or create an account</Link> to save your test results and track your performance analytics.
           </AlertDescription>
         </Alert>
        )}
