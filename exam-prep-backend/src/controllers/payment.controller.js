@@ -17,14 +17,14 @@ const getExpiryDate = (plan) => {
 export const createCheckout = async (req, res, next) => {
   try {
     const { plan, institutionId } = req.body; // institutionId is optional
-    const pricing = { monthly: 9, yearly: 79, lifetime: 199, institutional: 1000 };
+    const pricing = { monthly: 1000, yearly: 10000, lifetime: 20000, institutional: 100000 };
     if (!pricing[plan]) return res.status(400).json({ message: "Invalid plan" });
 
     const payment = await Payment.create({
       userId: req.user.id, 
       plan, 
-      amount: pricing[plan] * 100, 
-      currency: "usd", 
+      amount: pricing[plan] * 100, // Stripe expects amount in cents
+      currency: "pkr", 
       status: "pending",
       institutionId: institutionId,
     });
@@ -35,20 +35,21 @@ export const createCheckout = async (req, res, next) => {
     };
     if (institutionId) metadata.institutionId = institutionId;
     
-    const productName = institutionId ? `DojoBeacon Institutional Plan` : `DojoBeacon ${plan} plan`;
+    const productName = institutionId ? `PrepWise Institutional Plan` : `PrepWise ${plan} plan`;
 
     const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
       mode: "payment",
       line_items: [{
         price_data: {
-          currency: "usd",
+          currency: "pkr",
           product_data: { name: productName },
           unit_amount: payment.amount
         },
         quantity: 1
       }],
       success_url: `http://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:3000/cancel`,
+      cancel_url: `http://localhost:3000/pricing`,
       metadata
     });
 
@@ -106,3 +107,5 @@ export const stripeWebhook = async (req, res, next) => {
     res.json({ received: true });
   } catch (e) { next(e); }
 };
+
+    

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { educationalBoards, provinces, citiesByProvince } from '@/lib/pakistan-data';
 import { Combobox } from '@/components/ui/combobox';
+import { useAuth } from '@/hooks/use-auth';
 
 const paymentMethods = [
   { name: "Visa", icon: CreditCard },
@@ -97,12 +98,14 @@ interface PlanDetails {
     name: string;
     price: string;
     billing_desc: string;
+    api_plan_id: 'monthly' | 'yearly' | 'lifetime' | 'institutional';
 }
 
 const boardOptions = educationalBoards.map(board => ({ value: board, label: board }));
 
 export default function PricingPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isPremiumDialogOpen, setIsPremiumDialogOpen] = useState<boolean>(false);
   const [premiumFormData, setPremiumFormData] = useState<PremiumFormData>(initialPremiumFormData);
   const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
@@ -211,7 +214,11 @@ export default function PricingPage() {
     setSelectedDemoProvince('');
   };
   
-  const handlePremiumSubscribeSubmit = () => {
+  const handlePremiumSubscribeSubmit = async () => {
+    if (!user) {
+        toast({ title: "Login Required", description: "You must be logged in to subscribe.", variant: "destructive" });
+        return;
+    }
     if (!premiumFormData.fullName || !premiumFormData.email || !premiumFormData.gender) {
          toast({
             title: "Missing Information",
@@ -220,18 +227,48 @@ export default function PricingPage() {
         });
         return;
     }
+    
     saveSubscriberInfo(premiumFormData, selectedPlan?.name.split(' ')[0] as 'Monthly' | '6-Month' | 'Yearly' || 'Monthly');
-    toast({
-      title: "Processing Payment Securely...",
-      description: "Your subscription is being activated. This is a simulated secure transaction.",
-      duration: 7000,
-    });
+    
+    toast({ title: "Redirecting to payment...", description: "Please wait." });
+    
+    try {
+        const response = await fetch('/api/payments/create-checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Assuming token is stored in localStorage after login
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify({ plan: selectedPlan?.api_plan_id })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to create checkout session.');
+        }
+
+        const { url } = await response.json();
+        window.location.href = url; // Redirect to Stripe
+        
+    } catch (error: any) {
+        toast({
+            title: 'Payment Error',
+            description: error.message || 'Could not initiate payment. Please try again.',
+            variant: 'destructive',
+        });
+    }
+
     setIsPremiumDialogOpen(false);
     setPremiumFormData(initialPremiumFormData);
     setSelectedPremiumProvince('');
   };
   
-    const handleInstitutionalSubscribeSubmit = () => {
+    const handleInstitutionalSubscribeSubmit = async () => {
+        if (!user) {
+            toast({ title: "Login Required", description: "You must be logged in as a Super Admin to subscribe an institution.", variant: "destructive" });
+            return;
+        }
         if (!institutionalFormData.institutionName || !institutionalFormData.adminName || !institutionalFormData.adminEmail || !institutionalFormData.password) {
             toast({ title: "Missing Information", description: "Institution Name, Admin Name, Admin Email, and Password are required.", variant: "destructive" });
             return;
@@ -241,22 +278,48 @@ export default function PricingPage() {
             return;
         }
 
+        // Mock: save institution locally first to get an ID. In real app, backend would handle this.
         const existingSubscriptionsRaw = localStorage.getItem('dojobeacon-institutional-subscriptions');
         const existingSubscriptions = existingSubscriptionsRaw ? JSON.parse(existingSubscriptionsRaw) : [];
-
+        const newSubscriptionId = `inst-${Date.now()}`;
         const newSubscription: InstitutionalFormData = {
-            id: `inst-${Date.now()}`,
+            id: newSubscriptionId,
             ...institutionalFormData,
         };
-
         existingSubscriptions.push(newSubscription);
         localStorage.setItem('dojobeacon-institutional-subscriptions', JSON.stringify(existingSubscriptions));
         
-        toast({
-            title: "Processing Institutional Subscription...",
-            description: "Your subscription is being activated. This is a simulated secure transaction. You will be redirected after payment.",
-            duration: 7000,
-        });
+        toast({ title: "Redirecting to payment...", description: "Please wait." });
+
+         try {
+            const response = await fetch('/api/payments/create-checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify({ plan: 'institutional', institutionId: newSubscriptionId })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                // If checkout fails, remove the temporarily saved institution
+                const updatedSubscriptions = existingSubscriptions.filter((sub: any) => sub.id !== newSubscriptionId);
+                localStorage.setItem('dojobeacon-institutional-subscriptions', JSON.stringify(updatedSubscriptions));
+                throw new Error(errorData.message || 'Failed to create checkout session.');
+            }
+
+            const { url } = await response.json();
+            window.location.href = url; // Redirect to Stripe
+            
+        } catch (error: any) {
+            toast({
+                title: 'Payment Error',
+                description: error.message || 'Could not initiate payment. Please try again.',
+                variant: 'destructive',
+            });
+        }
+        
         setIsInstitutionalDialogOpen(false);
         setInstitutionalFormData(initialInstitutionalFormData);
         setSelectedInstitutionalProvince('');
@@ -353,7 +416,7 @@ export default function PricingPage() {
                     </ul>
                 </CardContent>
                 <CardFooter className="flex-col gap-2 mt-auto">
-                    <Button onClick={() => handleOpenSubscriptionDialog({ name: 'Monthly Plan', price: '1000 PKR', billing_desc: 'Billed monthly.' })} className="w-full text-lg py-6" variant="outline">
+                    <Button onClick={() => handleOpenSubscriptionDialog({ name: 'Monthly Plan', price: '1000 PKR', billing_desc: 'Billed monthly.', api_plan_id: 'monthly' })} className="w-full text-lg py-6" variant="outline">
                         Subscribe
                     </Button>
                 </CardFooter>
@@ -384,7 +447,7 @@ export default function PricingPage() {
                     </ul>
                 </CardContent>
                 <CardFooter className="flex-col gap-2 mt-auto">
-                    <Button onClick={() => handleOpenSubscriptionDialog({ name: '6-Month Plan', price: '5000 PKR', billing_desc: 'Billed every 6 months.' })} className="w-full text-lg py-6">
+                    <Button onClick={() => handleOpenSubscriptionDialog({ name: '6-Month Plan', price: '5000 PKR', billing_desc: 'Billed every 6 months.', api_plan_id: 'yearly'  })} className="w-full text-lg py-6">
                     Subscribe
                     </Button>
                 </CardFooter>
@@ -415,7 +478,7 @@ export default function PricingPage() {
                     </ul>
                 </CardContent>
                 <CardFooter className="flex-col gap-2 mt-auto">
-                    <Button onClick={() => handleOpenSubscriptionDialog({ name: 'Yearly Plan', price: '10000 PKR', billing_desc: 'Billed annually.' })} className="w-full text-lg py-6" variant="outline">
+                    <Button onClick={() => handleOpenSubscriptionDialog({ name: 'Yearly Plan', price: '10000 PKR', billing_desc: 'Billed annually.', api_plan_id: 'yearly' })} className="w-full text-lg py-6" variant="outline">
                         Subscribe
                     </Button>
                 </CardFooter>
@@ -765,3 +828,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
